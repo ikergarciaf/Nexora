@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------
+// Phase 1: Architectural Schema for ClinicSaaS AI
+// ------------------------------------------------------
+
+model Tenant {
+  id                   String   @id @default(uuid())
+  name                 String
+  taxId                String?
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  stripePriceId        String?
+  subscriptionStatus   String   @default("trialing") // trialing, active, past_due, canceled, unpaid
+  subscriptionPlan     String   @default("STARTER") // STARTER, PRO, PREMIUM
+  trialEndsAt          DateTime?
+  createdAt            DateTime @default(now())
+
+  users              User[]
+  patients           Patient[]
+  appointments       Appointment[]
+  invoices           Invoice[]
+}
+
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  email        String   @unique
+  passwordHash String
+  role         String   @default("STAFF") // OWNER, DOCTOR, STAFF
+  name         String
+  isActive     Boolean  @default(true)
+}
+
+model Patient {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id])
+  fullName            String
+  dob                 DateTime?
+  phone               String?
+  email               String?
+  medicalHistoryNotes String?
+  tags                String?  // JSON serialized representation for Prisma compatibility without raw Jsonb 
+
+  // --- AI Monetization & Caching strategy ---
+  aiSummary           String?  // Caches the expensive LLM generation
+  cachedAt            DateTime? // Tracks when the summary was last generated
+  lastVisit           DateTime? // Helps with inactive patient logic
+
+  appointments        Appointment[]
+  invoices            Invoice[]
+}
+
+model Appointment {
+  id               String   @id @default(uuid())
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+  patientId        String
+  patient          Patient  @relation(fields: [patientId], references: [id])
+  doctorId         String // Not strictly relating to User to allow unassigned/external docs in MVP
+  startTime        DateTime
+  endTime          DateTime
+  status           String   @default("SCHEDULED") // SCHEDULED, COMPLETED, NO_SHOW, CANCELLED
+  
+  // --- AI Features ---
+  aiConflictScore  Float?
+  aiAlertReason    String?  // E.g., "History of no-shows on Friday afternoons"
+  whatsappDraft    String?  // Caches the personalized outreach message
+  internalNotes    String?
+}
+
+model Invoice {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id])
+  amount    Float
+  currency  String   @default("USD")
+  status    String   @default("PENDING") // PENDING, PAID
+  issuedDate DateTime @default(now())
+}
