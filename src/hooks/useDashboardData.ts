@@ -90,6 +90,94 @@ export async function createPatientApi(data: { fullName: string, email?: string,
   }
 }
 
+export async function updatePatientApi(id: string, data: any) {
+  try {
+    const token = localStorage.getItem('clinic_token');
+    const response = await fetch(`/api/patients/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token || 'demo-token'}`
+      },
+      body: JSON.stringify(data),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to update patient:', error);
+    return false;
+  }
+}
+
+export async function deletePatientApi(id: string) {
+  try {
+    const token = localStorage.getItem('clinic_token');
+    const response = await fetch(`/api/patients/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token || 'demo-token'}`
+      }
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to delete patient:', error);
+    return false;
+  }
+}
+
+export async function createAppointmentApi(data: { patientId: string, doctorId?: string, startTime: string, durationMinutes: number }): Promise<Appointment | null> {
+  try {
+    const token = localStorage.getItem('clinic_token');
+    const response = await fetch('/api/appointments', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token || 'demo-token'}` 
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) throw new Error("Failed to create appointment");
+    return await response.json();
+  } catch (error) {
+    console.error('Appointment API error:', error);
+    return null;
+  }
+}
+
+export async function updateAppointmentApi(id: string, data: any) {
+  try {
+    const token = localStorage.getItem('clinic_token');
+    const response = await fetch(`/api/appointments/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token || 'demo-token'}`
+      },
+      body: JSON.stringify(data),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to update appointment:', error);
+    return false;
+  }
+}
+
+export async function deleteAppointmentApi(id: string) {
+  try {
+    const token = localStorage.getItem('clinic_token');
+    const response = await fetch(`/api/appointments/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token || 'demo-token'}`
+      }
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to delete appointment:', error);
+    return false;
+  }
+}
+
 export async function generatePatientSummary(notes: string) {
   try {
     const token = localStorage.getItem('clinic_token');

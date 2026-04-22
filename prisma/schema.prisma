@@ -3,89 +3,80 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-// ------------------------------------------------------
-// Phase 1: Architectural Schema for ClinicSaaS AI
-// ------------------------------------------------------
-
 model Tenant {
-  id                   String   @id @default(uuid())
+  id                   String        @id @default(uuid())
   name                 String
   taxId                String?
   stripeCustomerId     String?
   stripeSubscriptionId String?
   stripePriceId        String?
-  subscriptionStatus   String   @default("trialing") // trialing, active, past_due, canceled, unpaid
-  subscriptionPlan     String   @default("STARTER") // STARTER, PRO, PREMIUM
+  subscriptionStatus   String        @default("trialing")
+  subscriptionPlan     String        @default("STARTER")
   trialEndsAt          DateTime?
-  createdAt            DateTime @default(now())
-
-  users              User[]
-  patients           Patient[]
-  appointments       Appointment[]
-  invoices           Invoice[]
+  createdAt            DateTime      @default(now())
+  appointments         Appointment[]
+  invoices             Invoice[]
+  patients             Patient[]
+  users                User[]
 }
 
 model User {
-  id           String   @id @default(uuid())
+  id           String  @id @default(uuid())
   tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id])
-  email        String   @unique
+  email        String  @unique
   passwordHash String
-  role         String   @default("STAFF") // OWNER, DOCTOR, STAFF
+  role         String  @default("STAFF")
   name         String
-  isActive     Boolean  @default(true)
+  isActive     Boolean @default(true)
+  tenant       Tenant  @relation(fields: [tenantId], references: [id])
 }
 
 model Patient {
-  id                  String   @id @default(uuid())
+  id                  String        @id @default(uuid())
   tenantId            String
-  tenant              Tenant   @relation(fields: [tenantId], references: [id])
   fullName            String
   dob                 DateTime?
   phone               String?
   email               String?
   medicalHistoryNotes String?
-  tags                String?  // JSON serialized representation for Prisma compatibility without raw Jsonb 
-
-  // --- AI Monetization & Caching strategy ---
-  aiSummary           String?  // Caches the expensive LLM generation
-  cachedAt            DateTime? // Tracks when the summary was last generated
-  lastVisit           DateTime? // Helps with inactive patient logic
-
+  tags                String?
+  aiSummary           String?
+  cachedAt            DateTime?
+  lastVisit           DateTime?
   appointments        Appointment[]
   invoices            Invoice[]
+  tenant              Tenant        @relation(fields: [tenantId], references: [id])
 }
 
 model Appointment {
-  id               String   @id @default(uuid())
-  tenantId         String
-  tenant           Tenant   @relation(fields: [tenantId], references: [id])
-  patientId        String
-  patient          Patient  @relation(fields: [patientId], references: [id])
-  doctorId         String // Not strictly relating to User to allow unassigned/external docs in MVP
-  startTime        DateTime
-  endTime          DateTime
-  status           String   @default("SCHEDULED") // SCHEDULED, COMPLETED, NO_SHOW, CANCELLED
-  
-  // --- AI Features ---
-  aiConflictScore  Float?
-  aiAlertReason    String?  // E.g., "History of no-shows on Friday afternoons"
-  whatsappDraft    String?  // Caches the personalized outreach message
-  internalNotes    String?
+  id              String   @id @default(uuid())
+  tenantId        String
+  patientId       String
+  doctorId        String
+  startTime       DateTime
+  endTime         DateTime
+  status          String   @default("SCHEDULED")
+  aiConflictScore Float?
+  aiAlertReason   String?
+  whatsappDraft   String?
+  internalNotes   String?
+  patient         Patient  @relation(fields: [patientId], references: [id])
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
 }
 
 model Invoice {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  patientId String
-  patient   Patient  @relation(fields: [patientId], references: [id])
-  amount    Float
-  currency  String   @default("USD")
-  status    String   @default("PENDING") // PENDING, PAID
+  id         String   @id @default(uuid())
+  tenantId   String
+  patientId  String
+  amount     Float
+  currency   String   @default("USD")
+  status     String   @default("PENDING")
   issuedDate DateTime @default(now())
+  patient    Patient  @relation(fields: [patientId], references: [id])
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
 }

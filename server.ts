@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
@@ -9,12 +11,17 @@ import prisma from './server/db.ts';
 async function checkDatabase() {
   if (process.env.DATABASE_URL) {
     try {
+      console.log('⏳ Verifying database connection...');
+      await prisma.$connect();
       await prisma.$executeRawUnsafe('SELECT 1');
       console.log('✅ Database connected successfully');
     } catch (e: any) {
-      console.warn('⚠️ Database Authentication Failed - Disabling DATABASE_URL for Mock Mode');
-      delete process.env.DATABASE_URL; // This triggers all the fallback logics automatically
+      console.error('❌ Database Authentication Failed - The DATABASE_URL is invalid or credentials expired.');
+      console.warn('⚠️ Disabling DATABASE_URL and falling back to Mock Mode for this session.');
+      delete process.env.DATABASE_URL; 
     }
+  } else {
+    console.log('ℹ️ No DATABASE_URL provided. Operating in Mock Mode.');
   }
 }
 

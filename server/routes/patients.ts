@@ -4,28 +4,39 @@ import { requireAuth, requireRole } from '../middlewares/auth.ts';
 
 export const patientRouter = Router();
 
+// In-memory mock storage for local testing when no DB is connected
+let mockPatients: any[] = [];
+
 // Apply authentication and tenant injection to all patient routes
 patientRouter.use(requireAuth);
 
 patientRouter.get('/', async (req, res) => {
   try {
-    if (!process.env.DATABASE_URL) throw new Error('No DB URL configured');
+    if (process.env.DATABASE_URL) {
+      // STRICT TENANT ISOLATION
+      const patients = await prisma.patient.findMany({ 
+        where: { tenantId: req.user!.tenantId },
+        take: 50,
+        orderBy: { fullName: 'asc' }
+      });
+      
+      if (patients.length > 0) {
+        return res.json(patients);
+      }
+    }
     
-    // STRICT TENANT ISOLATION
-    const patients = await prisma.patient.findMany({ 
-      where: { tenantId: req.user!.tenantId },
-      take: 50,
-      orderBy: { fullName: 'asc' }
-    });
-    
-    res.json(patients);
+    // Fallback if DB empty or missing
+    if (mockPatients.length === 0) {
+      mockPatients = [
+        { id: 'm1', fullName: 'Adrián Sánchez', email: 'adrian@example.com', phone: '600111222', tags: '["regular"]' },
+        { id: 'm2', fullName: 'Elena Martínez', email: 'elena@example.com', phone: '600333444', tags: '["vip"]' },
+        { id: 'm3', fullName: 'Roberto Gómez', email: 'roberto@example.com', phone: '600555666', tags: '["new"]' }
+      ];
+    }
+    res.json(mockPatients);
   } catch (error: any) {
-    console.warn("[DB Warning] Falling back to mocks. Reason:", error.message);
-    res.json([
-      { id: 'p1', fullName: 'Sarah Jenkins', email: 'sarah@example.com', tags: '["high-retention"]' },
-      { id: 'p2', fullName: 'Michael Chen', email: 'mchen@example.com', tags: '["no-show-risk"]' },
-      { id: 'p3', fullName: 'Robert Downey Jr.', email: 'rdj@example.com', tags: '["premium"]' }
-    ]);
+    console.warn("[Patients DB Warning] Falling back to mocks.");
+    res.json(mockPatients);
   }
 });
 
@@ -38,13 +49,15 @@ patientRouter.post('/', async (req, res) => {
 
     // Fallback if DB is not configured in environment
     if (!process.env.DATABASE_URL) {
-      return res.status(201).json({ 
+      const newMockPatient = { 
         id: `mock_p_${Date.now()}`, 
         fullName, 
-        email, 
-        phone, 
+        email: email || '', 
+        phone: phone || '', 
         tags: '["new"]' 
-      });
+      };
+      mockPatients.push(newMockPatient);
+      return res.status(201).json(newMockPatient);
     }
 
     // Auto-bootstrap the tenant for the demo environment if it doesn't exist yet
@@ -78,6 +91,7 @@ patientRouter.delete('/:id', requireRole(['ADMIN']), async (req, res) => {
     const { id } = req.params;
     
     if (!process.env.DATABASE_URL) {
+      mockPatients = mockPatients.filter(p => p.id !== id);
       return res.status(200).json({ success: true, message: "Mock delete successful" });
     }
 
@@ -98,6 +112,44 @@ patientRouter.delete('/:id', requireRole(['ADMIN']), async (req, res) => {
   } catch (error) {
     console.error("[Patient Delete Error]", error);
     res.status(500).json({ error: "Failed to delete patient." });
+  }
+});
+
+// Update patient
+patientRouter.put('/:id', requireRole(['ADMIN']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { fullName, email, phone } = req.body;
+    
+    if (!process.env.DATABASE_URL) {
+      const idx = mockPatients.findIndex(p => p.id === id);
+      if (idx !== -1) {
+        mockPatients[idx] = { ...mockPatients[idx], fullName, email, phone };
+        return res.json(mockPatients[idx]);
+      }
+      return res.status(404).json({ error: "Mock patient not found" });
+    }
+
+    const updated = await prisma.patient.updateMany({
+      where: {
+        id,
+        tenantId: req.user!.tenantId
+      },
+      data: {
+        fullName,
+        email,
+        phone
+      }
+    });
+
+    if (updated.count === 0) {
+      return res.status(404).json({ error: "Patient not found or unauthorized." });
+    }
+
+    res.json({ success: true, message: "Patient updated" });
+  } catch (error) {
+    console.error("[Patient Update Error]", error);
+    res.status(500).json({ error: "Failed to update patient." });
   }
 });
 

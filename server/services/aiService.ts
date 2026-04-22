@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Type } from '@google/genai';
 
 export class AiService {
   private ai: GoogleGenAI | null = null;
@@ -22,7 +22,7 @@ export class AiService {
     }
 
     const response = await this.ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: `You are an expert clinical assistant. Provide a highly concise, 2-sentence summary of the following patient history. Focus purely on actionable insights for today's visit. \n\nHistory: ${notes}`,
     });
     
@@ -48,14 +48,14 @@ export class AiService {
       reactivation: 'a gentle reactivation message for an inactive patient'
     };
 
-    const prompt = `Write a short, engaging WhatsApp message for a dental clinic patient.
+    const prompt = `Write a short, engaging WhatsApp message for a clinic patient.
     Patient Name: ${patientName}
     Context: ${appointmentType} at ${time}. 
     Goal: Write ${goalPrompts[goal]}. 
     Constraint: Keep it under 250 characters, friendly but professional. Do not use placeholders like [Clinic Name], just speak directly.`;
 
     const response = await this.ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: prompt,
     });
 
@@ -71,17 +71,36 @@ export class AiService {
     }
 
     const prompt = `Based on the following patient tags, predict the probability of a no-show for their next appointment. 
-    Tags: ${patientHistoryTags.join(', ')}
-    Format your response exactly as JSON like this: {"riskLevel": "LOW|MEDIUM|HIGH", "score": 0.0-1.0, "reason": "brief explanation"}`;
+    Tags: ${patientHistoryTags.join(', ')}`;
 
     try {
       const response = await this.ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              riskLevel: {
+                type: Type.STRING,
+                description: "Risk level of no-show: LOW, MEDIUM, or HIGH"
+              },
+              score: {
+                type: Type.NUMBER,
+                description: "Predicted probability from 0.0 to 1.0"
+              },
+              reason: {
+                type: Type.STRING,
+                description: "Brief reasoning for the prediction"
+              }
+            },
+            required: ["riskLevel", "score", "reason"]
+          }
+        }
       });
 
-      // Simple extraction of JSON from the response text (in case of markdown blocks)
-      const jsonStr = response.text?.replace(/```json|```/g, '').trim() || "{}";
+      const jsonStr = response.text || "{}";
       const parsed = JSON.parse(jsonStr);
       return {
         riskLevel: parsed.riskLevel || "MEDIUM",
@@ -101,12 +120,12 @@ export class AiService {
     }
 
     const patientProfiles = patients.map(p => p.tags || "No specific tags").join("; ");
-    const prompt = `You are a dental clinic marketing expert. I have ${patients.length} inactive patients.
+    const prompt = `You are a clinic marketing expert. I have ${patients.length} inactive patients.
     Their historical tags: ${patientProfiles}
     Write a 2-3 sentence highly effective reactivation strategy via WhatsApp to get them back in the chair.`;
 
     const response = await this.ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: prompt,
     });
     

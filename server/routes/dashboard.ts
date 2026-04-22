@@ -11,13 +11,13 @@ dashboardRouter.get('/stats', async (req, res) => {
     const tenantId = req.user!.tenantId;
 
     if (!process.env.DATABASE_URL) {
-      // Return high-value mock data for UI testing if no DB is attached
+      // Return realistic mock stats for the demo environment
       return res.json({
-        monthlyRevenue: 14250,
-        revenueGrowth: 12.5, // Percentage
-        appointmentsThisWeek: 48,
-        activePatients: 1204,
-        noShowRate: 3.2 // Percentage
+        monthlyRevenue: 12450.50,
+        revenueGrowth: 12.5,
+        appointmentsThisWeek: 42,
+        activePatients: 156,
+        noShowRate: 4.2
       });
     }
 
