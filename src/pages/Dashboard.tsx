@@ -10,6 +10,7 @@ import {
   ResponsiveContainer, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell 
 } from 'recharts';
 import { useDashboardData, createPatientApi, createAppointmentApi, updatePatientApi, deletePatientApi, updateAppointmentApi, deleteAppointmentApi } from '../hooks/useDashboardData';
+import { NexoraLogo } from '../components/NexoraLogo';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -2104,9 +2105,7 @@ export default function Dashboard() {
               className={`w-[calc(100%-16px)] mx-2 mt-4 mb-2 flex items-center justify-between px-2 py-1.5 rounded-[6px] border transition-all ${isAccountMenuOpen ? (isDarkMode ? 'bg-[#1e293b] border-transparent' : 'bg-[#e3e8ee] border-transparent') : (isDarkMode ? 'bg-transparent border-transparent hover:bg-[#1e293b]' : 'bg-transparent border-transparent hover:bg-[#e3e8ee]')}`}
             >
               <div className="flex items-center gap-2 text-left overflow-hidden">
-                <div className={`w-6 h-6 rounded-[4px] flex items-center justify-center font-bold text-[10px] shadow-sm shrink-0 border transition-colors ${isDarkMode ? 'bg-[#334155] border-[#475569] text-[#008477]' : 'bg-white border-[#e3e8ee] text-[#008477]'}`}>
-                  {clinicConfig.name.substring(0, 2).toUpperCase()}
-                </div>
+                <NexoraLogo size={24} />
                 <div className="min-w-0">
                   <div className={`text-[13px] font-bold leading-tight truncate ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
                     {clinicConfig.name}
@@ -2123,9 +2122,7 @@ export default function Dashboard() {
             {isAccountMenuOpen && (
               <div className={`absolute top-[86px] left-3 w-[260px] rounded-[12px] shadow-[0_12px_40px_rgba(0,0,0,0.15)] flex flex-col z-[100] py-2 border transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
                 <div className="px-5 py-4 pb-2 flex flex-col items-center">
-                  <div className={`w-12 h-12 rounded-[12px] flex items-center justify-center font-bold text-lg mb-3 border-2 transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-[#008477]' : 'bg-[#f6f9fc] border-[#e3e8ee] text-[#008477]'}`}>
-                    {clinicConfig.name.substring(0, 2).toUpperCase()}
-                  </div>
+                  <NexoraLogo size={48} className="mb-3" />
                   <div className={`text-[15px] font-bold text-center w-full truncate ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
                     {clinicConfig.name}
                   </div>
