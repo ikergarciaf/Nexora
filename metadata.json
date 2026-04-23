@@ -1,6 +1,6 @@
 {
   "name": "Nexora",
-  "description": "A robust, multi-tenant SaaS for private clinics featuring an AI-powered CRM, smart scheduling, WhatsApp automation, and business analytics.",
-  "requestFramePermissions": [],
+  "description": "A robust, multi-tenant SaaS for private clinics featuring an AI-powered CRM, smart scheduling, WhatsApp automation, and business analytics. Now featuring Telemedicine capabilities.",
+  "requestFramePermissions": ["camera", "microphone"],
   "majorCapabilities": []
 }

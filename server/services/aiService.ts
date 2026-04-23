@@ -14,19 +14,19 @@ export class AiService {
   }
 
   /**
-   * Summarize clinical notes to save doctor's time
+   * Summarize or Structure clinical notes (SOAP format)
    */
   async summarizePatientHistory(notes: string): Promise<string> {
     if (this.isMockMode || !this.ai) {
-      return "Patient has had 3 cleanings in 12 months. Recommend preventive sealant for lower molars during today's visit.";
+      return "SUBJETIVO: Dolor agudo molar 3. \nOBJETIVO: Caries profunda detectada. \nPLAN: Endodoncia programada para la próxima semana.";
     }
 
     const response = await this.ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `You are an expert clinical assistant. Provide a highly concise, 2-sentence summary of the following patient history. Focus purely on actionable insights for today's visit. \n\nHistory: ${notes}`,
+      contents: `Eres un asistente clínico experto. Estructura las siguientes notas médicas en un formato profesional y accionable (estilo SOAP si es posible). Responde SIEMPRE en Español. \n\nNotas: ${notes}`,
     });
     
-    return response.text || "Summary unavailable.";
+    return response.text || "Resumen no disponible.";
   }
 
   /**
@@ -35,24 +35,24 @@ export class AiService {
   async generateWhatsAppDraft(patientName: string, appointmentType: string, time: string, goal: 'reminder' | 'follow_up' | 'reactivation'): Promise<string> {
     if (this.isMockMode || !this.ai) {
       const mocks = {
-        reminder: `Hi ${patientName}, confirming your ${appointmentType} at ${time} today! Do you need directions to the clinic?`,
-        follow_up: `Hi ${patientName}, just checking in to see how you feel after your ${appointmentType}. Let us know if you need anything!`,
-        reactivation: `Hi ${patientName}, it's been a while! We noticed you haven't scheduled your next check-up. Would you like to see available times?`
+        reminder: `Hola ${patientName}, ¡confirmamos tu cita de ${appointmentType} a las ${time}! ¿Necesitas indicaciones para llegar?`,
+        follow_up: `Hola ${patientName}, ¿cómo te encuentras tras tu ${appointmentType}? ¡Avísanos si necesitas algo!`,
+        reactivation: `Hola ${patientName}, ¡hace tiempo que no nos vemos! Notamos que no tienes programada tu próxima revisión. ¿Te gustaría ver horarios disponibles?`
       };
       return mocks[goal];
     }
 
     const goalPrompts = {
-      reminder: 'a polite and warm appointment reminder',
-      follow_up: 'a caring post-treatment follow-up to check on their recovery',
-      reactivation: 'a gentle reactivation message for an inactive patient'
+      reminder: 'un recordatorio de cita educado y cálido',
+      follow_up: 'un seguimiento post-tratamiento atento para comprobar la recuperación',
+      reactivation: 'un mensaje amable de reactivación para un paciente que lleva tiempo sin venir'
     };
 
-    const prompt = `Write a short, engaging WhatsApp message for a clinic patient.
-    Patient Name: ${patientName}
-    Context: ${appointmentType} at ${time}. 
-    Goal: Write ${goalPrompts[goal]}. 
-    Constraint: Keep it under 250 characters, friendly but professional. Do not use placeholders like [Clinic Name], just speak directly.`;
+    const prompt = `Escribe un mensaje corto y cercano para WhatsApp destinado a un paciente de clínica dental. Responde SIEMPRE en Español.
+    Nombre Paciente: ${patientName}
+    Contexto: ${appointmentType} a las ${time}. 
+    Objetivo: Escribe ${goalPrompts[goal]}. 
+    Restricción: Máximo 250 caracteres, tono cercano pero profesional. No uses placeholders como [Nombre Clínica], habla directamente. No uses comillas.`;
 
     const response = await this.ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -63,15 +63,15 @@ export class AiService {
   }
 
   /**
-   * Predict the No-Show probability based on historical tags and metrics
+   * Predict the No-Show probability
    */
   async predictNoShowRisk(patientHistoryTags: string[]): Promise<{ riskLevel: string, score: number, reason: string }> {
     if (this.isMockMode || !this.ai) {
-      return { riskLevel: "HIGH", score: 0.82, reason: "Historical pattern indicates frequent rescheduling." };
+      return { riskLevel: "ALTO", score: 0.82, reason: "Patrón histórico indica frecuentes reprogramaciones." };
     }
 
-    const prompt = `Based on the following patient tags, predict the probability of a no-show for their next appointment. 
-    Tags: ${patientHistoryTags.join(', ')}`;
+    const prompt = `Basado en las siguientes etiquetas de historial de paciente, predice la probabilidad de inasistencia (no-show) para su próxima cita. Responde en Español.
+    Etiquetas: ${patientHistoryTags.join(', ')}`;
 
     try {
       const response = await this.ai.models.generateContent({
@@ -84,15 +84,15 @@ export class AiService {
             properties: {
               riskLevel: {
                 type: Type.STRING,
-                description: "Risk level of no-show: LOW, MEDIUM, or HIGH"
+                description: "Nivel de riesgo: BAJO, MEDIO, o ALTO"
               },
               score: {
                 type: Type.NUMBER,
-                description: "Predicted probability from 0.0 to 1.0"
+                description: "Probabilidad predicha de 0.0 a 1.0"
               },
               reason: {
                 type: Type.STRING,
-                description: "Brief reasoning for the prediction"
+                description: "Breve razonamiento en español"
               }
             },
             required: ["riskLevel", "score", "reason"]
@@ -103,33 +103,34 @@ export class AiService {
       const jsonStr = response.text || "{}";
       const parsed = JSON.parse(jsonStr);
       return {
-        riskLevel: parsed.riskLevel || "MEDIUM",
+        riskLevel: parsed.riskLevel || "MEDIO",
         score: parsed.score || 0.5,
-        reason: parsed.reason || "Unable to determine precise reasoning."
+        reason: parsed.reason || "No se ha podido determinar el razonamiento preciso."
       };
     } catch (e) {
-      return { riskLevel: "MEDIUM", score: 0.5, reason: "Error computing risk." };
+      return { riskLevel: "MEDIO", score: 0.5, reason: "Error al computar el riesgo." };
     }
   }
+
   /**
-   * Draft a reactivation campaign strategy for a list of inactive patients
+   * Draft a reactivation campaign strategy
    */
   async draftReactivationStrategy(patients: any[]): Promise<string> {
     if (this.isMockMode || !this.ai) {
-      return "Based on the " + patients.length + " inactive patients found, send a 'We Miss You' discount on teeth whitening via WhatsApp next Tuesday at 10 AM.";
+      return "Basado en los " + patients.length + " pacientes inactivos, envía un descuento 'Te echamos de menos' para limpieza dental el próximo Martes a las 10 AM.";
     }
 
-    const patientProfiles = patients.map(p => p.tags || "No specific tags").join("; ");
-    const prompt = `You are a clinic marketing expert. I have ${patients.length} inactive patients.
-    Their historical tags: ${patientProfiles}
-    Write a 2-3 sentence highly effective reactivation strategy via WhatsApp to get them back in the chair.`;
+    const patientProfiles = patients.map(p => p.tags || "Sin etiquetas").join("; ");
+    const prompt = `Eres un experto en marketing dental. Tengo ${patients.length} pacientes inactivos.
+    Sus perfiles históricos: ${patientProfiles}
+    Escribe una estrategia de reactivación de 2-3 frases muy efectiva vía WhatsApp. Responde en Español.`;
 
     const response = await this.ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
     
-    return response.text || "Strategy unavailable.";
+    return response.text || "Estrategia no disponible.";
   }
 }
 

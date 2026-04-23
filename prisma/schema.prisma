@@ -23,6 +23,8 @@ model Tenant {
   invoices             Invoice[]
   patients             Patient[]
   users                User[]
+  rooms                Room[]
+  shifts               Shift[]
 }
 
 model User {
@@ -34,6 +36,7 @@ model User {
   name         String
   isActive     Boolean @default(true)
   tenant       Tenant  @relation(fields: [tenantId], references: [id])
+  shifts       Shift[]
 }
 
 model Patient {
@@ -48,6 +51,7 @@ model Patient {
   aiSummary           String?
   cachedAt            DateTime?
   lastVisit           DateTime?
+  portalToken         String?       @unique // For the patient self-service portal
   appointments        Appointment[]
   invoices            Invoice[]
   tenant              Tenant        @relation(fields: [tenantId], references: [id])
@@ -79,4 +83,26 @@ model Invoice {
   issuedDate DateTime @default(now())
   patient    Patient  @relation(fields: [patientId], references: [id])
   tenant     Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model Room {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  shifts    Shift[]
+}
+
+model Shift {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String
+  roomId    String?
+  startTime DateTime
+  endTime   DateTime
+  type      String   @default("WORK") // WORK, VACATION, SICK_LEAVE
+  notes     String?
+  user      User     @relation(fields: [userId], references: [id])
+  room      Room?    @relation(fields: [roomId], references: [id])
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
 }

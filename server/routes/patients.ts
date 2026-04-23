@@ -27,10 +27,12 @@ patientRouter.get('/', async (req, res) => {
     
     // Fallback if DB empty or missing
     if (mockPatients.length === 0) {
+      const now = new Date();
+      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 7, 10); // Around 7 months ago
       mockPatients = [
-        { id: 'm1', fullName: 'Adrián Sánchez', email: 'adrian@example.com', phone: '600111222', tags: '["regular"]' },
-        { id: 'm2', fullName: 'Elena Martínez', email: 'elena@example.com', phone: '600333444', tags: '["vip"]' },
-        { id: 'm3', fullName: 'Roberto Gómez', email: 'roberto@example.com', phone: '600555666', tags: '["new"]' }
+        { id: 'm1', fullName: 'Adrián Sánchez', email: 'adrian@example.com', phone: '600111222', tags: '["regular"]', lastVisit: new Date().toISOString() },
+        { id: 'm2', fullName: 'Elena Martínez', email: 'elena@example.com', phone: '600333444', tags: '["vip"]', lastVisit: new Date().toISOString() },
+        { id: 'm3', fullName: 'Marta Gómez', email: 'marta@example.com', phone: '600555666', tags: '["new"]', lastVisit: sixMonthsAgo.toISOString() }
       ];
     }
     res.json(mockPatients);

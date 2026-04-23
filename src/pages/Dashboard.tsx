@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, Wallet, ArrowRightLeft, Users, Package, CreditCard, FileText, BarChart, MoreHorizontal, 
-  Code, Search, Grid, HelpCircle, Bell, Settings, Plus, ChevronDown, CheckCircle2, Info, X, Map, User, LogOut, ArrowRight, Menu, Mail, Phone, Pencil, Trash2, Download, Sun, Moon, Brain, Rocket, Clock, Calendar
+  Code, Search, Grid, HelpCircle, Bell, Settings, Plus, ChevronDown, CheckCircle2, Info, X, Map, User, LogOut, ArrowRight, Menu, Mail, Phone, Pencil, Trash2, Download, Sun, Moon, Brain, Rocket, Clock, Calendar, Video, Mic, MicOff, VideoOff, PhoneCall
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -10,11 +10,18 @@ import {
   ResponsiveContainer, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell 
 } from 'recharts';
 import { useDashboardData, createPatientApi, createAppointmentApi, updatePatientApi, deletePatientApi, updateAppointmentApi, deleteAppointmentApi } from '../hooks/useDashboardData';
+import { useStaffData, createShiftApi, deleteShiftApi, createRoomApi, updateRoomApi, deleteRoomApi } from '../hooks/useStaffData';
 import { NexoraLogo } from '../components/NexoraLogo';
+import { TelemedicineRoom } from '../components/TelemedicineRoom';
+import { Odontogram } from '../components/specialties/Odontogram';
+import { PainMap } from '../components/specialties/PainMap';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { stats, appointments, patients, refreshData } = useDashboardData();
+  const { users, rooms, shifts, refreshStaffData } = useStaffData();
+
   const [activeView, setActiveView] = useState('inicio');
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -24,6 +31,7 @@ export default function Dashboard() {
   const [clinicConfig, setClinicConfig] = useState({
     name: localStorage.getItem('clinic-name') || 'Nexora Clinic',
     plan: localStorage.getItem('clinic-plan') || 'Pro',
+    specialty: localStorage.getItem('clinic-specialty') || 'Odontología', // Default to Dentistry as requested
     owner: 'Iker',
     email: 'ikergarciafdez1@gmail.com',
     address: 'Calle Principal 123, Madrid',
@@ -47,8 +55,27 @@ export default function Dashboard() {
     setClinicConfig(updated);
     if (newConfig.name) localStorage.setItem('clinic-name', newConfig.name);
     if (newConfig.plan) localStorage.setItem('clinic-plan', newConfig.plan);
+    if (newConfig.specialty) localStorage.setItem('clinic-specialty', newConfig.specialty);
     if (newConfig.openingHours) localStorage.setItem('clinic-hours', JSON.stringify(newConfig.openingHours));
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const specialtyParam = params.get('specialty');
+    if (specialtyParam) {
+      let mappedSpecialty = '';
+      if (specialtyParam === 'dental') mappedSpecialty = 'Odontología';
+      else if (specialtyParam === 'nutricion') mappedSpecialty = 'Nutrición';
+      else if (specialtyParam === 'fisioterapia') mappedSpecialty = 'Fisioterapia';
+      else if (specialtyParam === 'psicologos') mappedSpecialty = 'Psicología';
+      else if (specialtyParam === 'estetica') mappedSpecialty = 'Estética';
+      else if (specialtyParam === 'general') mappedSpecialty = 'Medicina General';
+      
+      if (mappedSpecialty) {
+        updateClinicConfig({ specialty: mappedSpecialty });
+      }
+    }
+  }, [location.search, updateClinicConfig]);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const globalAddRef = useRef<HTMLDivElement>(null);
@@ -95,6 +122,7 @@ export default function Dashboard() {
   const [isAddPatientModalOpen, setIsAddPatientModalOpen] = useState(false);
   const [newPatientForm, setNewPatientForm] = useState({ fullName: '', email: '', phone: '' });
   const [isSubmittingPatient, setIsSubmittingPatient] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
   // Edit Patient Modal State
   const [isEditPatientModalOpen, setIsEditPatientModalOpen] = useState(false);
@@ -109,6 +137,19 @@ export default function Dashboard() {
   const [isEditAppointmentModalOpen, setIsEditAppointmentModalOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<any>(null);
 
+  // Staff & Shifts State
+  const [activeStaffTab, setActiveStaffTab] = useState<'cuadrante' | 'salas'>('cuadrante');
+  const [isAddShiftModalOpen, setIsAddShiftModalOpen] = useState(false);
+  const [newShiftForm, setNewShiftForm] = useState({ userId: '', roomId: '', date: '', startTime: '09:00', endTime: '17:00', type: 'WORK', notes: '' });
+  const [isSubmittingShift, setIsSubmittingShift] = useState(false);
+
+  // Room State
+  const [isAddRoomModalOpen, setIsAddRoomModalOpen] = useState(false);
+  const [isEditRoomModalOpen, setIsEditRoomModalOpen] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<any>(null);
+  const [newRoomForm, setNewRoomForm] = useState({ name: '' });
+  const [isSubmittingRoom, setIsSubmittingRoom] = useState(false);
+
   // Services Local State
   const [localServices, setLocalServices] = useState([
     { id: 'serv-1', name: 'Primera Visita / Evaluación', description: 'Diagnóstico general y elaboración de presupuesto', category: 'Diagnóstico', duration: 30, price: 0 },
@@ -120,9 +161,38 @@ export default function Dashboard() {
   const [editingService, setEditingService] = useState<any>(null);
   const [newServiceForm, setNewServiceForm] = useState({ name: '', description: '', category: '', duration: 30, price: 0 });
 
+  // Telemedicine State
+  const [activeTelemedicineCall, setActiveTelemedicineCall] = useState<any>(null);
+
+  // Patient Clinical Record State
+  const [patientRecord, setPatientRecord] = useState<any>({
+    odontogram: [],
+    painPoints: [],
+    generalNotes: ""
+  });
+
+  // Copy Link States
+  const [copiedStates, setCopiedStates] = useState<{ [key: string]: boolean }>({});
+
+  const handleCopyLink = async (text: string, key: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedStates(prev => ({ ...prev, [key]: true }));
+      setTimeout(() => {
+        setCopiedStates(prev => ({ ...prev, [key]: false }));
+      }, 3000);
+    } catch (err) {
+      console.error('Failed to copy', err);
+    }
+  };
+
   // Formatters
   const formatCurrency = (val: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
   
+  useEffect(() => {
+    refreshStaffData();
+  }, [refreshStaffData]);
+
   // Close the popup when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -200,6 +270,106 @@ export default function Dashboard() {
     if (window.confirm('¿Seguro que quieres eliminar este cliente? Esta acción no se puede deshacer.')) {
       await deletePatientApi(id);
       await refreshData();
+    }
+  };
+
+  const handleGeneratePortalLink = async (patientId: string) => {
+    try {
+      const response = await fetch(`/api/portal/generate/${patientId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('clinic_token') || 'demo-token'}`
+        }
+      });
+      if (response.ok) {
+        const { token } = await response.json();
+        const portalUrl = `${window.location.origin}/portal/${token}`;
+        
+        handleCopyLink(portalUrl, `portal-${patientId}`);
+        
+      } else {
+        const err = await response.json();
+        window.alert('Error al generar el enlace: ' + (err.error || 'Desconocido'));
+      }
+    } catch (e) {
+      console.error(e);
+      window.alert('Error de red al generar enlace.');
+    }
+  };
+
+  const handleAddShiftSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newShiftForm.userId || !newShiftForm.date) return;
+    
+    setIsSubmittingShift(true);
+    try {
+      const startDateTime = new Date(`${newShiftForm.date}T${newShiftForm.startTime}`);
+      const endDateTime = new Date(`${newShiftForm.date}T${newShiftForm.endTime}`);
+      
+      await createShiftApi({
+        userId: newShiftForm.userId,
+        roomId: newShiftForm.roomId || null,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
+        type: newShiftForm.type,
+        notes: newShiftForm.notes
+      });
+      
+      await refreshStaffData();
+      setIsAddShiftModalOpen(false);
+      setNewShiftForm({ userId: '', roomId: '', date: '', startTime: '09:00', endTime: '17:00', type: 'WORK', notes: '' });
+    } catch (error) {
+      console.error('Error adding shift:', error);
+      alert('Error al generar el turno.');
+    } finally {
+      setIsSubmittingShift(false);
+    }
+  };
+
+  const handleAddRoomSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRoomForm.name) return;
+    
+    setIsSubmittingRoom(true);
+    try {
+      await createRoomApi({ name: newRoomForm.name });
+      await refreshStaffData();
+      setIsAddRoomModalOpen(false);
+      setNewRoomForm({ name: '' });
+    } catch (error) {
+      console.error('Error adding room:', error);
+      alert('Error al generar la sala.');
+    } finally {
+      setIsSubmittingRoom(false);
+    }
+  };
+
+  const handleEditRoomSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRoom || !editingRoom.name) return;
+    
+    setIsSubmittingRoom(true);
+    try {
+      await updateRoomApi(editingRoom.id, { name: editingRoom.name });
+      await refreshStaffData();
+      setIsEditRoomModalOpen(false);
+      setEditingRoom(null);
+    } catch (error) {
+      console.error('Error editing room:', error);
+      alert('Error al actualizar la sala.');
+    } finally {
+      setIsSubmittingRoom(false);
+    }
+  };
+
+  const handleDeleteRoom = async (id: string) => {
+    if (window.confirm('¿Seguro que quieres eliminar esta sala? Esta acción no se puede deshacer.')) {
+      try {
+        await deleteRoomApi(id);
+        await refreshStaffData();
+      } catch (error) {
+         alert('Error al eliminar la sala.');
+      }
     }
   };
 
@@ -339,24 +509,196 @@ export default function Dashboard() {
     setIsGeneratingDraft(false);
   };
 
+  // Contextual AI Insights
+  const reactivationCandidates = useMemo(() => {
+    const now = new Date();
+    return patients.filter((p: any) => {
+      if (!p.lastVisit) return false;
+      const lastVisitDate = new Date(p.lastVisit);
+      const diffTime = Math.abs(now.getTime() - lastVisitDate.getTime());
+      const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30));
+      return diffMonths >= 6;
+    });
+  }, [patients]);
+
   const renderContent = () => {
+    if (activeView === 'historial_clinico') {
+      const patient = patients.find(p => p.id === selectedPatientId);
+      if (!patient) return <div>No se encontró el paciente</div>;
+
+      return (
+        <div className="px-4 md:px-8 max-w-6xl mx-auto pb-24 mt-8 transition-all animate-in slide-in-from-right-4 duration-300">
+          <div className="flex items-center gap-4 mb-8">
+            <button 
+              onClick={() => setActiveView('pacientes')}
+              className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-gray-400' : 'hover:bg-slate-100 text-gray-500'}`}
+            >
+              <ArrowRight className="w-5 h-5 rotate-180" />
+            </button>
+            <div>
+              <h1 className={`text-[24px] font-bold tracking-tight flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
+                Ficha Médica: {patient.fullName}
+                <span className={`text-[11px] px-2 py-0.5 rounded-full border ${isDarkMode ? 'bg-blue-900/20 border-blue-800 text-blue-400' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
+                  {clinicConfig.specialty}
+                </span>
+              </h1>
+              <p className={`text-[13px] ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Editando historial clínico y evolución del paciente.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Specialized Component based on Specialty */}
+              <div className={`border rounded-[12px] shadow-sm overflow-hidden transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+                <div className={`px-5 py-4 border-b flex items-center justify-between transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155]' : 'bg-slate-50 border-[#e3e8ee]'}`}>
+                   <h3 className={`text-[15px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
+                     {clinicConfig.specialty === 'Odontología' ? 'Odontograma Interactivo' : 'Mapa de Dolor Palpable'}
+                   </h3>
+                   <div className="text-[11px] font-medium text-gray-500">Última actualización: Hoy</div>
+                </div>
+                <div className="p-0">
+                  {clinicConfig.specialty === 'Odontología' ? (
+                    <Odontogram 
+                      isDarkMode={isDarkMode} 
+                      value={patientRecord.odontogram} 
+                      onChange={(val) => setPatientRecord({...patientRecord, odontogram: val})} 
+                    />
+                  ) : (
+                    <PainMap 
+                      isDarkMode={isDarkMode} 
+                      value={patientRecord.painPoints}
+                      onChange={(val) => setPatientRecord({...patientRecord, painPoints: val})}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* General Observations */}
+              <div className={`border rounded-[12px] shadow-sm overflow-hidden transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+                <div className={`px-5 py-4 border-b transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155]' : 'bg-slate-50 border-[#e3e8ee]'}`}>
+                   <h3 className={`text-[15px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Notas de Evolución</h3>
+                </div>
+                <div className="p-5">
+                   <textarea 
+                     value={patientRecord.generalNotes}
+                     onChange={(e) => setPatientRecord({...patientRecord, generalNotes: e.target.value})}
+                     className={`w-full p-4 border rounded-[8px] text-[14px] outline-none min-h-[150px] transition-colors focus:ring-2 focus:ring-blue-500/20 ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white' : 'bg-[#fcfdff] border-[#e3e8ee] text-[#1a1f36]'}`}
+                     placeholder="Añade detalles sobre el tratamiento de hoy, evolución del paciente, etc..."
+                   />
+                   <div className="mt-4 flex justify-end">
+                      <button className="px-4 py-2 bg-[#5469d4] text-white rounded-[6px] text-[13px] font-bold hover:shadow-lg transition-all active:scale-95 flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4" /> Guardar Entrada
+                      </button>
+                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {/* Quick Info Sidebar */}
+              <div className={`border rounded-[12px] shadow-sm p-6 transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+                 <h4 className={`text-[14px] font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Infomación rápida</h4>
+                 <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+                          <User className="w-4 h-4" />
+                       </div>
+                       <div>
+                          <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider">Paciente</p>
+                          <p className={`text-[13px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>{patient.fullName}</p>
+                       </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
+                          <Calendar className="w-4 h-4" />
+                       </div>
+                       <div>
+                          <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider">Antigüedad</p>
+                          <p className={`text-[13px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Feb 2024 (14 meses)</p>
+                       </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800 text-green-400' : 'bg-green-50 text-green-600'}`}>
+                          <Wallet className="w-4 h-4" />
+                       </div>
+                       <div>
+                          <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider">Saldo Pendiente</p>
+                          <p className={`text-[13px] font-bold text-red-500`}>120,00 €</p>
+                       </div>
+                    </div>
+                 </div>
+                 <button className="w-full mt-6 py-2.5 border border-dashed border-gray-300 rounded-[8px] text-[12px] font-bold text-gray-500 hover:bg-gray-50 transition-colors">
+                    Ver Expediente Completo
+                 </button>
+              </div>
+
+              {/* Digital Assets */}
+              <div className={`border rounded-[12px] shadow-sm p-6 transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+                 <h4 className={`text-[14px] font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Archivos y RX</h4>
+                 <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className={`aspect-square rounded-[8px] border flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-400 transition-colors ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-gray-50 border-gray-200'}`}>
+                       <FileText className="w-5 h-5 text-blue-500" />
+                       <span className="text-[10px] font-bold opacity-60">Analitica_oct.pdf</span>
+                    </div>
+                    <div className={`aspect-square rounded-[8px] border flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-400 transition-colors ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-gray-50 border-gray-200'}`}>
+                       <Plus className="w-6 h-6 text-gray-400" />
+                       <span className="text-[10px] font-bold opacity-40">Subir nuevo</span>
+                    </div>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (activeView === 'automatizaciones' || activeView === 'nexora_ai') {
       return (
         <div className="px-4 md:px-8 max-w-6xl mx-auto pb-24 mt-8 transition-colors">
           <div className="mb-8">
             <h1 className={`text-[24px] font-bold tracking-tight flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
               <span className={`w-8 h-8 rounded-[4px] flex items-center justify-center transition-colors ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-[#e3e8ee] text-[#5469d4]'}`}>
-                <HelpCircle className="w-5 h-5" />
+                <Brain className="w-5 h-5" />
               </span>
               Nexora Intelligence 
             </h1>
             <p className={`text-[14px] mt-1 ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Automatiza tareas rutinarias y extrae valor de tus datos médicos con IA Generativa.</p>
           </div>
 
+          {reactivationCandidates.length > 0 && (
+            <div className={`mb-8 p-4 border rounded-[8px] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm transition-colors ${isDarkMode ? 'bg-blue-900/10 border-blue-800/50' : 'bg-blue-50 border-blue-100'}`}>
+              <div className="flex items-start gap-3">
+                <div className={`w-8 h-8 rounded-full flex shrink-0 items-center justify-center mt-0.5 ${isDarkMode ? 'bg-blue-900 text-blue-400' : 'bg-blue-100 text-[#5469d4]'}`}>
+                  <Brain className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className={`text-[15px] font-bold ${isDarkMode ? 'text-blue-100' : 'text-[#1a1f36]'}`}>Sugerencia de Contexto Inteligente</h4>
+                  <p className={`text-[13px] mt-0.5 ${isDarkMode ? 'text-blue-200' : 'text-[#4f566b]'}`}>
+                    Hemos detectado que <strong>{reactivationCandidates[0].fullName}</strong> no viene desde hace más de 6 meses. ¿Quieres enviarle un mensaje de reactivación?
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  setAiDraftInput({
+                    patientName: reactivationCandidates[0].fullName,
+                    appointmentType: 'Revisión General',
+                    time: 'Pronto',
+                    goal: 'reactivation'
+                  });
+                  window.scrollTo({ top: document.getElementById('ai-whatsapp-tool')?.offsetTop! - 100, behavior: 'smooth' });
+                }}
+                className={`shrink-0 px-4 py-2 rounded-[6px] text-[13px] font-semibold transition-colors ${isDarkMode ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-[#5469d4] text-white hover:bg-[#4c5ed1]'}`}
+              >
+                Cargar en Generador
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             {/* HERRAMIENTA 1: Whatsapp OutReach */}
-            <div className={`border rounded-[8px] shadow-sm flex flex-col h-full overflow-hidden transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+            <div id="ai-whatsapp-tool" className={`border rounded-[8px] shadow-sm flex flex-col h-full overflow-hidden transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
               <div className={`p-5 border-b transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155]' : 'bg-[#f6f9fc] border-[#e3e8ee]'}`}>
                 <h3 className={`text-[16px] font-bold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
                   <Mail className="w-4 h-4 text-[#5469d4]" /> Generador de WhatsApp
@@ -396,7 +738,9 @@ export default function Dashboard() {
                 {aiDraftResult && (
                   <div className={`mt-4 p-4 border rounded-[6px] relative transition-colors ${isDarkMode ? 'bg-blue-900/20 border-blue-800' : 'bg-[#f8fcfb] border-[#a6ebd3]'}`}>
                     <p className={`text-[13px] italic ${isDarkMode ? 'text-blue-200' : 'text-[#1b4d3e]'}`}>"{aiDraftResult}"</p>
-                    <button onClick={()=>{navigator.clipboard.writeText(aiDraftResult)}} className="absolute top-2 right-2 text-[11px] font-bold text-[#5469d4] hover:underline">Copiar</button>
+                    <button onClick={()=>{handleCopyLink(aiDraftResult, 'ai-draft');}} className={`absolute top-2 right-2 text-[11px] font-bold ${copiedStates['ai-draft'] ? 'text-green-600' : 'text-[#5469d4] hover:underline'}`}>
+                      {copiedStates['ai-draft'] ? '¡Copiado!' : 'Copiar'}
+                    </button>
                   </div>
                 )}
               </div>
@@ -478,6 +822,19 @@ export default function Dashboard() {
                     onChange={(e) => updateClinicConfig({ address: e.target.value })}
                     className={`w-full px-4 py-2 rounded-[6px] border text-[14px] outline-none transition-all ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-[#5469d4]' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4]'}`}
                   />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <label className={`text-[13px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Especialidad de la Clínica</label>
+                  <select 
+                    value={clinicConfig.specialty}
+                    onChange={(e) => updateClinicConfig({ specialty: e.target.value })}
+                    className={`w-full px-4 py-2 rounded-[6px] border text-[14px] outline-none transition-all ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-[#5469d4]' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4]'}`}
+                  >
+                    <option value="Odontología">Odontología (Odontograma)</option>
+                    <option value="Fisioterapia">Fisioterapia (Mapa de Dolor)</option>
+                    <option value="General">Medicina General / Otros</option>
+                  </select>
+                  <p className="text-[11px] text-gray-500 mt-1">Este ajuste cambiará automáticamente el tipo de ficha médica que verás en cada paciente.</p>
                 </div>
               </div>
             </div>
@@ -597,14 +954,26 @@ export default function Dashboard() {
     if (activeView === 'agenda') {
       return (
         <div className="px-4 md:px-8 max-w-6xl mx-auto pb-24 mt-8">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <h1 className={`text-[24px] font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Agenda de Citas</h1>
-            <button 
-              onClick={() => setIsAddAppointmentModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#5469d4] text-white rounded-[4px] font-semibold text-[13px] hover:opacity-90 transition-opacity shadow-sm"
-            >
-              <Plus className="w-4 h-4" /> Nueva Cita
-            </button>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => {
+                  const url = `${window.location.origin}/book/demo-clinic`;
+                  handleCopyLink(url, 'agenda-link');
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-[4px] font-semibold text-[13px] transition-colors shadow-sm ${copiedStates['agenda-link'] ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800/50 dark:text-green-400' : isDarkMode ? 'bg-[#1e293b] border-[#334155] text-white hover:bg-[#334155]' : 'bg-white border-[#e3e8ee] text-[#1a1f36] hover:bg-[#f6f9fc]'}`}
+              >
+                {copiedStates['agenda-link'] ? <CheckCircle2 className="w-4 h-4" /> : <Plus className="w-4 h-4 rotate-45" />}
+                {copiedStates['agenda-link'] ? '¡Copiado!' : 'Compartir Link Cliente'}
+              </button>
+              <button 
+                onClick={() => setIsAddAppointmentModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#5469d4] text-white rounded-[4px] font-semibold text-[13px] hover:opacity-90 transition-opacity shadow-sm"
+              >
+                <Plus className="w-4 h-4" /> Nueva Cita Int.
+              </button>
+            </div>
           </div>
 
           <div className={`border rounded-[8px] overflow-hidden shadow-sm transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
@@ -956,7 +1325,14 @@ export default function Dashboard() {
                     </tr>
                   ) : (
                     patients.map((patient) => (
-                      <tr key={patient.id} className={`transition-colors cursor-pointer group ${isDarkMode ? 'hover:bg-[#334155]' : 'hover:bg-[#f6f9fc]'}`}>
+                      <tr 
+                        key={patient.id} 
+                        onClick={() => {
+                          setSelectedPatientId(patient.id);
+                          setActiveView('historial_clinico');
+                        }}
+                        className={`transition-colors cursor-pointer group ${isDarkMode ? 'hover:bg-[#334155]' : 'hover:bg-[#f6f9fc]'}`}
+                      >
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-colors ${isDarkMode ? 'bg-[#0f172a] text-gray-300' : 'bg-[#e3e8ee] text-[#1a1f36]'}`}>
@@ -986,6 +1362,9 @@ export default function Dashboard() {
                             </button>
                             {activeDropdown === `patient-${patient.id}` && (
                               <div className={`absolute right-8 top-0 w-32 border rounded-[6px] shadow-[0_4px_12px_rgba(0,0,0,0.1)] py-1 z-50 animate-in fade-in zoom-in-95 duration-100 ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+                                <button onClick={(e) => { e.stopPropagation(); setActiveDropdown(null); handleGeneratePortalLink(patient.id); }} className={`w-full text-left px-3 py-1.5 text-[13px] flex items-center gap-2 transition-colors ${copiedStates['portal-'+patient.id] ? 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/30 hover:opacity-80' : isDarkMode ? 'text-gray-300 hover:text-white hover:bg-[#334155]' : 'text-[#4f566b] hover:text-[#1a1f36] hover:bg-[#f6f9fc]'}`}>
+                                  {copiedStates[`portal-${patient.id}`] ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Code className="w-3.5 h-3.5" />} {copiedStates[`portal-${patient.id}`] ? 'Copiado!' : 'Enlace Paciente'}
+                                </button>
                                 <button onClick={(e) => { e.stopPropagation(); setActiveDropdown(null); setEditingPatient(patient); setIsEditPatientModalOpen(true); }} className={`w-full text-left px-3 py-1.5 text-[13px] flex items-center gap-2 transition-colors ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-[#334155]' : 'text-[#4f566b] hover:text-[#1a1f36] hover:bg-[#f6f9fc]'}`}>
                                   <Pencil className="w-3.5 h-3.5" /> Editar
                                 </button>
@@ -1769,12 +2148,368 @@ export default function Dashboard() {
       );
     }
     
+    if (activeView === 'staff') {
+      return (
+        <div className="px-4 md:px-8 max-w-6xl mx-auto pb-24 mt-8 transition-colors">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className={`text-[24px] font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Personal y Turnos</h1>
+              <p className={`text-[14px] mt-1 ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Gestiona la disponibilidad, vacaciones y asignación de salas de tu equipo médico.</p>
+            </div>
+          </div>
+
+          {/* Tab Selection */}
+          <div className={`flex items-center border-b mb-6 transition-colors ${isDarkMode ? 'border-[#334155]' : 'border-[#e3e8ee]'}`}>
+            <button 
+              onClick={() => setActiveStaffTab('cuadrante')}
+              className={`px-4 py-2 text-[14px] font-semibold border-b-2 transition-colors ${activeStaffTab === 'cuadrante' ? (isDarkMode ? 'border-blue-400 text-white' : 'border-[#5469d4] text-[#5469d4]') : (isDarkMode ? 'border-transparent text-gray-500 hover:text-gray-300' : 'border-transparent text-[#8792a2] hover:text-[#4f566b]')}`}
+            >
+              Cuadrante Semanal
+            </button>
+            <button 
+              onClick={() => setActiveStaffTab('salas')}
+              className={`px-4 py-2 text-[14px] font-semibold border-b-2 transition-colors ${activeStaffTab === 'salas' ? (isDarkMode ? 'border-blue-400 text-white' : 'border-[#5469d4] text-[#5469d4]') : (isDarkMode ? 'border-transparent text-gray-500 hover:text-gray-300' : 'border-transparent text-[#8792a2] hover:text-[#4f566b]')}`}
+            >
+              Equipos y Salas
+            </button>
+          </div>
+
+          <div className={`p-6 rounded-[8px] border shadow-sm transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+            
+            {activeStaffTab === 'cuadrante' && (
+              <>
+                <h3 className={`text-[16px] font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Planificación de {new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</h3>
+                
+                {/* Shifts Logic Iteration */}
+                <div className="space-y-4">
+                  {users.map(user => {
+                    const userShifts = shifts.filter(s => s.userId === user.id);
+                    return (
+                      <div key={user.id} className={`flex flex-col md:flex-row p-4 rounded-[6px] border ${isDarkMode ? 'bg-[#0f172a] border-[#334155]' : 'bg-[#f6f9fc] border-[#e3e8ee]'}`}>
+                        <div className="w-full md:w-1/4 mb-4 md:mb-0">
+                          <div className="flex gap-3 items-center">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${isDarkMode ? 'bg-[#1e293b] text-blue-400' : 'bg-white text-[#5469d4]'}`}>
+                              {user.name.charAt(0)}{user.name.split(' ').length > 1 ? user.name.split(' ')[1].charAt(0) : ''}
+                            </div>
+                            <div>
+                              <p className={`font-bold text-[14px] ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{user.name}</p>
+                              <p className={`text-[11px] font-medium uppercase mt-0.5 ${user.role === 'DOCTOR' ? 'text-[#8792a2]' : 'text-purple-500'}`}>{user.role}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="w-full md:w-3/4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                          {/* Let's render the upcoming shifts or vacations */}
+                          {userShifts.length === 0 ? (
+                            <div className="col-span-full flex items-center text-[12px] text-gray-500 italic">
+                              Sin turnos asignados esta semana
+                            </div>
+                          ) : (
+                            userShifts.map((shift, idx) => {
+                               const shiftDate = new Date(shift.startTime);
+                               const formattedDate = `${String(shiftDate.getDate()).padStart(2, '0')}/${String(shiftDate.getMonth() + 1).padStart(2, '0')}`;
+                               return (
+                                 <div key={idx} className={`p-3 border-l-4 rounded-r-[4px] shadow-sm ${shift.type === 'VACATION' ? (isDarkMode ? 'border-orange-500 bg-orange-900/20' : 'border-[#e65100] bg-[#fff3e0]') : (isDarkMode ? 'border-blue-500 bg-[#1e293b]' : 'border-[#5469d4] bg-white')}`}>
+                                   <p className={`text-[11px] font-bold uppercase mb-1 ${shift.type === 'VACATION' ? 'text-orange-500' : (isDarkMode ? 'text-blue-400' : 'text-[#5469d4]')}`}>
+                                     {shift.type === 'VACATION' ? 'Vacaciones' : 'Turno Trabajo'}
+                                   </p>
+                                   <p className={`text-[13px] font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                                     {formattedDate}
+                                   </p>
+                                   <div className={`text-[11px] mt-1 flex items-center gap-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                     <Clock className="w-3 h-3"/> 
+                                     {new Date(shift.startTime).getHours()}:{new Date(shift.startTime).getMinutes().toString().padStart(2, '0')} - {new Date(shift.endTime).getHours()}:{new Date(shift.endTime).getMinutes().toString().padStart(2, '0')}
+                                   </div>
+                                   {shift.roomId && (
+                                     <div className={`text-[10px] mt-1.5 inline-block px-1.5 py-0.5 rounded-sm ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'}`}>
+                                       {rooms.find(r => r.id === shift.roomId)?.name || 'Sala'}
+                                     </div>
+                                   )}
+                                 </div>
+                               );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                <div className="mt-6 flex justify-end">
+                  <button onClick={() => setIsAddShiftModalOpen(true)} className="px-4 py-2 bg-[#5469d4] hover:bg-[#4c5ed1] text-white rounded-[4px] text-[13px] font-bold flex items-center gap-2 transition-all">
+                    <Plus className="w-4 h-4" /> Asignar Turno
+                  </button>
+                </div>
+              </>
+            )}
+
+            {activeStaffTab === 'salas' && (
+              <>
+                 <div className="flex items-center justify-between mb-4">
+                   <h3 className={`text-[16px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Gestión de Espacios y Consultas</h3>
+                   <button onClick={() => setIsAddRoomModalOpen(true)} className="px-4 py-2 border border-[#5469d4] text-[#5469d4] hover:bg-[#5469d4] hover:text-white rounded-[4px] text-[13px] font-bold flex items-center gap-2 transition-all">
+                      <Plus className="w-4 h-4" /> Añadir Sala
+                    </button>
+                 </div>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                   {rooms.length === 0 ? (
+                     <div className="col-span-full py-8 text-center text-[13px] text-gray-500 italic">No hay salas configuradas.</div>
+                   ) : rooms.map(room => (
+                     <div key={room.id} className={`p-5 rounded-[8px] border transition-colors relative group ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-[#fcfdff] border-[#e3e8ee] hover:border-[#5469d4]'}`}>
+                       
+                       {/* Floating actions */}
+                       <div className="absolute top-4 right-4 flex opacity-0 group-hover:opacity-100 transition-opacity gap-1 z-10">
+                         <button 
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             setEditingRoom(room);
+                             setIsEditRoomModalOpen(true);
+                           }} 
+                           className={`p-1.5 rounded-[4px] transition-colors ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-[#334155]' : 'text-[#8792a2] hover:text-[#5469d4] hover:bg-[#e3e8ee]'}`}
+                         >
+                           <Pencil className="w-3.5 h-3.5" />
+                         </button>
+                         <button 
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             handleDeleteRoom(room.id);
+                           }} 
+                           className={`p-1.5 rounded-[4px] text-red-500 transition-colors ${isDarkMode ? 'hover:bg-red-900/20' : 'hover:bg-[#ffebee]'}`}
+                         >
+                           <Trash2 className="w-3.5 h-3.5" />
+                         </button>
+                       </div>
+
+                       <div className="flex items-start justify-between mb-4">
+                         <div className={`w-12 h-12 rounded-[8px] flex items-center justify-center ${isDarkMode ? 'bg-[#0f172a] text-blue-400' : 'bg-[#f0f4f8] text-[#5469d4]'}`}>
+                            <Grid className="w-6 h-6" />
+                         </div>
+                         <span className={`px-2 py-1 text-[11px] font-bold rounded-full mr-12 ${isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'}`}>Activa</span>
+                       </div>
+                       <h4 className={`text-[16px] font-bold mb-1 pr-6 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>{room.name}</h4>
+                       <p className={`text-[13px] ${isDarkMode ? 'text-gray-400' : 'text-[#8792a2]'}`}>ID Interno: {room.id.split('-')[0]}</p>
+                     </div>
+                   ))}
+                 </div>
+              </>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (activeView === 'automatizaciones') {
+      return (
+        <div className="px-4 md:px-8 max-w-6xl mxauto pb-24 mt-8 transition-colors">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className={`text-[24px] font-bold tracking-tight mb-2 flex items-center gap-2 transition-colors ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
+                <HelpCircle className="w-6 h-6 text-[#5469d4]" /> Automatizaciones Inteligentes
+              </h1>
+              <p className={`text-[13px] ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Configura tus flujos automáticos potenciados por Inteligencia Nexora.</p>
+            </div>
+            <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#5469d4] text-white rounded-[4px] font-bold text-[13px] hover:opacity-90 transition-opacity shadow-sm">
+              <Plus className="w-4 h-4" /> Nueva automatización
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div className={`p-6 rounded-[8px] border relative transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-[#fcfdff] border-[#e3e8ee]'}`}>
+              <div className="flex items-start justify-between mb-4">
+                <div className={`w-12 h-12 rounded-[8px] flex items-center justify-center ${isDarkMode ? 'bg-[#0f172a] text-green-400' : 'bg-[#f0f4f8] text-[#008477]'}`}>
+                   <Bell className="w-6 h-6" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-1 text-[11px] font-bold rounded-full ${isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'}`}>Activa</span>
+                  <div className={`w-8 h-4 rounded-full flex items-center p-0.5 cursor-pointer transition-colors ${isDarkMode ? 'bg-green-500' : 'bg-[#008477]'}`}>
+                    <div className="w-3 h-3 rounded-full bg-white transform translate-x-4 shadow-sm"></div>
+                  </div>
+                </div>
+              </div>
+              <h4 className={`text-[16px] font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Recordatorios de Citas por WhatsApp</h4>
+              <p className={`text-[13px] mb-4 ${isDarkMode ? 'text-gray-400' : 'text-[#8792a2]'}`}>Envía un mensaje inteligente 24 horas antes a los pacientes para reducir inasistencias.</p>
+              
+              <div className={`flex items-center justify-between pt-4 border-t text-[12px] ${isDarkMode ? 'border-[#334155] text-gray-400' : 'border-[#e3e8ee] text-[#4f566b]'}`}>
+                <span>45 mensajes enviados hoy</span>
+                <button className="font-medium text-[#5469d4] hover:underline">Configurar</button>
+              </div>
+            </div>
+
+            <div className={`p-6 rounded-[8px] border relative transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-[#fcfdff] border-[#e3e8ee]'}`}>
+              <div className="flex items-start justify-between mb-4">
+                <div className={`w-12 h-12 rounded-[8px] flex items-center justify-center ${isDarkMode ? 'bg-[#0f172a] text-blue-400' : 'bg-[#f0f4f8] text-[#5469d4]'}`}>
+                   <Grid className="w-6 h-6" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-1 text-[11px] font-bold rounded-full ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'}`}>Pausado</span>
+                   <div className={`w-8 h-4 rounded-full flex items-center p-0.5 cursor-pointer transition-colors ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                    <div className="w-3 h-3 rounded-full bg-white shadow-sm"></div>
+                  </div>
+                </div>
+              </div>
+              <h4 className={`text-[16px] font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Alerta de Solapamiento</h4>
+              <p className={`text-[13px] mb-4 ${isDarkMode ? 'text-gray-400' : 'text-[#8792a2]'}`}>El sistema revisa constantemente el cuadrante y te notifica si hay agendas superpuestas.</p>
+              
+              <div className={`flex items-center justify-between pt-4 border-t text-[12px] ${isDarkMode ? 'border-[#334155] text-gray-400' : 'border-[#e3e8ee] text-[#4f566b]'}`}>
+                <span>0 alertas activas</span>
+                <button className="font-medium text-[#5469d4] hover:underline">Configurar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeView === 'insights') {
+      return (
+         <div className="px-4 md:px-8 max-w-6xl mx-auto pb-24 mt-8 transition-colors">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className={`text-[24px] font-bold tracking-tight mb-2 flex items-center gap-2 transition-colors ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
+                <BarChart className="w-6 h-6 text-amber-500" /> Insights Avanzados
+              </h1>
+              <p className={`text-[13px] ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Análisis predictivos sobre el rendimiento de tu clínica.</p>
+            </div>
+            <div className={`flex items-center gap-2 text-[12px] font-medium px-3 py-1.5 rounded-full border ${isDarkMode ? 'bg-amber-900/20 text-amber-500 border-amber-900/50' : 'bg-[#fffbeb] text-amber-700 border-amber-200'}`}>
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              </span>
+              Analizando en tiempo real
+            </div>
+          </div>
+
+          <div className={`border rounded-[8px] p-6 mb-8 transition-colors shadow-sm ${isDarkMode ? 'bg-gradient-to-br from-[#1e293b] to-[#0f172a] border-[#334155]' : 'bg-gradient-to-br from-white to-[#fcfdff] border-[#e3e8ee]'}`}>
+            <h3 className={`text-[15px] font-bold mb-4 flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
+              <BarChart className="w-4 h-4 text-purple-500" /> Resumen Predictivo
+            </h3>
+            <div className="space-y-4">
+              <div className={`p-4 rounded-[6px] border ${isDarkMode ? 'bg-[#1e293b] border-gray-700' : 'bg-[#f6f9fc] border-transparent'}`}>
+                <p className={`text-[13px] ${isDarkMode ? 'text-gray-300' : 'text-[#4f566b]'}`}>
+                  <strong className={isDarkMode ? 'text-white' : 'text-[#1a1f36]'}>Reducción de Inasistencias:</strong> La activación de recordatorios automáticos ha disminuido los No-Shows en un estimado del <span className="text-green-500 font-bold">12%</span> respecto al mes pasado.
+                </p>
+              </div>
+              <div className={`p-4 rounded-[6px] border ${isDarkMode ? 'bg-[#1e293b] border-gray-700' : 'bg-[#f6f9fc] border-transparent'}`}>
+                 <p className={`text-[13px] ${isDarkMode ? 'text-gray-300' : 'text-[#4f566b]'}`}>
+                  <strong className={isDarkMode ? 'text-white' : 'text-[#1a1f36]'}>Optimización de Salas:</strong> La <span className="italic">Consulta 2</span> tiene una tasa de ocupación del <span className="text-orange-500 font-bold">85%</span>. Se recomienda redistribuir turnos no prioritarios hacia la <span className="italic">Consulta 1</span>.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeView === 'telemedicina') {
+      if (activeTelemedicineCall) {
+        return (
+          <div className="h-full w-full p-4 animate-in fade-in zoom-in-95 duration-300 relative bg-black">
+            <TelemedicineRoom 
+              isDarkMode={isDarkMode} 
+              appointmentInfo={activeTelemedicineCall}
+              onEndCall={() => setActiveTelemedicineCall(null)} 
+            />
+          </div>
+        );
+      }
+
+      return (
+        <div className="px-4 md:px-8 max-w-6xl mx-auto pb-24 mt-8 transition-colors">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className={`text-[24px] font-bold tracking-tight mb-2 flex items-center gap-2 transition-colors ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
+                <Video className="w-6 h-6 text-[#5469d4]" /> Videoconsultas
+              </h1>
+              <p className={`text-[13px] ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Gestiona y accede a tus citas de telemedicina cifradas de extremo a extremo.</p>
+            </div>
+            {/* Start direct room */}
+            <button 
+              onClick={() => setActiveTelemedicineCall({ patientName: 'Paciente (Invitado)' })}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-black text-white dark:bg-white dark:text-black rounded-[4px] font-bold text-[13px] hover:opacity-90 transition-opacity shadow-sm"
+            >
+              <PhoneCall className="w-4 h-4" /> Iniciar sesión urgente
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className={`text-[15px] font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Citas Online Programadas (Hoy)</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {appointments.filter(a => a.status === 'scheduled').slice(0, 3).map((app, idx) => (
+                 <div key={idx} className={`p-5 rounded-[8px] border transition-colors flex flex-col justify-between ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-[#fcfdff] border-[#e3e8ee]'}`}>
+                    <div>
+                       <div className="flex justify-between items-start mb-3">
+                          <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+                            E2E Secure Video
+                          </span>
+                          <div className="flex items-center gap-1 text-[12px] text-gray-500">
+                             <Clock className="w-3.5 h-3.5" />
+                             {app.time}
+                          </div>
+                       </div>
+                       <h4 className={`text-[16px] font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Consulta con Paciente ID: {app.patientId.slice(0,8)}</h4>
+                       <p className={`text-[13px] mb-4 ${isDarkMode ? 'text-gray-400' : 'text-[#8792a2]'}`}>{app.notes || 'Revisión general online.'}</p>
+                    </div>
+                    
+                    <button 
+                      onClick={() => setActiveTelemedicineCall({ patientName: 'Paciente ID: ' + app.patientId.slice(0,8), time: app.time })}
+                      className="w-full py-2.5 bg-[#5469d4] hover:bg-[#4c5ed1] text-white text-[13px] font-bold rounded-[6px] transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Video className="w-4 h-4" /> Unirse a la sala
+                    </button>
+                 </div>
+              ))}
+
+              {/* Empty placeholder if no upcoming */}
+              {appointments.filter(a => a.status === 'scheduled').length === 0 && (
+                 <div className="col-span-full py-16 text-center text-[13px] text-gray-500">
+                    No hay citas online programadas para hoy.
+                 </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
     return (
       <div className="px-4 md:px-8 max-w-6xl mx-auto pb-24">
         {/* HOY Section */}
         <div className="mt-4 mb-10">
           <h1 className={`text-[28px] font-bold tracking-tight mb-8 transition-colors ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Hoy</h1>
           
+          {reactivationCandidates.length > 0 && (
+            <div className={`mb-8 p-4 border rounded-[8px] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm transition-colors ${isDarkMode ? 'bg-blue-900/10 border-blue-800/50' : 'bg-blue-50 border-blue-100'}`}>
+              <div className="flex items-start gap-3">
+                <div className={`w-8 h-8 rounded-full flex shrink-0 items-center justify-center mt-0.5 ${isDarkMode ? 'bg-blue-900 text-blue-400' : 'bg-blue-100 text-[#5469d4]'}`}>
+                  <Brain className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className={`text-[15px] font-bold ${isDarkMode ? 'text-blue-100' : 'text-[#1a1f36]'}`}>Sugerencia de Contexto Inteligente</h4>
+                  <p className={`text-[13px] mt-0.5 ${isDarkMode ? 'text-blue-200' : 'text-[#4f566b]'}`}>
+                    Hemos detectado que <strong>{reactivationCandidates[0].fullName}</strong> no viene desde hace más de 6 meses. ¿Quieres enviarle un mensaje de reactivación?
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  setAiDraftInput({
+                    patientName: reactivationCandidates[0].fullName,
+                    appointmentType: 'Revisión General',
+                    time: 'Pronto',
+                    goal: 'reactivation'
+                  });
+                  setActiveView('nexora_ai');
+                  setTimeout(() => {
+                    window.scrollTo({ top: document.getElementById('ai-whatsapp-tool')?.offsetTop! - 100, behavior: 'smooth' });
+                  }, 100);
+                }}
+                className={`shrink-0 px-4 py-2 rounded-[6px] text-[13px] font-semibold transition-colors ${isDarkMode ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-[#5469d4] text-white hover:bg-[#4c5ed1]'}`}
+              >
+                Cargar en Generador
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12">
             {/* Left Col */}
             <div className={`flex flex-col border-b pb-4 mb-4 md:border-b-0 md:pb-0 md:mb-0 transition-colors ${isDarkMode ? 'border-gray-800' : 'border-[#e3e8ee]'}`}>
@@ -2190,16 +2925,18 @@ export default function Dashboard() {
             <div className={`mt-6 mb-2 px-3 text-[11px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-[#8792a2]'}`}>Gestión Principal</div>
             {[
               { id: 'agenda', label: 'Agenda', icon: Grid },
-              { id: 'pacientes', label: 'Clientes / Pacientes', icon: Users },
+              { id: 'pacientes', label: 'Clientes / Pacientes', icon: Users, isActive: activeView === 'pacientes' || activeView === 'historial_clinico' },
               { id: 'tratamientos', label: 'Servicios', icon: Package },
+              { id: 'staff', label: 'Personal y Turnos', icon: User },
+              { id: 'telemedicina', label: 'Videoconsulta', icon: Video },
             ].map(item => (
               <button 
                 key={item.id}
                 onClick={() => handleMenuClick(item.id)} 
-                className={`w-full flex items-center justify-between px-3 py-1.5 rounded-[4px] font-medium text-[13px] transition-colors ${activeView === item.id ? (isDarkMode ? 'bg-[#334155] text-white' : 'bg-[#e3e8ee] text-[#000000]') : (isDarkMode ? 'text-gray-400 hover:text-white hover:bg-[#334155]' : 'text-[#425466] hover:text-[#1a1f36] hover:bg-[#e3e8ee]')}`}
+                className={`w-full flex items-center justify-between px-3 py-1.5 rounded-[4px] font-medium text-[13px] transition-colors ${(item as any).isActive || activeView === item.id ? (isDarkMode ? 'bg-[#334155] text-white' : 'bg-[#e3e8ee] text-[#000000]') : (isDarkMode ? 'text-gray-400 hover:text-white hover:bg-[#334155]' : 'text-[#425466] hover:text-[#1a1f36] hover:bg-[#e3e8ee]')}`}
               >
                 <div className="flex items-center gap-3">
-                  <item.icon className={`w-4 h-4 ${activeView === item.id ? (isDarkMode ? 'text-blue-400' : 'text-[#5469d4]') : 'text-[#8792a2]'}`} />
+                  <item.icon className={`w-4 h-4 ${(item as any).isActive || activeView === item.id ? (isDarkMode ? 'text-blue-400' : 'text-[#5469d4]') : 'text-[#8792a2]'}`} />
                   {item.label}
                 </div>
               </button>
@@ -2331,6 +3068,189 @@ export default function Dashboard() {
 
         </main>
       </div>
+      {/* Appointment Modal -> To append before final div of component */}
+      
+      {isAddShiftModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+          <div className={`w-full max-w-md rounded-[12px] shadow-2xl ${isDarkMode ? 'bg-[#1e293b] border border-[#334155]' : 'bg-white'}`}>
+            <div className={`p-5 flex items-center justify-between border-b ${isDarkMode ? 'border-[#334155]' : 'border-[#e3e8ee]'}`}>
+              <h2 className={`text-[16px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Asignar Turno o Vacaciones</h2>
+              <button onClick={() => setIsAddShiftModalOpen(false)} className={`p-1 rounded-full ${isDarkMode ? 'hover:bg-[#334155] text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleAddShiftSubmit} className="p-5 space-y-4">
+              <div>
+                <label className={`block text-[13px] font-medium mb-1.5 ${isDarkMode ? 'text-gray-300' : 'text-[#4f566b]'}`}>Personal</label>
+                <select 
+                  required
+                  value={newShiftForm.userId}
+                  onChange={e => setNewShiftForm({...newShiftForm, userId: e.target.value})}
+                  className={`w-full px-3 py-2 border rounded-[6px] text-[14px] outline-none transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4] focus:ring-1 focus:ring-[#5469d4]'}`}
+                >
+                  <option value="">Seleccionar miembro...</option>
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className={`block text-[13px] font-medium mb-1.5 ${isDarkMode ? 'text-gray-300' : 'text-[#4f566b]'}`}>Tipo</label>
+                <select 
+                  value={newShiftForm.type}
+                  onChange={e => setNewShiftForm({...newShiftForm, type: e.target.value})}
+                  className={`w-full px-3 py-2 border rounded-[6px] text-[14px] outline-none transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4] focus:ring-1 focus:ring-[#5469d4]'}`}
+                >
+                  <option value="WORK">Trabajo</option>
+                  <option value="VACATION">Vacaciones / Libre</option>
+                  <option value="SICK_LEAVE">Baja Médica</option>
+                </select>
+              </div>
+
+              {newShiftForm.type === 'WORK' && (
+                <div>
+                  <label className={`block text-[13px] font-medium mb-1.5 ${isDarkMode ? 'text-gray-300' : 'text-[#4f566b]'}`}>Sala / Consulta (Opcional)</label>
+                  <select 
+                    value={newShiftForm.roomId}
+                    onChange={e => setNewShiftForm({...newShiftForm, roomId: e.target.value})}
+                    className={`w-full px-3 py-2 border rounded-[6px] text-[14px] outline-none transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4] focus:ring-1 focus:ring-[#5469d4]'}`}
+                  >
+                    <option value="">Cualquier sala...</option>
+                    {rooms.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-[13px] font-medium mb-1.5 ${isDarkMode ? 'text-gray-300' : 'text-[#4f566b]'}`}>Fecha</label>
+                  <input 
+                    type="date" 
+                    required
+                    value={newShiftForm.date}
+                    onChange={e => setNewShiftForm({...newShiftForm, date: e.target.value})}
+                    className={`w-full px-3 py-2 border rounded-[6px] text-[14px] outline-none transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4] focus:ring-1 focus:ring-[#5469d4]'}`}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-[13px] font-medium mb-1.5 ${isDarkMode ? 'text-gray-300' : 'text-[#4f566b]'}`}>Hora Inicio</label>
+                  <input 
+                    type="time" 
+                    required
+                    value={newShiftForm.startTime}
+                    onChange={e => setNewShiftForm({...newShiftForm, startTime: e.target.value})}
+                    className={`w-full px-3 py-2 border rounded-[6px] text-[14px] outline-none transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4] focus:ring-1 focus:ring-[#5469d4]'}`}
+                  />
+                </div>
+                <div>
+                  <label className={`block text-[13px] font-medium mb-1.5 ${isDarkMode ? 'text-gray-300' : 'text-[#4f566b]'}`}>Hora Fin</label>
+                  <input 
+                    type="time" 
+                    required
+                    value={newShiftForm.endTime}
+                    onChange={e => setNewShiftForm({...newShiftForm, endTime: e.target.value})}
+                    className={`w-full px-3 py-2 border rounded-[6px] text-[14px] outline-none transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4] focus:ring-1 focus:ring-[#5469d4]'}`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={`block text-[13px] font-medium mb-1.5 ${isDarkMode ? 'text-gray-300' : 'text-[#4f566b]'}`}>Notas (Opcional)</label>
+                <textarea 
+                  value={newShiftForm.notes}
+                  onChange={e => setNewShiftForm({...newShiftForm, notes: e.target.value})}
+                  className={`w-full px-3 py-2 border rounded-[6px] text-[14px] outline-none transition-colors min-h-[60px] ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4] focus:ring-1 focus:ring-[#5469d4]'}`}
+                ></textarea>
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3 border-t mt-6 dark:border-[#334155]">
+                <button type="button" onClick={() => setIsAddShiftModalOpen(false)} className={`px-4 py-2 bg-transparent text-[14px] font-medium rounded-[4px] border ${isDarkMode ? 'border-[#334155] text-white hover:bg-[#334155]' : 'border-[#e3e8ee] text-[#4f566b] hover:bg-[#f6f9fc]'}`}>
+                  Cancelar
+                </button>
+                <button type="submit" disabled={isSubmittingShift} className="px-4 py-2 bg-[#5469d4] hover:bg-[#4c5ed1] text-white text-[14px] font-medium rounded-[4px] shadow-sm disabled:opacity-50">
+                  {isSubmittingShift ? 'Guardando...' : 'Asignar Turno'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isAddRoomModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+          <div className={`w-full max-w-sm rounded-[12px] shadow-2xl ${isDarkMode ? 'bg-[#1e293b] border border-[#334155]' : 'bg-white'}`}>
+            <div className={`p-5 flex items-center justify-between border-b ${isDarkMode ? 'border-[#334155]' : 'border-[#e3e8ee]'}`}>
+              <h2 className={`text-[16px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Añadir Sala</h2>
+              <button onClick={() => setIsAddRoomModalOpen(false)} className={`p-1 rounded-full ${isDarkMode ? 'hover:bg-[#334155] text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleAddRoomSubmit} className="p-5 space-y-4">
+              <div>
+                <label className={`block text-[13px] font-medium mb-1.5 ${isDarkMode ? 'text-gray-300' : 'text-[#4f566b]'}`}>Nombre de la Sala</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="Ej: Consulta 3"
+                  value={newRoomForm.name}
+                  onChange={e => setNewRoomForm({...newRoomForm, name: e.target.value})}
+                  className={`w-full px-3 py-2 border rounded-[6px] text-[14px] outline-none transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4] focus:ring-1 focus:ring-[#5469d4]'}`}
+                />
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3 border-t mt-6 dark:border-[#334155]">
+                <button type="button" onClick={() => setIsAddRoomModalOpen(false)} className={`px-4 py-2 bg-transparent text-[14px] font-medium rounded-[4px] border ${isDarkMode ? 'border-[#334155] text-white hover:bg-[#334155]' : 'border-[#e3e8ee] text-[#4f566b] hover:bg-[#f6f9fc]'}`}>
+                  Cancelar
+                </button>
+                <button type="submit" disabled={isSubmittingRoom} className="px-4 py-2 bg-[#5469d4] hover:bg-[#4c5ed1] text-white text-[14px] font-medium rounded-[4px] shadow-sm disabled:opacity-50">
+                  {isSubmittingRoom ? 'Guardando...' : 'Crear Sala'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isEditRoomModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+          <div className={`w-full max-w-sm rounded-[12px] shadow-2xl ${isDarkMode ? 'bg-[#1e293b] border border-[#334155]' : 'bg-white'}`}>
+            <div className={`p-5 flex items-center justify-between border-b ${isDarkMode ? 'border-[#334155]' : 'border-[#e3e8ee]'}`}>
+              <h2 className={`text-[16px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Editar Sala</h2>
+              <button onClick={() => {setIsEditRoomModalOpen(false); setEditingRoom(null);}} className={`p-1 rounded-full ${isDarkMode ? 'hover:bg-[#334155] text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleEditRoomSubmit} className="p-5 space-y-4">
+              <div>
+                <label className={`block text-[13px] font-medium mb-1.5 ${isDarkMode ? 'text-gray-300' : 'text-[#4f566b]'}`}>Nombre de la Sala</label>
+                <input 
+                  type="text" 
+                  required
+                  value={editingRoom?.name || ''}
+                  onChange={e => setEditingRoom({...editingRoom, name: e.target.value})}
+                  className={`w-full px-3 py-2 border rounded-[6px] text-[14px] outline-none transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4] focus:ring-1 focus:ring-[#5469d4]'}`}
+                />
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3 border-t mt-6 dark:border-[#334155]">
+                <button type="button" onClick={() => {setIsEditRoomModalOpen(false); setEditingRoom(null);}} className={`px-4 py-2 bg-transparent text-[14px] font-medium rounded-[4px] border ${isDarkMode ? 'border-[#334155] text-white hover:bg-[#334155]' : 'border-[#e3e8ee] text-[#4f566b] hover:bg-[#f6f9fc]'}`}>
+                  Cancelar
+                </button>
+                <button type="submit" disabled={isSubmittingRoom} className="px-4 py-2 bg-[#5469d4] hover:bg-[#4c5ed1] text-white text-[14px] font-medium rounded-[4px] shadow-sm disabled:opacity-50">
+                  {isSubmittingRoom ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

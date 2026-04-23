@@ -8,18 +8,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { NexoraLogo } from '../components/NexoraLogo';
 
+import { FrontendNavbar } from '../components/FrontendNavbar';
+
 export default function LandingPage() {
   const navigate = useNavigate();
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('agenda');
-
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const features = [
     {
@@ -101,119 +94,9 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-[#1a1f36] font-sans selection:bg-[#008477]/10 selection:text-[#008477]">
       
-      {/* Navigation */}
-      <nav className={`fixed top-0 inset-x-0 z-[100] transition-all duration-300 ${isScrolled ? 'bg-white/95 backdrop-blur-md border-b border-gray-100 py-3' : 'bg-transparent py-6'}`}>
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer group" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
-            <NexoraLogo size={36} />
-            <span className="font-bold text-xl tracking-tight text-[#1a1f36]">Nexora</span>
-          </div>
-          
-          <div className="hidden lg:flex items-center gap-8">
-            {/* Servicios Dropdown */}
-            <div 
-              className="relative group py-2"
-              onMouseEnter={() => setActiveDropdown('servicios')}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <div className="flex items-center gap-1 text-[14px] font-semibold text-[#4f566b] hover:text-[#008477] transition-colors cursor-pointer">
-                Servicios <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${activeDropdown === 'servicios' ? 'rotate-180' : ''}`} />
-              </div>
-              <AnimatePresence>
-                {activeDropdown === 'servicios' && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    className="absolute top-full left-0 w-[260px] bg-white rounded-xl shadow-xl border border-gray-100 py-3 z-[110]"
-                  >
-                    {[
-                      'Software Clínica Dental', 'Software Nutrición', 'Software Fisioterapia', 
-                      'Software Psicólogos', 'Software Estética', 'Gestión Médica General',
-                      'App para Clientes'
-                    ].map((label, i) => (
-                      <div key={i} className="px-5 py-2 hover:bg-gray-50 text-[13px] font-medium text-gray-500 hover:text-[#008477] transition-colors cursor-pointer">
-                        {label}
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+      <FrontendNavbar />
 
-            {/* Soluciones Dropdown */}
-            <div 
-              className="relative group py-2"
-              onMouseEnter={() => setActiveDropdown('soluciones')}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <div className="flex items-center gap-1 text-[14px] font-semibold text-[#4f566b] hover:text-[#008477] transition-colors cursor-pointer">
-                Soluciones <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${activeDropdown === 'soluciones' ? 'rotate-180' : ''}`} />
-              </div>
-              <AnimatePresence>
-                {activeDropdown === 'soluciones' && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    className="absolute top-full left-0 w-[240px] bg-white rounded-xl shadow-xl border border-gray-100 py-3 z-[110]"
-                  >
-                    {['Agenda Digital', 'Historial Clínico', 'Facturación', 'Nexora AI'].map((label, i) => (
-                      <div key={i} className="px-5 py-2 hover:bg-gray-50 text-[13px] font-medium text-gray-500 hover:text-[#008477] transition-colors cursor-pointer">
-                        {label}
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* A quien ayudamos Dropdown */}
-            <div 
-              className="relative group py-2"
-              onMouseEnter={() => setActiveDropdown('ayudamos')}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <div className="flex items-center gap-1 text-[14px] font-semibold text-[#4f566b] hover:text-[#008477] transition-colors cursor-pointer">
-                A quién ayudamos <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${activeDropdown === 'ayudamos' ? 'rotate-180' : ''}`} />
-              </div>
-              <AnimatePresence>
-                {activeDropdown === 'ayudamos' && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    className="absolute top-full left-0 w-[240px] bg-white rounded-xl shadow-xl border border-gray-100 py-3 z-[110]"
-                  >
-                    {['Clínicas', 'Autónomos', 'Franquicias'].map((label, i) => (
-                      <div key={i} className="px-5 py-2 hover:bg-gray-50 text-[13px] font-medium text-gray-500 hover:text-[#008477] transition-colors cursor-pointer">
-                        {label}
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            
-            <a href="#precios" className="text-[14px] font-semibold text-[#4f566b] hover:text-[#008477] transition-colors">Precios</a>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <button 
-              onClick={() => navigate('/dashboard')}
-              className="hidden md:block text-[14px] font-semibold text-[#4f566b] hover:text-[#008477] transition-colors"
-            >
-              Iniciar Sesión
-            </button>
-            <button 
-              onClick={() => navigate('/dashboard')}
-              className="px-6 py-2.5 bg-[#008477] hover:bg-[#006b60] text-white text-[14px] font-bold rounded-lg transition-all shadow-sm active:scale-95"
-            >
-              Probar Gratis
-            </button>
-          </div>
-        </div>
-      </nav>
+      {/* Hero Section: Replicated Style */}
 
       {/* Hero Section: Replicated Style */}
       <section className="relative pt-32 lg:pt-52 pb-24 border-b border-gray-50">
