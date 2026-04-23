@@ -5,7 +5,6 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 model Tenant {
@@ -61,9 +60,10 @@ model Appointment {
   id              String   @id @default(uuid())
   tenantId        String
   patientId       String
-  doctorId        String
+  doctorId        String?
   startTime       DateTime
   endTime         DateTime
+  type            String?
   status          String   @default("SCHEDULED")
   aiConflictScore Float?
   aiAlertReason   String?

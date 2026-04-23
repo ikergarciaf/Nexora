@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, Wallet, ArrowRightLeft, Users, Package, CreditCard, FileText, BarChart, MoreHorizontal, 
-  Code, Search, Grid, HelpCircle, Bell, Settings, Plus, ChevronDown, CheckCircle2, Info, X, Map, User, LogOut, ArrowRight, Menu, Mail, Phone, Pencil, Trash2, Download, Sun, Moon, Brain, Rocket, Clock, Calendar, Video, Mic, MicOff, VideoOff, PhoneCall
+  Code, Search, Grid, HelpCircle, Bell, Settings, Plus, ChevronDown, CheckCircle2, Info, X, Map, User, LogOut, ArrowRight, Menu, Mail, Phone, Pencil, Trash2, Download, Sun, Moon, Brain, Rocket, Clock, Calendar, Video, Mic, MicOff, VideoOff, PhoneCall, Sparkles, Stethoscope
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -15,6 +15,9 @@ import { NexoraLogo } from '../components/NexoraLogo';
 import { TelemedicineRoom } from '../components/TelemedicineRoom';
 import { Odontogram } from '../components/specialties/Odontogram';
 import { PainMap } from '../components/specialties/PainMap';
+import { NutritionPlan } from '../components/specialties/NutritionPlan';
+import { SessionDiary } from '../components/specialties/SessionDiary';
+import { AestheticGal } from '../components/specialties/AestheticGal';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -50,14 +53,122 @@ export default function Dashboard() {
     ]))
   });
 
-  const updateClinicConfig = (newConfig: Partial<typeof clinicConfig>) => {
-    const updated = { ...clinicConfig, ...newConfig };
-    setClinicConfig(updated);
-    if (newConfig.name) localStorage.setItem('clinic-name', newConfig.name);
-    if (newConfig.plan) localStorage.setItem('clinic-plan', newConfig.plan);
-    if (newConfig.specialty) localStorage.setItem('clinic-specialty', newConfig.specialty);
-    if (newConfig.openingHours) localStorage.setItem('clinic-hours', JSON.stringify(newConfig.openingHours));
+  const SPECIALTY_MAP: Record<string, {
+    productName: string,
+    primaryColor: string,
+    secondaryColor: string,
+    accentColor: string,
+    icon: React.ReactNode,
+    specializedItems: { id: string, label: string, icon: React.ReactNode }[],
+    kpis: { label: string, key: string, prefix?: string, suffix?: string }[],
+    patientModule: string
+  }> = {
+    'Odontología': {
+      productName: 'Nexora Dental',
+      primaryColor: '#008477',
+      secondaryColor: 'bg-[#008477]',
+      accentColor: 'text-[#008477]',
+      icon: <CheckCircle2 className="w-5 h-5" />,
+      specializedItems: [
+        { id: 'odontograma', label: 'Odontograma', icon: <Grid className="w-4 h-4" /> },
+        { id: 'presupuestos', label: 'Presupuestos', icon: <FileText className="w-4 h-4" /> }
+      ],
+      kpis: [
+        { label: 'Dientes Tratados', key: 'treated', suffix: '' },
+        { label: 'Presupuestos Aceptados', key: 'accepted', suffix: '%' }
+      ],
+      patientModule: 'Odontogram'
+    },
+    'Nutrición': {
+      productName: 'Nexora Nutrición',
+      primaryColor: '#059669',
+      secondaryColor: 'bg-[#059669]',
+      accentColor: 'text-[#059669]',
+      icon: <Sun className="w-5 h-5" />,
+      specializedItems: [
+        { id: 'dietas', label: 'Plan de Dietas', icon: <FileText className="w-4 h-4" /> },
+        { id: 'evolucion', label: 'Evolución Peso', icon: <BarChart className="w-4 h-4" /> }
+      ],
+      kpis: [
+        { label: 'Bajada Peso Media', key: 'avgWeight', suffix: 'kg' },
+        { label: 'Adherencia Plan', key: 'adherence', suffix: '%' }
+      ],
+      patientModule: 'NutritionPlan'
+    },
+    'Fisioterapia': {
+      productName: 'Nexora Physio',
+      primaryColor: '#2563eb',
+      secondaryColor: 'bg-[#2563eb]',
+      accentColor: 'text-[#2563eb]',
+      icon: <Map className="w-5 h-5" />,
+      specializedItems: [
+        { id: 'mapa_dolor', label: 'Mapa de Dolor', icon: <Settings className="w-4 h-4" /> },
+        { id: 'ejercicios', label: 'Pautas Ejercicios', icon: <Video className="w-4 h-4" /> }
+      ],
+      kpis: [
+        { label: 'Sesiones Restantes', key: 'sessions', suffix: '' },
+        { label: 'Mejoría Dolor', key: 'recovery', suffix: '%' }
+      ],
+      patientModule: 'PainMap'
+    },
+    'Psicología': {
+      productName: 'Nexora Psico',
+      primaryColor: '#7c3aed',
+      secondaryColor: 'bg-[#7c3aed]',
+      accentColor: 'text-[#7c3aed]',
+      icon: <Brain className="w-5 h-5" />,
+      specializedItems: [
+        { id: 'sesiones', label: 'Diario de Sesiones', icon: <Clock className="w-4 h-4" /> },
+        { id: 'test', label: 'Tests Psicométricos', icon: <FileText className="w-4 h-4" /> }
+      ],
+      kpis: [
+        { label: 'Sesiones Activas', key: 'activeSessions', suffix: '' },
+        { label: 'Nivel Bienestar', key: 'wellbeing', suffix: '/10' }
+      ],
+      patientModule: 'SessionDiary'
+    },
+    'Estética': {
+      productName: 'Nexora Glow',
+      primaryColor: '#db2777',
+      secondaryColor: 'bg-[#db2777]',
+      accentColor: 'text-[#db2777]',
+      icon: <Sparkles className="w-5 h-5" />,
+      specializedItems: [
+        { id: 'galeria', label: 'Galería Antes/Desc', icon: <Grid className="w-4 h-4" /> },
+        { id: 'stock_estetica', label: 'Control VIALES', icon: <Package className="w-4 h-4" /> }
+      ],
+      kpis: [
+        { label: 'Retoques Pendientes', key: 'refill', suffix: '' },
+        { label: 'Satisfacción Glow', key: 'glowScore', suffix: '%' }
+      ],
+      patientModule: 'AestheticGal'
+    },
+    'Medicina General': {
+      productName: 'Nexora Health',
+      primaryColor: '#5469d4',
+      secondaryColor: 'bg-[#5469d4]',
+      accentColor: 'text-[#5469d4]',
+      icon: <Stethoscope className="w-5 h-5" />,
+      specializedItems: [],
+      kpis: [],
+      patientModule: 'Standard'
+    }
   };
+
+  const currentSpecialtyConfig = useMemo(() => {
+    return SPECIALTY_MAP[clinicConfig.specialty] || SPECIALTY_MAP['Medicina General'];
+  }, [clinicConfig.specialty]);
+
+  const updateClinicConfig = useCallback((newConfig: Partial<typeof clinicConfig>) => {
+    setClinicConfig(prev => {
+      const updated = { ...prev, ...newConfig };
+      if (newConfig.name) localStorage.setItem('clinic-name', newConfig.name);
+      if (newConfig.plan) localStorage.setItem('clinic-plan', newConfig.plan);
+      if (newConfig.specialty) localStorage.setItem('clinic-specialty', newConfig.specialty);
+      if (newConfig.openingHours) localStorage.setItem('clinic-hours', JSON.stringify(newConfig.openingHours));
+      return updated;
+    });
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -166,9 +277,30 @@ export default function Dashboard() {
 
   // Patient Clinical Record State
   const [patientRecord, setPatientRecord] = useState<any>({
-    odontogram: [],
-    painPoints: [],
-    generalNotes: ""
+    odontogram: [
+      { id: 11, status: 'healthy' },
+      { id: 12, status: 'caries' },
+      { id: 13, status: 'healthy' },
+      { id: 21, status: 'restored' },
+    ],
+    painPoints: [
+      { id: 'p1', x: 45, y: 30, intensity: 8, notes: 'Dolor lumbar agudo tras esfuerzo físico.' },
+      { id: 'p2', x: 55, y: 45, intensity: 4, notes: 'Molestia leve en zona cervical.' }
+    ],
+    nutritionPlan: {
+       desayuno: ['Avena con frutos rojos', 'Café sin azúcar'],
+       almuerzo: ['Pechuga de pollo a la plancha', 'Arroz integral', 'Brocoli al vapor'],
+       cena: ['Ensalada mixta', 'Pescado blanco', 'Infusión']
+    },
+    psychSessions: [
+       { date: '22 Abr 2026', duration: '50 min', summary: 'El paciente muestra avances significativos en la gestión de la ansiedad social.' },
+       { date: '15 Abr 2026', duration: '55 min', summary: 'Primer contacto y evaluación del entorno familiar.' }
+    ],
+    aestheticPhotos: [
+       { type: 'Antes', date: '01 Mar 2026', url: 'https://images.unsplash.com/photo-1512413316925-fd4b93f31521?w=400&auto=format&fit=crop&q=60' },
+       { type: 'Después', date: '20 Abr 2026', url: 'https://images.unsplash.com/photo-1512413316925-fd4b93f31521?w=400&auto=format&fit=crop&q=60' }
+    ],
+    generalNotes: "Paciente colaborador con buena predisposición al tratamiento."
   });
 
   // Copy Link States
@@ -552,7 +684,12 @@ export default function Dashboard() {
               <div className={`border rounded-[12px] shadow-sm overflow-hidden transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
                 <div className={`px-5 py-4 border-b flex items-center justify-between transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155]' : 'bg-slate-50 border-[#e3e8ee]'}`}>
                    <h3 className={`text-[15px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
-                     {clinicConfig.specialty === 'Odontología' ? 'Odontograma Interactivo' : 'Mapa de Dolor Palpable'}
+                     {clinicConfig.specialty === 'Odontología' ? 'Odontograma Interactivo' : 
+                      clinicConfig.specialty === 'Fisioterapia' ? 'Mapa de Dolor Palpable' :
+                      clinicConfig.specialty === 'Nutrición' ? 'Seguimiento Antropométrico' :
+                      clinicConfig.specialty === 'Psicología' ? 'Línea de Vida y Sesiones' :
+                      clinicConfig.specialty === 'Estética' ? 'Protocolo Tratamiento Estético' :
+                      'Historia Clínica General'}
                    </h3>
                    <div className="text-[11px] font-medium text-gray-500">Última actualización: Hoy</div>
                 </div>
@@ -563,12 +700,40 @@ export default function Dashboard() {
                       value={patientRecord.odontogram} 
                       onChange={(val) => setPatientRecord({...patientRecord, odontogram: val})} 
                     />
-                  ) : (
+                  ) : clinicConfig.specialty === 'Fisioterapia' ? (
                     <PainMap 
                       isDarkMode={isDarkMode} 
                       value={patientRecord.painPoints}
                       onChange={(val) => setPatientRecord({...patientRecord, painPoints: val})}
                     />
+                  ) : clinicConfig.specialty === 'Nutrición' ? (
+                    <NutritionPlan 
+                      isDarkMode={isDarkMode} 
+                      value={patientRecord.nutritionPlan}
+                      onChange={(val) => setPatientRecord({...patientRecord, nutritionPlan: val})}
+                    />
+                  ) : clinicConfig.specialty === 'Psicología' ? (
+                    <SessionDiary 
+                      isDarkMode={isDarkMode} 
+                      value={patientRecord.psychSessions}
+                      onChange={(val) => setPatientRecord({...patientRecord, psychSessions: val})}
+                    />
+                  ) : clinicConfig.specialty === 'Estética' ? (
+                    <AestheticGal 
+                      isDarkMode={isDarkMode} 
+                      value={patientRecord.aestheticPhotos}
+                      onChange={(val) => setPatientRecord({...patientRecord, aestheticPhotos: val})}
+                    />
+                  ) : (
+                    <div className={`p-12 text-center flex flex-col items-center gap-4 ${isDarkMode ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
+                      <div className={`w-16 h-16 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-[#1e293b]' : 'bg-white shadow-sm'}`}>
+                         {currentSpecialtyConfig.icon}
+                      </div>
+                      <div>
+                        <p className={`font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Módulo de {clinicConfig.specialty}</p>
+                        <p className="text-[13px] text-gray-500 max-w-xs mx-auto mt-1">Este módulo está optimizado para flujos de {clinicConfig.specialty.toLowerCase()}.</p>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1273,6 +1438,46 @@ export default function Dashboard() {
               </div>
             </div>
           )}
+        </div>
+      );
+    }
+
+    // Specialized Views check
+    const specializedView = currentSpecialtyConfig.specializedItems.find(item => item.id === activeView);
+    if (specializedView) {
+      return (
+        <div className="px-4 md:px-8 max-w-6xl mx-auto pb-24 mt-8 transition-colors">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className={`text-[24px] font-bold tracking-tight flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
+                {specializedView.label} 
+              </h1>
+              <p className={`text-[14px] mt-1 ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Módulo especializado para {clinicConfig.specialty}.</p>
+            </div>
+          </div>
+          
+          <div className={`rounded-xl border shadow-sm overflow-hidden min-h-[500px] ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+             {activeView === 'odontograma' && <Odontogram isDarkMode={isDarkMode} value={patientRecord.odontogram} onChange={(v) => setPatientRecord(prev => ({...prev, odontogram: v}))} />}
+             {activeView === 'dietas' && <NutritionPlan isDarkMode={isDarkMode} value={patientRecord.nutritionPlan} onChange={(v) => setPatientRecord(prev => ({...prev, nutritionPlan: v}))} />}
+             {activeView === 'mapa_dolor' && <PainMap isDarkMode={isDarkMode} value={patientRecord.painPoints} onChange={(v) => setPatientRecord(prev => ({...prev, painPoints: v}))} />}
+             {activeView === 'sesiones' && <SessionDiary isDarkMode={isDarkMode} value={patientRecord.psychSessions} onChange={(v) => setPatientRecord(prev => ({...prev, psychSessions: v}))} />}
+             {activeView === 'galeria' && <AestheticGal isDarkMode={isDarkMode} value={patientRecord.aestheticPhotos} onChange={(v) => setPatientRecord(prev => ({...prev, aestheticPhotos: v}))} />}
+             
+             {['presupuestos', 'evolucion', 'ejercicios', 'test', 'stock_estetica'].includes(activeView) && (
+                <div className={`p-20 text-center flex flex-col items-center gap-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                   <div className={`w-16 h-16 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
+                      {specializedView.icon}
+                   </div>
+                   <div>
+                      <h4 className="font-bold text-lg">{specializedView.label}</h4>
+                      <p className="text-sm text-gray-500 max-w-sm mt-1">Este módulo avanzado permite gestionar {specializedView.label.toLowerCase()} de forma optimizada para {clinicConfig.specialty}.</p>
+                   </div>
+                   <button className="mt-4 px-6 py-2 bg-[#5469d4] text-white rounded-lg text-sm font-bold shadow-md">
+                      Configurar {specializedView.label}
+                   </button>
+                </div>
+             )}
+          </div>
         </div>
       );
     }
@@ -2702,74 +2907,68 @@ export default function Dashboard() {
           </div>
 
           {/* Cards Grid */}
-          <div className={`grid grid-cols-1 md:grid-cols-3 gap-0 border rounded-[8px] overflow-hidden transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-[#f6f9fc] border-[#e3e8ee]'}`}>
+          <div className={`grid grid-cols-1 md:grid-cols-4 gap-0 border rounded-[8px] overflow-hidden transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-[#f6f9fc] border-[#e3e8ee]'}`}>
             
             {/* Facturación Card */}
-            <div className={`p-5 border-r flex flex-col h-[300px] transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+            <div className={`p-5 border-r flex flex-col h-[280px] transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
               <div className="flex items-center justify-between gap-1 mb-4">
                 <div className={`flex items-center gap-1 text-[13px] font-medium ${isDarkMode ? 'text-gray-300' : 'text-[#1a1f36]'}`}>
                   Facturación <Info className="w-3.5 h-3.5 text-[#8792a2]" />
                 </div>
               </div>
-              <div className={`flex-1 border border-dashed rounded-[4px] flex items-center justify-center transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155]' : 'bg-[#fcfdff] border-[#e3e8ee]'}`}>
-                <span className={`text-[13px] px-4 py-1.5 rounded-full border shadow-sm transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155] text-gray-300' : 'bg-[#f6f9fc] border-[#e3e8ee] text-[#4f566b]'}`}>
-                  {stats?.monthlyRevenue ? formatCurrency(stats.monthlyRevenue) : 'No hay datos'}
+              <div className={`flex-1 flex flex-col items-center justify-center`}>
+                <span className={`text-[24px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
+                  {stats?.monthlyRevenue ? formatCurrency(stats.monthlyRevenue) : '0,00 €'}
                 </span>
+                <span className={`text-[12px] mt-1 font-medium ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Este mes</span>
               </div>
             </div>
 
-            {/* Gross Volume Card -> Citas Confirmadas */}
-            <div className={`p-5 border-r flex flex-col relative h-[300px] transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
-              <div className="flex justify-between items-start mb-2 relative z-10">
-                <div>
+            {/* Specialty-Specific KPIs */}
+            {currentSpecialtyConfig.kpis.map((kpi, idx) => (
+              <div key={idx} className={`p-5 border-r flex flex-col h-[280px] transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+                <div className="flex items-center justify-between gap-1 mb-4">
                   <div className={`flex items-center gap-1 text-[13px] font-medium ${isDarkMode ? 'text-gray-300' : 'text-[#1a1f36]'}`}>
-                    Citas Confirmadas <Info className="w-3.5 h-3.5 text-[#8792a2]" />
+                    {kpi.label} <Info className="w-3.5 h-3.5 text-[#8792a2]" />
                   </div>
-                  <div className={`text-[20px] font-medium mt-1 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>{stats?.appointmentsThisWeek || 0}</div>
-                  <div className={`text-[13px] mt-0.5 ${isDarkMode ? 'text-gray-500' : 'text-[#4f566b]'}`}>{stats?.appointmentsThisWeek || 0} período anterior</div>
                 </div>
-                <button className={`p-1 border rounded shadow-sm transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-[#94a3b8] hover:bg-[#1e293b]' : 'bg-white border-[#e3e8ee] text-[#4f566b] hover:bg-[#f6f9fc]'}`}>
-                  <BarChart className="w-4 h-4" />
-                </button>
-              </div>
-              
-              {/* Trend chart faux */}
-              <div className="absolute inset-x-5 bottom-8 h-24 flex items-end">
-                <div className={`w-full relative h-px mb-4 transition-colors ${isDarkMode ? 'bg-[#334155]' : 'bg-[#e3e8ee]'}`}>
-                  <div className="absolute top-0 right-0 h-full bg-[#7a32fc] transition-all duration-1000 ease-in-out" style={{ width: stats?.appointmentsThisWeek ? '40%' : '0%' }}></div>
+                <div className={`flex-1 flex flex-col items-center justify-center`}>
+                  <div className="flex items-baseline gap-1">
+                    <span className={`text-[24px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
+                      {kpi.prefix}{Math.floor(Math.random() * 80) + 20}{kpi.suffix}
+                    </span>
+                  </div>
+                  <span className={`text-[12px] mt-1 font-medium ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Métrica {clinicConfig.specialty}</span>
                 </div>
-                <div className={`absolute top-0 w-full h-[60px] border-b border-dashed pointer-events-none transition-colors ${isDarkMode ? 'border-[#334155]' : 'border-[#e3e8ee]'}`}></div>
               </div>
-              
-              <div className="absolute left-5 right-5 bottom-5 flex justify-end text-[11px] text-[#8792a2] font-medium">
-                <span>{stats?.appointmentsThisWeek || 0}</span>
-              </div>
-            </div>
+            ))}
 
-            {/* Net Volume Card -> Pacientes Activos */}
-            <div className={`p-5 flex flex-col relative h-[300px] transition-colors ${isDarkMode ? 'bg-[#1e293b]' : 'bg-white'}`}>
-              <div className="flex justify-between items-start mb-2 relative z-10">
-                <div>
-                  <div className={`flex items-center gap-1 text-[13px] font-medium ${isDarkMode ? 'text-gray-300' : 'text-[#1a1f36]'}`}>
-                    Pacientes Activos <Info className="w-3.5 h-3.5 text-[#8792a2]" />
+            {!currentSpecialtyConfig.kpis.length && (
+              <>
+                <div className={`p-5 border-r flex flex-col h-[280px] transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+                  <div className="flex justify-between items-start mb-2 relative z-10">
+                    <div className={`flex items-center gap-1 text-[13px] font-medium ${isDarkMode ? 'text-gray-300' : 'text-[#1a1f36]'}`}>
+                      Citas <Info className="w-3.5 h-3.5 text-[#8792a2]" />
+                    </div>
                   </div>
-                  <div className={`text-[20px] font-medium mt-1 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>{stats?.activePatients || 0}</div>
-                  <div className={`text-[13px] mt-0.5 ${isDarkMode ? 'text-gray-500' : 'text-[#4f566b]'}`}>{stats?.activePatients ? stats.activePatients : 0} período anterior</div>
+                  <div className="flex-1 flex flex-col items-center justify-center">
+                    <span className={`text-[24px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>{stats?.appointmentsThisWeek || 0}</span>
+                    <span className="text-[12px] mt-1 font-medium text-gray-400">Esta semana</span>
+                  </div>
                 </div>
-              </div>
-              
-              {/* Trend chart faux */}
-              <div className="absolute inset-x-5 bottom-8 h-24 flex items-end">
-                <div className={`w-full relative h-px mb-4 transition-colors ${isDarkMode ? 'bg-[#334155]' : 'bg-[#e3e8ee]'}`}>
-                  <div className="absolute top-0 right-0 h-full bg-[#80e9ff] transition-all duration-1000 ease-in-out" style={{ width: stats?.activePatients ? '20%' : '0%' }}></div>
+                <div className={`p-5 flex flex-col h-[280px] transition-colors ${isDarkMode ? 'bg-[#1e293b]' : 'bg-white'}`}>
+                  <div className="flex justify-between items-start mb-2 relative z-10">
+                    <div className={`flex items-center gap-1 text-[13px] font-medium ${isDarkMode ? 'text-gray-300' : 'text-[#1a1f36]'}`}>
+                      Pacientes Activos <Info className="w-3.5 h-3.5 text-[#8792a2]" />
+                    </div>
+                  </div>
+                  <div className="flex-1 flex flex-col items-center justify-center">
+                    <span className={`text-[24px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>{stats?.activePatients || 0}</span>
+                    <span className="text-[12px] mt-1 font-medium text-gray-400">Total</span>
+                  </div>
                 </div>
-                <div className={`absolute top-0 w-full h-[60px] border-b border-dashed pointer-events-none transition-colors ${isDarkMode ? 'border-[#334155]' : 'border-[#e3e8ee]'}`}></div>
-              </div>
-              
-              <div className="absolute left-5 right-5 bottom-5 flex justify-end text-[11px] text-[#8792a2] font-medium">
-                <span>{stats?.activePatients || 0}</span>
-              </div>
-            </div>
+              </>
+            )}
 
           </div>
           
@@ -2840,13 +3039,13 @@ export default function Dashboard() {
               className={`w-[calc(100%-16px)] mx-2 mt-4 mb-2 flex items-center justify-between px-2 py-1.5 rounded-[6px] border transition-all ${isAccountMenuOpen ? (isDarkMode ? 'bg-[#1e293b] border-transparent' : 'bg-[#e3e8ee] border-transparent') : (isDarkMode ? 'bg-transparent border-transparent hover:bg-[#1e293b]' : 'bg-transparent border-transparent hover:bg-[#e3e8ee]')}`}
             >
               <div className="flex items-center gap-2 text-left overflow-hidden">
-                <NexoraLogo size={24} />
+                <NexoraLogo size={24} color={currentSpecialtyConfig.primaryColor} />
                 <div className="min-w-0">
                   <div className={`text-[13px] font-bold leading-tight truncate ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
                     {clinicConfig.name}
                   </div>
-                  <div className={`text-[12px] leading-tight mt-0.5 truncate ${isDarkMode ? 'text-gray-400 font-medium' : 'text-[#4f566b]'}`}>
-                    Suscripción {clinicConfig.plan}
+                  <div className={`text-[12px] leading-tight mt-0.5 truncate ${isDarkMode ? 'text-gray-500 font-bold' : 'text-[#4f566b] font-medium'}`}>
+                    Nexora {clinicConfig.specialty}
                   </div>
                 </div>
               </div>
@@ -2857,12 +3056,12 @@ export default function Dashboard() {
             {isAccountMenuOpen && (
               <div className={`absolute top-[86px] left-3 w-[260px] rounded-[12px] shadow-[0_12px_40px_rgba(0,0,0,0.15)] flex flex-col z-[100] py-2 border transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
                 <div className="px-5 py-4 pb-2 flex flex-col items-center">
-                  <NexoraLogo size={48} className="mb-3" />
+                  <NexoraLogo size={48} className="mb-3" color={currentSpecialtyConfig.primaryColor} />
                   <div className={`text-[15px] font-bold text-center w-full truncate ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
-                    {clinicConfig.name}
+                    {currentSpecialtyConfig.productName}
                   </div>
-                  <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#008477]/10 text-[#008477] text-[10px] font-black uppercase tracking-wider rounded mt-2 mb-4">
-                    Plan {clinicConfig.plan}
+                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded mt-2 mb-4 bg-gray-500/10 text-gray-500`}>
+                    Modo {clinicConfig.specialty}
                   </div>
                 </div>
                 
@@ -2918,9 +3117,27 @@ export default function Dashboard() {
               onClick={() => handleMenuClick('inicio')}
               className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-[4px] font-semibold text-[13px] transition-colors ${activeView === 'inicio' ? (isDarkMode ? 'bg-[#334155] text-white' : 'bg-[#e3e8ee] text-[#000000]') : (isDarkMode ? 'text-gray-400 hover:text-white hover:bg-[#334155]' : 'text-[#425466] hover:text-[#1a1f36] hover:bg-[#e3e8ee]')}`}
             >
-              <Home className={`w-4 h-4 ${activeView === 'inicio' ? (isDarkMode ? 'text-blue-400' : 'text-[#5469d4]') : 'text-[#8792a2]'}`} />
+              <Home className={`w-4 h-4 ${activeView === 'inicio' ? (isDarkMode ? 'text-blue-400' : currentSpecialtyConfig.accentColor) : 'text-[#8792a2]'}`} />
               Inicio
             </button>
+
+            {currentSpecialtyConfig.specializedItems.length > 0 && (
+              <>
+                <div className={`mt-6 mb-2 px-3 text-[11px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-[#8792a2]'}`}>Herramientas {clinicConfig.specialty}</div>
+                {currentSpecialtyConfig.specializedItems.map(item => (
+                  <button 
+                    key={item.id}
+                    onClick={() => handleMenuClick(item.id)} 
+                    className={`w-full flex items-center justify-between px-3 py-1.5 rounded-[4px] font-medium text-[13px] transition-colors ${activeView === item.id ? (isDarkMode ? 'bg-[#334155] text-white' : 'bg-[#e3e8ee] text-[#000000]') : (isDarkMode ? 'text-gray-400 hover:text-white hover:bg-[#334155]' : 'text-[#425466] hover:text-[#1a1f36] hover:bg-[#e3e8ee]')}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`${activeView === item.id ? currentSpecialtyConfig.accentColor : 'text-[#8792a2]'}`}>{item.icon}</div>
+                      {item.label}
+                    </div>
+                  </button>
+                ))}
+              </>
+            )}
 
             <div className={`mt-6 mb-2 px-3 text-[11px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-[#8792a2]'}`}>Gestión Principal</div>
             {[
@@ -3037,7 +3254,7 @@ export default function Dashboard() {
               <div ref={globalAddRef} className="relative">
                 <div 
                   onClick={() => setIsGlobalAddOpen(!isGlobalAddOpen)}
-                  className="hidden md:flex w-[28px] h-[28px] bg-[#5469d4] text-white rounded-full items-center justify-center cursor-pointer shadow-sm hover:opacity-90 ml-1"
+                  className={`hidden md:flex w-[28px] h-[28px] ${currentSpecialtyConfig.secondaryColor} text-white rounded-full items-center justify-center cursor-pointer shadow-sm hover:opacity-90 ml-1`}
                 >
                   <Plus className={`w-4 h-4 transition-transform ${isGlobalAddOpen ? 'rotate-45' : ''}`} />
                 </div>

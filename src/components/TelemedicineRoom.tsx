@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Video, Mic, MicOff, VideoOff, PhoneCall, Users, Clock, ShieldCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Video, Mic, MicOff, VideoOff, PhoneCall, Users, Clock, ShieldCheck, User } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export function TelemedicineRoom({ isDarkMode, onEndCall, appointmentInfo }: { isDarkMode: boolean, onEndCall: () => void, appointmentInfo?: any }) {
   const localVideoRef = useRef<HTMLVideoElement>(null);
