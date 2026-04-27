@@ -19,6 +19,7 @@ import {
   Play,
   FileText,
   Clock,
+  Quote,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { NexoraLogo } from '../components/NexoraLogo';
@@ -29,12 +30,14 @@ interface SpecialtyData {
   title: string;
   subtitle: string;
   description: string;
+  image: string;
   features: {
     title: string;
     description: string;
     icon: React.ReactNode;
   }[];
   benefits: string[];
+  testimonial?: { quote: string; name: string; role: string };
 }
 
 const specialties: Record<string, SpecialtyData> = {
@@ -44,6 +47,14 @@ const specialties: Record<string, SpecialtyData> = {
     subtitle: 'Odontograma digital y presupuestos por fases',
     description:
       'Plataforma diseñada para odontología, con herramientas específicas y datos aislados de otras especialidades.',
+    image:
+      'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&q=80&w=1600',
+    testimonial: {
+      quote:
+        'Pasamos de Excel a Nexora en una semana. Las cancelaciones se cubren solas y mi equipo recupera horas cada día.',
+      name: 'Dra. Marta Rivas',
+      role: 'Directora · Clínica Dental Rivas',
+    },
     features: [
       {
         title: 'Odontograma digital',
@@ -72,6 +83,14 @@ const specialties: Record<string, SpecialtyData> = {
     subtitle: 'Planes de dieta y seguimiento antropométrico',
     description:
       'Un entorno enfocado en métricas corporales y planes nutricionales, sin funciones que no usarás.',
+    image:
+      'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=1600',
+    testimonial: {
+      quote:
+        'El portal de recetas y la báscula sincronizada hacen que el paciente vea su evolución y se enganche al plan.',
+      name: 'Sofía Martínez',
+      role: 'Nutricionista clínica',
+    },
     features: [
       {
         title: 'Diseñador de dietas IA',
@@ -97,6 +116,14 @@ const specialties: Record<string, SpecialtyData> = {
     subtitle: 'Mapa de dolor y pautas de rehabilitación',
     description:
       'Plataforma dedicada a la rehabilitación: tu equipo trabaja sin distracciones de otras especialidades.',
+    image:
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&q=80&w=1600',
+    testimonial: {
+      quote:
+        'El mapa de dolor es brutal. Los pacientes ven la evolución sesión a sesión y la adherencia sube muchísimo.',
+      name: 'Iván López',
+      role: 'Fisioterapeuta · Centro Movimiento',
+    },
     features: [
       {
         title: 'Mapa de dolor',
@@ -122,6 +149,14 @@ const specialties: Record<string, SpecialtyData> = {
     subtitle: 'Confidencialidad absoluta y notas dinámicas',
     description:
       'Entorno blindado y aislado para que tus notas terapéuticas vivan en una instancia separada.',
+    image:
+      'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=1600',
+    testimonial: {
+      quote:
+        'Las notas cifradas y el doble factor me dan tranquilidad absoluta con datos tan sensibles como los que manejo.',
+      name: 'Carla Domínguez',
+      role: 'Psicóloga clínica',
+    },
     features: [
       {
         title: 'Notas cifradas',
@@ -147,6 +182,14 @@ const specialties: Record<string, SpecialtyData> = {
     subtitle: 'Control de tratamientos y galería fotográfica',
     description:
       'Plataforma para flujos de estética, con base de datos propia para fotos evolutivas e inventario.',
+    image:
+      'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=1600',
+    testimonial: {
+      quote:
+        'El antes/después alineado y el control de viales son justo lo que pedíamos. Profesional y bonito.',
+      name: 'Dra. Patricia Soler',
+      role: 'Clínica Estética Soler',
+    },
     features: [
       {
         title: 'Tracking fotográfico',
@@ -172,6 +215,14 @@ const specialties: Record<string, SpecialtyData> = {
     subtitle: 'Un sistema universal para múltiples especialidades',
     description:
       'Plataforma multi-especialidad modular para centros que combinan varias ramas clínicas.',
+    image:
+      'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1600',
+    testimonial: {
+      quote:
+        'Tenemos pediatría, ginecología y medicina interna en el mismo centro. Nexora se adapta a cada uno sin pelearse.',
+      name: 'Dr. Andrés Quevedo',
+      role: 'Director médico · Centro Vital',
+    },
     features: [
       {
         title: 'Historia clínica universal',
@@ -197,6 +248,14 @@ const specialties: Record<string, SpecialtyData> = {
     subtitle: 'Tus pacientes gestionan su salud bajo tu marca',
     description:
       'Aplicación móvil independiente conectada al backend de tu clínica, personalizable con tu identidad.',
+    image:
+      'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&q=80&w=1600',
+    testimonial: {
+      quote:
+        'Los pacientes hacen check-in solos y consultan recetas desde el móvil. Recepción se ha descongestionado del todo.',
+      name: 'Equipo de Clínica Aurora',
+      role: 'Recepción y administración',
+    },
     features: [
       {
         title: 'Self check-in',
@@ -241,7 +300,7 @@ export default function SpecialtyLanding() {
 
       {/* Hero */}
       <section className="pt-32 pb-16 lg:pt-40 lg:pb-24">
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-6xl mx-auto px-6">
           <motion.button
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -250,58 +309,85 @@ export default function SpecialtyLanding() {
           >
             ← Volver a Nexora
           </motion.button>
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#008477]/8 text-[#008477] text-[12px] font-medium mb-6"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#008477]" />
-            {data.subtitle}
-          </motion.div>
-          <motion.h1
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.05 }}
-            className="text-[40px] sm:text-[52px] lg:text-[60px] leading-[1.05] font-semibold tracking-tight text-slate-900 max-w-3xl"
-          >
-            {data.title}
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="mt-6 text-lg text-slate-600 leading-relaxed max-w-2xl"
-          >
-            {data.description}
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="mt-8 flex flex-col sm:flex-row gap-3"
-          >
-            <button
-              onClick={() => navigate(`/dashboard?specialty=${specialty}`)}
-              className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-slate-900 text-white text-[15px] font-medium hover:bg-[#008477] transition-colors"
+
+          <div className="grid lg:grid-cols-[1.15fr_1fr] gap-12 lg:gap-16 items-center">
+            <div>
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#008477]/8 text-[#008477] text-[12px] font-medium mb-6"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-[#008477]" />
+                {data.subtitle}
+              </motion.div>
+              <motion.h1
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.05 }}
+                className="text-[36px] sm:text-[44px] lg:text-[52px] leading-[1.05] font-semibold tracking-tight text-slate-900"
+              >
+                {data.title}
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="mt-6 text-lg text-slate-600 leading-relaxed"
+              >
+                {data.description}
+              </motion.p>
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.15 }}
+                className="mt-8 flex flex-col sm:flex-row gap-3"
+              >
+                <button
+                  onClick={() => navigate(`/dashboard?specialty=${specialty}`)}
+                  className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-slate-900 text-white text-[15px] font-medium hover:bg-[#008477] transition-colors"
+                >
+                  Empezar gratis
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => navigate('/')}
+                  className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-700 text-[15px] font-medium ring-1 ring-slate-200 hover:ring-slate-300 transition-colors"
+                >
+                  Ver precios
+                </button>
+              </motion.div>
+              <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-slate-500">
+                {data.benefits.map((b) => (
+                  <span key={b} className="inline-flex items-center gap-1.5">
+                    <Check className="w-4 h-4 text-[#008477]" />
+                    {b}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="relative"
             >
-              Empezar gratis
-              <ArrowRight className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => navigate('/')}
-              className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-700 text-[15px] font-medium ring-1 ring-slate-200 hover:ring-slate-300 transition-colors"
-            >
-              Ver precios
-            </button>
-          </motion.div>
-          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-slate-500">
-            {data.benefits.map((b) => (
-              <span key={b} className="inline-flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-[#008477]" />
-                {b}
-              </span>
-            ))}
+              <div className="absolute -inset-x-4 -inset-y-4 lg:-inset-x-8 lg:-inset-y-8 -z-10 rounded-[32px] bg-gradient-to-br from-[#008477]/10 via-transparent to-transparent blur-2xl" />
+              <div className="relative aspect-[4/5] rounded-2xl overflow-hidden ring-1 ring-slate-200/70 bg-slate-100">
+                <img
+                  src={data.image}
+                  alt={data.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-slate-900/70 via-slate-900/30 to-transparent">
+                  <div className="text-white text-[12px] font-semibold uppercase tracking-[0.14em]">
+                    {data.brandName}
+                  </div>
+                  <div className="text-white/90 text-[14px]">{data.subtitle}</div>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -333,6 +419,35 @@ export default function SpecialtyLanding() {
           </div>
         </div>
       </section>
+
+      {/* Testimonial */}
+      {data.testimonial && (
+        <section className="py-20 lg:py-24">
+          <div className="max-w-3xl mx-auto px-6">
+            <div className="p-8 lg:p-10 rounded-2xl bg-white ring-1 ring-slate-200/70">
+              <Quote className="w-6 h-6 text-[#008477] mb-4" />
+              <p className="text-[18px] lg:text-[20px] leading-relaxed text-slate-800 font-medium">
+                “{data.testimonial.quote}”
+              </p>
+              <div className="mt-6 pt-6 border-t border-slate-100 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-slate-100 text-[13px] font-semibold text-slate-600 flex items-center justify-center">
+                  {data.testimonial.name
+                    .split(' ')
+                    .map((p) => p[0])
+                    .slice(0, 2)
+                    .join('')}
+                </div>
+                <div>
+                  <div className="text-[14px] font-semibold text-slate-900">
+                    {data.testimonial.name}
+                  </div>
+                  <div className="text-[13px] text-slate-500">{data.testimonial.role}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section className="py-20 lg:py-28">

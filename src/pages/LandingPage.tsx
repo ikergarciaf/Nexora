@@ -16,6 +16,10 @@ import {
   Camera,
   Stethoscope,
   Smartphone,
+  Quote,
+  X,
+  MessageCircle,
+  Zap,
 } from 'lucide-react';
 import { FrontendNavbar } from '../components/FrontendNavbar';
 import { NexoraLogo } from '../components/NexoraLogo';
@@ -25,6 +29,7 @@ type SpecialtyCard = {
   name: string;
   description: string;
   icon: React.ReactNode;
+  image: string;
 };
 
 const SPECIALTIES: SpecialtyCard[] = [
@@ -33,43 +38,109 @@ const SPECIALTIES: SpecialtyCard[] = [
     name: 'Clínicas dentales',
     description: 'Odontograma digital, presupuestos por fases y firma online.',
     icon: <Smile className="w-5 h-5" />,
+    image:
+      'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&q=80&w=1200',
   },
   {
     slug: 'fisioterapia',
     name: 'Fisioterapia',
     description: 'Mapa de dolor, bonos de sesiones y planes de ejercicio.',
     icon: <Heart className="w-5 h-5" />,
+    image:
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&q=80&w=1200',
   },
   {
     slug: 'psicologos',
     name: 'Psicología',
     description: 'Notas cifradas, escalas DSM-V y teleconsulta segura.',
     icon: <Brain className="w-5 h-5" />,
+    image:
+      'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=1200',
   },
   {
     slug: 'nutricion',
     name: 'Nutrición',
     description: 'Diseñador de dietas IA, antropometría y portal de recetas.',
     icon: <Apple className="w-5 h-5" />,
+    image:
+      'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=1200',
   },
   {
     slug: 'estetica',
     name: 'Medicina estética',
     description: 'Antes y después fotográfico, lotes y CRM de fidelización.',
     icon: <Camera className="w-5 h-5" />,
+    image:
+      'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=1200',
   },
   {
     slug: 'general',
     name: 'Policlínica general',
     description: 'Historia clínica universal, receta electrónica y CIE-10.',
     icon: <Stethoscope className="w-5 h-5" />,
+    image:
+      'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200',
   },
   {
     slug: 'app-clientes',
     name: 'App para pacientes',
     description: 'Marca blanca con self-checkin, carpeta de salud y reservas.',
     icon: <Smartphone className="w-5 h-5" />,
+    image:
+      'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&q=80&w=1200',
   },
+];
+
+const TESTIMONIALS = [
+  {
+    quote:
+      'Hemos pasado de Excel y agendas en papel a tener todo en Nexora. Las cancelaciones se cubren solas y mi equipo recupera 6 horas a la semana.',
+    name: 'Dra. Marta Rivas',
+    role: 'Directora · Clínica Dental Rivas',
+    specialty: 'Dental',
+  },
+  {
+    quote:
+      'El mapa de dolor es brutal. Mis pacientes ven la evolución sesión a sesión y eso aumenta la adherencia al tratamiento muchísimo.',
+    name: 'Iván López',
+    role: 'Fisioterapeuta · Centro Movimiento',
+    specialty: 'Fisioterapia',
+  },
+  {
+    quote:
+      'Las notas terapéuticas cifradas me dan tranquilidad. Y la teleconsulta no necesita instalar nada, mis pacientes mayores la usan sin problemas.',
+    name: 'Carla Domínguez',
+    role: 'Psicóloga clínica',
+    specialty: 'Psicología',
+  },
+];
+
+const INTEGRATIONS = [
+  { name: 'Stripe', tag: 'Cobros y suscripciones' },
+  { name: 'WhatsApp', tag: 'Recordatorios al paciente' },
+  { name: 'Google Calendar', tag: 'Agenda sincronizada' },
+  { name: 'Verifactu', tag: 'Facturación electrónica' },
+  { name: 'Zoom', tag: 'Teleconsulta' },
+  { name: 'Outlook', tag: 'Email del equipo' },
+];
+
+const COMPARISON = [
+  { feature: 'Específico por especialidad', nexora: true, excel: false, generico: false },
+  { feature: 'Recordatorios automáticos', nexora: true, excel: false, generico: true },
+  { feature: 'Firma digital de consentimientos', nexora: true, excel: false, generico: false },
+  { feature: 'IA clínica integrada', nexora: true, excel: false, generico: false },
+  { feature: 'Datos cifrados en la UE', nexora: true, excel: false, generico: true },
+  { feature: 'Sin permanencia', nexora: true, excel: true, generico: false },
+  { feature: 'Migración asistida en 48h', nexora: true, excel: false, generico: false },
+];
+
+const CLIENT_LOGOS = [
+  'Clínica Aurora',
+  'Centro Médico Vital',
+  'Dental Rivas',
+  'Movimiento Fisio',
+  'Nutri+',
+  'Clínica Estética Soler',
 ];
 
 const FEATURES = [
@@ -285,6 +356,25 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Trust bar */}
+      <section className="py-12 border-y border-slate-200/70 bg-white">
+        <div className="max-w-6xl mx-auto px-6">
+          <p className="text-center text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-400 mb-6">
+            Construido junto a clínicas reales en España
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-y-4 gap-x-8 items-center">
+            {CLIENT_LOGOS.map((name) => (
+              <div
+                key={name}
+                className="text-center text-[13.5px] font-semibold tracking-tight text-slate-400/90 hover:text-slate-600 transition-colors"
+              >
+                {name}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Specialties */}
       <section id="especialidades" className="py-20 lg:py-28 bg-slate-50/60 border-y border-slate-200/70">
         <div className="max-w-6xl mx-auto px-6">
@@ -301,23 +391,75 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {SPECIALTIES.map((s) => (
               <button
                 key={s.slug}
                 onClick={() => navigate(`/soluciones/${s.slug}`)}
-                className="group relative text-left p-6 rounded-xl bg-white ring-1 ring-slate-200/70 hover:ring-[#008477]/40 hover:shadow-sm transition-all"
+                className="group relative text-left rounded-xl bg-white ring-1 ring-slate-200/70 hover:ring-[#008477]/40 hover:shadow-sm transition-all overflow-hidden flex flex-col"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-9 h-9 rounded-lg bg-[#008477]/10 text-[#008477] flex items-center justify-center">
+                <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+                  <img
+                    src={s.image}
+                    alt={s.name}
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent" />
+                  <div className="absolute top-3 left-3 w-8 h-8 rounded-lg bg-white/90 backdrop-blur text-[#008477] flex items-center justify-center ring-1 ring-white">
                     {s.icon}
                   </div>
-                  <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-[#008477] group-hover:translate-x-0.5 transition-all" />
                 </div>
-                <h3 className="font-semibold text-[16px] text-slate-900 mb-1">{s.name}</h3>
-                <p className="text-[13.5px] text-slate-500 leading-relaxed">{s.description}</p>
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-start justify-between mb-1.5 gap-2">
+                    <h3 className="font-semibold text-[16px] text-slate-900">{s.name}</h3>
+                    <ArrowRight className="w-4 h-4 mt-1 text-slate-300 group-hover:text-[#008477] group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </div>
+                  <p className="text-[13.5px] text-slate-500 leading-relaxed">{s.description}</p>
+                </div>
               </button>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Comparison */}
+      <section className="py-20 lg:py-28">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="max-w-2xl mb-12">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#008477] mb-3">
+              ¿Por qué Nexora?
+            </p>
+            <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900">
+              Específico para tu especialidad
+            </h2>
+            <p className="mt-4 text-slate-600 leading-relaxed">
+              Una herramienta hecha para clínicas: con módulos pensados por especialidad, sin
+              renunciar a la simpleza de un Excel ni a la potencia de un software médico.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto rounded-xl ring-1 ring-slate-200/70 bg-white">
+            <table className="w-full text-left text-[14px] min-w-[640px]">
+              <thead className="bg-slate-50/70 text-[12px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                <tr>
+                  <th className="py-4 px-5 font-semibold">Característica</th>
+                  <th className="py-4 px-5 font-semibold text-[#008477]">Nexora</th>
+                  <th className="py-4 px-5 font-semibold">Excel / papel</th>
+                  <th className="py-4 px-5 font-semibold">Software genérico</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {COMPARISON.map((row) => (
+                  <tr key={row.feature}>
+                    <td className="py-4 px-5 text-slate-700">{row.feature}</td>
+                    <td className="py-4 px-5">{cell(row.nexora, true)}</td>
+                    <td className="py-4 px-5">{cell(row.excel, false)}</td>
+                    <td className="py-4 px-5">{cell(row.generico, false)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -375,6 +517,41 @@ export default function LandingPage() {
                 </div>
                 <h3 className="font-semibold text-[16px] text-slate-900 mb-1.5">{f.title}</h3>
                 <p className="text-[14px] text-slate-500 leading-relaxed">{f.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Integrations */}
+      <section className="py-20 lg:py-28">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="max-w-2xl mb-12">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#008477] mb-3">
+              Conectado con tu stack
+            </p>
+            <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900">
+              Integraciones que ya usas
+            </h2>
+            <p className="mt-4 text-slate-600 leading-relaxed">
+              Nexora habla con las herramientas con las que ya trabajas. Cobros, agenda,
+              recordatorios y facturación electrónica sincronizados.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {INTEGRATIONS.map((it) => (
+              <div
+                key={it.name}
+                className="flex items-center gap-4 p-4 rounded-xl bg-white ring-1 ring-slate-200/70 hover:ring-slate-300 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-lg bg-slate-50 ring-1 ring-slate-200/70 flex items-center justify-center text-[12px] font-semibold text-slate-700">
+                  {it.name.charAt(0)}
+                </div>
+                <div>
+                  <div className="text-[14px] font-semibold text-slate-900">{it.name}</div>
+                  <div className="text-[12.5px] text-slate-500">{it.tag}</div>
+                </div>
               </div>
             ))}
           </div>
@@ -452,8 +629,52 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Testimonials */}
+      <section className="py-20 lg:py-28 bg-slate-50/60 border-y border-slate-200/70">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="max-w-2xl mb-12">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#008477] mb-3">
+              Lo que dicen las clínicas
+            </p>
+            <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900">
+              Profesionales que ya trabajan con Nexora
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            {TESTIMONIALS.map((t) => (
+              <div
+                key={t.name}
+                className="p-6 rounded-xl bg-white ring-1 ring-slate-200/70 flex flex-col"
+              >
+                <Quote className="w-5 h-5 text-[#008477] mb-4" />
+                <p className="text-[14.5px] text-slate-700 leading-relaxed flex-1">
+                  “{t.quote}”
+                </p>
+                <div className="mt-6 pt-5 border-t border-slate-100 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-slate-100 text-[12px] font-semibold text-slate-600 flex items-center justify-center">
+                    {t.name
+                      .split(' ')
+                      .map((p) => p[0])
+                      .slice(0, 2)
+                      .join('')}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[13.5px] font-semibold text-slate-900">{t.name}</div>
+                    <div className="text-[12.5px] text-slate-500">{t.role}</div>
+                  </div>
+                  <span className="text-[11px] font-semibold text-[#008477] bg-[#008477]/8 px-2 py-0.5 rounded">
+                    {t.specialty}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* FAQ */}
-      <section id="faq" className="py-20 lg:py-28 bg-slate-50/60 border-t border-slate-200/70">
+      <section id="faq" className="py-20 lg:py-28">
         <div className="max-w-3xl mx-auto px-6">
           <div className="mb-10">
             <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#008477] mb-3">
@@ -493,6 +714,42 @@ export default function LandingPage() {
                 </button>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* Demo banner */}
+      <section className="py-20 lg:py-24 bg-slate-50/60 border-y border-slate-200/70">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="rounded-2xl bg-white ring-1 ring-slate-200/70 p-8 lg:p-10 flex flex-col lg:flex-row items-start lg:items-center gap-6 lg:gap-10">
+            <div className="w-12 h-12 rounded-xl bg-[#008477]/10 text-[#008477] flex items-center justify-center shrink-0">
+              <Zap className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl lg:text-2xl font-semibold tracking-tight text-slate-900">
+                ¿Prefieres que te lo enseñemos?
+              </h3>
+              <p className="mt-2 text-[14.5px] text-slate-600 leading-relaxed">
+                Reserva una demo personalizada de 20 minutos. Te mostramos Nexora con un caso de
+                tu especialidad y te ayudamos a migrar tus datos en 48h.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 lg:shrink-0">
+              <a
+                href="mailto:hola@nexora.co?subject=Demo%20personalizada%20Nexora"
+                className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-slate-900 text-white text-[14px] font-medium hover:bg-[#008477] transition-colors"
+              >
+                Reservar demo <ArrowRight className="w-4 h-4" />
+              </a>
+              <a
+                href="https://wa.me/34000000000?text=Hola%2C%20quiero%20más%20info%20de%20Nexora"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-white text-slate-700 text-[14px] font-medium ring-1 ring-slate-200 hover:ring-slate-300 transition-colors"
+              >
+                <MessageCircle className="w-4 h-4 text-emerald-600" /> WhatsApp
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -584,6 +841,84 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      <FloatingContact />
+    </div>
+  );
+}
+
+function cell(value: boolean, highlight: boolean) {
+  if (value) {
+    return (
+      <span
+        className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${
+          highlight ? 'bg-[#008477]/10 text-[#008477]' : 'bg-emerald-50 text-emerald-600'
+        }`}
+      >
+        <Check className="w-3.5 h-3.5" />
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-400">
+      <X className="w-3.5 h-3.5" />
+    </span>
+  );
+}
+
+function FloatingContact() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="fixed bottom-5 right-5 z-[90]">
+      {open && (
+        <motion.div
+          initial={{ opacity: 0, y: 8, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          className="mb-3 w-72 rounded-2xl bg-white shadow-xl ring-1 ring-slate-200/80 p-4"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center">
+              <MessageCircle className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-[14px] font-semibold text-slate-900">¿Hablamos?</div>
+              <div className="text-[12px] text-slate-500">Respondemos en minutos</div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <a
+              href="https://wa.me/34000000000?text=Hola%2C%20quiero%20m%C3%A1s%20info%20de%20Nexora"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-between gap-3 p-2.5 rounded-lg ring-1 ring-slate-200 hover:bg-slate-50 transition-colors"
+            >
+              <span className="text-[13.5px] font-medium text-slate-800">WhatsApp</span>
+              <ArrowRight className="w-4 h-4 text-slate-400" />
+            </a>
+            <a
+              href="mailto:hola@nexora.co?subject=Consulta%20Nexora"
+              className="flex items-center justify-between gap-3 p-2.5 rounded-lg ring-1 ring-slate-200 hover:bg-slate-50 transition-colors"
+            >
+              <span className="text-[13.5px] font-medium text-slate-800">Email</span>
+              <ArrowRight className="w-4 h-4 text-slate-400" />
+            </a>
+            <a
+              href="mailto:hola@nexora.co?subject=Demo%20personalizada%20Nexora"
+              className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-slate-900 text-white hover:bg-[#008477] transition-colors"
+            >
+              <span className="text-[13.5px] font-medium">Reservar demo</span>
+              <ArrowRight className="w-4 h-4" />
+            </a>
+          </div>
+        </motion.div>
+      )}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-label={open ? 'Cerrar contacto' : 'Abrir contacto'}
+        className="w-12 h-12 rounded-full bg-emerald-500 text-white shadow-lg hover:bg-emerald-600 transition-colors flex items-center justify-center"
+      >
+        {open ? <X className="w-5 h-5" /> : <MessageCircle className="w-5 h-5" />}
+      </button>
     </div>
   );
 }
