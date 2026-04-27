@@ -21,21 +21,33 @@ model Tenant {
   appointments         Appointment[]
   invoices             Invoice[]
   patients             Patient[]
-  users                User[]
+  memberships          TenantUser[]
   rooms                Room[]
   shifts               Shift[]
 }
 
 model User {
-  id           String  @id @default(uuid())
-  tenantId     String
-  email        String  @unique
-  passwordHash String
-  role         String  @default("STAFF")
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String?
+  googleId     String?
   name         String
-  isActive     Boolean @default(true)
-  tenant       Tenant  @relation(fields: [tenantId], references: [id])
+  isActive     Boolean       @default(true)
+  isSuperAdmin Boolean       @default(false)
+  memberships  TenantUser[]
   shifts       Shift[]
+}
+
+model TenantUser {
+  id       String @id @default(uuid())
+  userId   String
+  tenantId String
+  role     String @default("OWNER") // OWNER, STAFF
+  
+  user     User   @relation(fields: [userId], references: [id])
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([userId, tenantId])
 }
 
 model Patient {

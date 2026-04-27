@@ -12,6 +12,7 @@ export function useStaffData() {
     try {
       const token = localStorage.getItem('clinic_token');
       const headers = { 
+        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
         'Authorization': `Bearer ${token || 'demo-token'}`,
         'Content-Type': 'application/json'
       };
@@ -43,7 +44,8 @@ export async function createShiftApi(data: any) {
     method: 'POST',
     headers: { 
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token || 'demo-token'}` 
+      'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
+        'Authorization': `Bearer ${token || 'demo-token'}` 
     },
     body: JSON.stringify(data)
   });
@@ -56,7 +58,8 @@ export async function deleteShiftApi(id: string) {
   const response = await fetch(`/api/staff/shifts/${id}`, {
     method: 'DELETE',
     headers: {
-      'Authorization': `Bearer ${token || 'demo-token'}`
+      'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
+        'Authorization': `Bearer ${token || 'demo-token'}`
     }
   });
   if (!response.ok) throw new Error('Failed to delete shift');
@@ -69,7 +72,8 @@ export async function createRoomApi(data: any) {
     method: 'POST',
     headers: { 
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token || 'demo-token'}` 
+      'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
+        'Authorization': `Bearer ${token || 'demo-token'}` 
     },
     body: JSON.stringify(data)
   });
@@ -83,7 +87,8 @@ export async function updateRoomApi(id: string, data: any) {
     method: 'PUT',
     headers: { 
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token || 'demo-token'}` 
+      'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
+        'Authorization': `Bearer ${token || 'demo-token'}` 
     },
     body: JSON.stringify(data)
   });
@@ -96,7 +101,8 @@ export async function deleteRoomApi(id: string) {
   const response = await fetch(`/api/staff/rooms/${id}`, {
     method: 'DELETE',
     headers: {
-      'Authorization': `Bearer ${token || 'demo-token'}`
+      'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
+        'Authorization': `Bearer ${token || 'demo-token'}`
     }
   });
   if (!response.ok) throw new Error('Failed to delete room');

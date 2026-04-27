@@ -8,8 +8,13 @@ import prisma from '../db.ts';
 export const requireActiveSubscription = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     if (!req.user || !req.user.tenantId) {
+      // Allow super admins to skip tenant check temporarily? No, they still need a tenantId to access tenant data.
       res.status(401).json({ error: 'Authentication required' });
       return;
+    }
+
+    if (req.user.isSuperAdmin) {
+      return next();
     }
 
     // Skip DB check if DB is not configured (Mock/Preview Mode constraint)

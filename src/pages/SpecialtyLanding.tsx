@@ -10,10 +10,12 @@ import { motion } from 'motion/react';
 import { NexoraLogo } from '../components/NexoraLogo';
 
 interface SpecialtyData {
+  brandName?: string;
   title: string;
   subtitle: string;
   description: string;
   heroImage: string;
+  imageClassName?: string;
   features: {
     title: string;
     description: string;
@@ -24,10 +26,11 @@ interface SpecialtyData {
 
 const specialties: Record<string, SpecialtyData> = {
   'dental': {
-    title: "Software Gestión Clínica Dental",
+    brandName: 'Nexora Dental',
+    title: "SaaS Independiente para Clínicas Dentales",
     subtitle: "El odontograma digital que estabas esperando",
-    description: "Digitaliza tu clínica dental con Nexora. Gestión de piezas dentales, presupuestos complejos y recordatorios de citas con IA.",
-    heroImage: "https://images.unsplash.com/photo-1606811841660-1b5168c5c2b4?auto=format&fit=crop&q=80&w=1000",
+    description: "Plataforma construida de cero para odontología. Aislamiento total de datos y base de datos autónoma para tu especialidad.",
+    heroImage: "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&q=80&w=1200",
     features: [
       { title: "Odontograma Digital", description: "Visualización interactiva FDI (11-48) para marcar caries, ausencias y tratamientos en segundos.", icon: <Smile className="w-6 h-6 text-[#008477]" /> },
       { title: "Presupuestos por Fases", description: "Agrupa tratamientos, aplica descuentos y envía el presupuesto al móvil del paciente para firma digital.", icon: <BarChart3 className="w-6 h-6 text-[#008477]" /> },
@@ -36,10 +39,11 @@ const specialties: Record<string, SpecialtyData> = {
     benefits: ["Sincronización con Rayos X", "Firma SEPA digital", "Gestión de laboratorios"]
   },
   'nutricion': {
-    title: "Software para Nutricionistas",
+    brandName: 'Nexora Nutrición',
+    title: "SaaS de Seguimiento Nutricional",
     subtitle: "Planes de dieta y seguimiento antropométrico",
-    description: "Tus pacientes alcanzarán sus objetivos más rápido con herramientas de seguimiento personalizadas y planes dinámicos.",
-    heroImage: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=1000",
+    description: "Un entorno 100% aislado enfocado en métricas corporales y planes. No es una adaptación general, es software sólo para ti.",
+    heroImage: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=1200",
     features: [
       { title: "Diseñador de Dietas IA", description: "Genera propuestas de menús equilibrados basados en las preferencias y alergias del paciente.", icon: <Apple className="w-6 h-6 text-[#008477]" /> },
       { title: "Bioimpedancia Integrada", description: "Importa datos de básculas inteligentes y visualiza la evolución de masa muscular y grasa.", icon: <Activity className="w-6 h-6 text-[#008477]" /> },
@@ -48,10 +52,12 @@ const specialties: Record<string, SpecialtyData> = {
     benefits: ["Base de datos USDA/Atwater", "Exportación PDF premium", "Recordatorios de hidratación"]
   },
   'fisioterapia': {
-    title: "Software Clínica Fisioterapia",
+    brandName: 'Nexora Fisioterapia',
+    title: "SaaS para Clínicas de Fisioterapia",
     subtitle: "Mapa de dolor y pautas de rehabilitación",
-    description: "Identifica y trata lesiones de forma visual. El historial clínico que tus fisios realmente usarán.",
-    heroImage: "https://images.unsplash.com/photo-1576091160550-217359f4ecf8?auto=format&fit=crop&q=80&w=1000",
+    description: "Plataforma independiente dedicada a la rehabilitación. Ecosistema separado sin herramientas clínicas que nunca vas a usar.",
+    heroImage: "https://logrono.fisio-clinics.com/sites/default/files/field/image/fisioterapeuta-en-terapia.jpeg",
+    imageClassName: "object-top",
     features: [
       { title: "Mapa de Dolor Palpable", description: "Localiza el origen del dolor y registra la intensidad en cada sesión para ver la evolución real.", icon: <Heart className="w-6 h-6 text-[#008477]" /> },
       { title: "Prescripción de Ejercicio", description: "Envía rutinas de rehabilitación con videos en HD para que el paciente entrene correctamente en casa.", icon: <Play className="w-6 h-6 text-[#008477]" /> },
@@ -60,10 +66,11 @@ const specialties: Record<string, SpecialtyData> = {
     benefits: ["Informes biomecánicos", "Recordatorios de ejercicios", "Facturación Fisiocare"]
   },
   'psicologos': {
-    title: "Software para Psicólogos",
+    brandName: 'Nexora Psicología',
+    title: "SaaS de Gestión Psicológica",
     subtitle: "Confidencialidad absoluta y notas dinámicas",
-    description: "Céntrate en el proceso terapéutico mientras Nexora se encarga de la gestión y la facturación segura.",
-    heroImage: "https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=1000",
+    description: "Entorno blindado y 100% independiente. Tus notas terapéuticas residen en una instancia aislada para garantizar máxima privacidad.",
+    heroImage: "https://images.unsplash.com/photo-1527689368864-3a821dbccc34?auto=format&fit=crop&q=80&w=1200",
     features: [
       { title: "Notas Terapéuticas Cifradas", description: "Separación clara entre notas clínicas y notas personales bajo doble factor de autenticación.", icon: <Shield className="w-6 h-6 text-[#008477]" /> },
       { title: "Teleconsulta HD", description: "Sala de video cifrada de extremo a extremo sin necesidad de instalar software adicional.", icon: <Monitor className="w-6 h-6 text-[#008477]" /> },
@@ -72,10 +79,11 @@ const specialties: Record<string, SpecialtyData> = {
     benefits: ["Doble cifrado AES-256", "Gestión de grupos (taller)", "Plantillas DSM-V"]
   },
   'estetica': {
-    title: "Software Clínica Estética",
+    brandName: 'Nexora Estética',
+    title: "SaaS Autónomo de Medicina Estética",
     subtitle: "Control de tratamientos y galería de fotos",
-    description: "Gestiona protocolos de belleza, control de stock y seguimiento fotográfico de tus tratamientos.",
-    heroImage: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=1000",
+    description: "Plataforma construida para flujos de estética. Base de datos propia para fotos evolutivas y control de inventario especializado.",
+    heroImage: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=1200",
     features: [
       { title: "Tracking Fotográfico", description: "Comparativa 'Antes y Después' con herramientas de alineación para resultados profesionales.", icon: <Camera className="w-6 h-6 text-[#008477]" /> },
       { title: "Trazabilidad de Productos", description: "Control de lotes y caducidades de viales y productos estéticos de forma sencilla.", icon: <Database className="w-6 h-6 text-[#008477]" /> },
@@ -84,10 +92,11 @@ const specialties: Record<string, SpecialtyData> = {
     benefits: ["Firma consentimientos", "Venta online de productos", "Control de aparatología"]
   },
   'general': {
-    title: "Gestión Médica General",
+    brandName: 'Nexora Clinical',
+    title: "SaaS Integral Policlínica",
     subtitle: "Un sistema universal para cualquier especialidad",
-    description: "La solución completa para policlínicas y médicos generales. Gestión integral, rápida y flexible.",
-    heroImage: "https://images.unsplash.com/photo-1505751172107-1600868f05b0?auto=format&fit=crop&q=80&w=1000",
+    description: "Plataforma multi-especialidad modular. La opción para centros que necesitan combinar y cruzar varias ramas.",
+    heroImage: "https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&q=80&w=1200",
     features: [
       { title: "Historia Clínica Universal", description: "Estructura SOAP configurable y adaptable a pediatría, ginecología o medicina interna.", icon: <Stethoscope className="w-6 h-6 text-[#008477]" /> },
       { title: "Receta Electrónica", description: "Emisión de recetas privadas válidas en todas las farmacias del territorio nacional.", icon: <FileText className="w-6 h-6 text-[#008477]" /> },
@@ -96,10 +105,11 @@ const specialties: Record<string, SpecialtyData> = {
     benefits: ["Codificación CIE-10", "Gestión mutualidades", "Módulo de enfermería"]
   },
   'app-clientes': {
-    title: "App para tus Clientes",
+    brandName: 'Nexora Patient',
+    title: "SaaS Marca Blanca Pacientes",
     subtitle: "Empodera a tus pacientes con tecnología",
-    description: "Ofrece una experiencia premium. Tus pacientes podrán gestionar su salud desde la palma de su mano.",
-    heroImage: "https://images.unsplash.com/photo-1512428559083-a400a40d4491?auto=format&fit=crop&q=80&w=1000",
+    description: "Aplicación móvil independiente pero conectada a tu backend. Tus pacientes gestionarán su información bajo tu marca.",
+    heroImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200",
     features: [
       { title: "Self-Checkin", description: "El paciente confirma su llegada a la clínica desde el móvil, reduciendo colas en recepción.", icon: <Clock className="w-6 h-6 text-[#008477]" /> },
       { title: "Carpeta de Salud", description: "Acceso a todos los informes, facturas y recetas sin necesidad de papel.", icon: <Database className="w-6 h-6 text-[#008477]" /> },
@@ -124,7 +134,7 @@ export default function SpecialtyLanding() {
 
   return (
     <div className="min-h-screen bg-white text-[#1a1f36] font-sans">
-      <FrontendNavbar />
+      <FrontendNavbar brandName={data.brandName} />
 
       <section className="relative pt-32 lg:pt-48 pb-20 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -148,7 +158,7 @@ export default function SpecialtyLanding() {
                   onClick={() => navigate(`/dashboard?specialty=${specialty}`)}
                   className="px-8 py-4 bg-[#008477] text-white font-bold rounded-xl shadow-lg hover:scale-[1.02] transition-all"
                 >
-                  Contratar Nexora {specialty?.charAt(0).toUpperCase()}{specialty?.slice(1)}
+                  Contratar {data.brandName || "Nexora"}
                 </button>
                 <button 
                    onClick={() => navigate(`/dashboard?specialty=${specialty}`)}
@@ -172,8 +182,8 @@ export default function SpecialtyLanding() {
               animate={{ opacity: 1, scale: 1 }}
               className="relative"
             >
-              <div className="aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border-8 border-white">
-                <img src={data.heroImage} className="w-full h-full object-cover" alt={data.title} />
+              <div className="aspect-[16/9] rounded-3xl overflow-hidden shadow-2xl border-8 border-white">
+                <img src={data.heroImage} className={`w-full h-full object-cover ${data.imageClassName || 'object-center'}`} alt={data.title} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
               </div>
             </motion.div>
@@ -184,7 +194,7 @@ export default function SpecialtyLanding() {
       <section className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto mb-20">
-            <h2 className="text-3xl font-black mb-4">Potencia tu {specialty === 'app-clientes' ? 'negocio' : 'clínica'} con Nexora</h2>
+            <h2 className="text-3xl font-black mb-4">Potencia tu {specialty === 'app-clientes' ? 'negocio' : 'clínica'} con {data.brandName || "Nexora"}</h2>
             <p className="text-gray-500 font-medium italic">Funciones diseñadas exclusivamente para tu día a día.</p>
           </div>
           
@@ -209,7 +219,7 @@ export default function SpecialtyLanding() {
               {[1,2,3,4,5].map(i => <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-gray-200" />)}
             </div>
           </div>
-          <h2 className="text-3xl font-black">Únete a más de 200 profesionales de {specialty} que ya confían en Nexora</h2>
+          <h2 className="text-3xl font-black">Únete a más de 200 profesionales de {specialty} que ya confían en {data.brandName || "Nexora"}</h2>
           <p className="text-gray-500 font-medium">Empieza hoy tu prueba gratuita de 14 días. No requiere tarjeta de crédito.</p>
           <button 
              onClick={() => navigate(`/dashboard?specialty=${specialty}`)}
@@ -224,9 +234,9 @@ export default function SpecialtyLanding() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2" onClick={() => navigate('/')}>
             <NexoraLogo size={24} />
-            <span className="font-bold text-lg text-[#1a1f36]">Nexora</span>
+            <span className="font-bold text-lg text-[#1a1f36]">{data.brandName || "Nexora"}</span>
           </div>
-          <div className="text-[13px] font-bold text-gray-400">© 2026 Nexora. Todos los derechos reservados.</div>
+          <div className="text-[13px] font-bold text-gray-400">© 2026 {data.brandName || "Nexora"}. Todos los derechos reservados.</div>
         </div>
       </footer>
     </div>

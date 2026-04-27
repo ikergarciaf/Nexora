@@ -21,7 +21,24 @@ export function TelemedicineRoom({ isDarkMode, onEndCall, appointmentInfo }: { i
 
   const startLocalStream = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Su navegador no soporta el acceso a medios.");
+      }
+
+      // Try to get both first
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      } catch (err) {
+        console.warn("Could not get both video and audio, trying audio only...", err);
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (err2) {
+          console.warn("Could not get audio either, trying video only...", err2);
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        }
+      }
+
       setLocalStream(stream);
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
@@ -35,7 +52,7 @@ export function TelemedicineRoom({ isDarkMode, onEndCall, appointmentInfo }: { i
 
     } catch (error) {
       console.error("Error accessing media devices.", error);
-      alert("Error al acceder a la cámara o micrófono. Por favor, asegúrate de haber dado los permisos.");
+      // Removed the alert to be less intrusive, showing it in the console and UI instead
     }
   };
 

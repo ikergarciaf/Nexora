@@ -1,74 +1,82 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ArrowRight, Brain, Calendar, CheckCircle2, Clock, MessageSquare, 
-  Shield, Sparkles, Stethoscope, Zap, Layout, Database, Globe, 
-  Check, Menu, X, ChevronRight, BarChart3, Users2, Star, ChevronDown, Monitor, Rocket, Info, Play
+  Check, Star, ChevronRight, Play, Server, Shield, 
+  ArrowRight, Users2, Calendar, BarChart3, Brain, Phone
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { NexoraLogo } from '../components/NexoraLogo';
-
 import { FrontendNavbar } from '../components/FrontendNavbar';
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('agenda');
+  const [activeFeatureTab, setActiveFeatureTab] = useState('agenda');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
-  const features = [
+  const stats = [
+    { value: "+500", label: "Clínicas Activas" },
+    { value: "4.9/5", label: "Satisfacción Clínicas" },
+    { value: "-40%", label: "Tiempo Administrativo" },
+    { value: "24/7", label: "Soporte Técnico" }
+  ];
+
+  const showcaseFeatures = [
     {
       id: 'agenda',
       title: "Agenda Inteligente",
-      description: "Gestiona citas de forma visual y rápida. IA que predice inasistencias y optimiza huecos.",
-      icon: <Calendar className="w-6 h-6 text-[#008477]" />
+      description: "Visualiza la disponibilidad de todo tu equipo al instante. Optimiza huecos, envía recordatorios automáticos por WhatsApp y reduce inasistencias en un 30%.",
+      image: "https://images.unsplash.com/photo-1506784365847-bbad939e9335?auto=format&fit=crop&q=80&w=1200",
+      icon: <Calendar className="w-5 h-5" />
     },
     {
       id: 'pacientes',
       title: "Historial Clínico",
-      description: "Fichas completas con LOPD, odontogramas y firma digital de documentos.",
-      icon: <Users2 className="w-6 h-6 text-[#008477]" />
+      description: "Una visión 360 grados de cada paciente. Odontogramas, evolución de peso, mapas de dolor, consentimientos firmados digitalmente y adjuntos médicos.",
+      image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=1200",
+      icon: <Users2 className="w-5 h-5" />
     },
     {
       id: 'facturacion',
       title: "Facturación y Cobros",
-      description: "Emisión de facturas, presupuestos, cobros y liquidaciones en un clic.",
-      icon: <BarChart3 className="w-6 h-6 text-[#008477]" />
+      description: "Crea presupuestos en segundos. Factura con un clic, lleva el control de cajas diario y analiza la rentabilidad de cada tratamiento.",
+      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1200",
+      icon: <BarChart3 className="w-5 h-5" />
     },
     {
       id: 'ia',
       title: "Inteligencia Artificial",
-      description: "Notas automáticas y borradores de mensajes que ahorran horas de trabajo.",
-      icon: <Brain className="w-6 h-6 text-[#008477]" />
+      description: "Genera resúmenes automáticos tras cada visita. Obtén sugerencias de diagnósticos basadas en los síntomas introducidos en historias clínicas.",
+      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200",
+      icon: <Brain className="w-5 h-5" />
     }
   ];
 
-  const [billingCycle, setBillingCycle] = React.useState<'monthly' | 'annually'>('monthly');
+  const activeShowcase = showcaseFeatures.find(f => f.id === activeFeatureTab);
 
   const plans = [
     {
       name: "Starter",
       getPrice: (cycle: string) => cycle === 'monthly' ? "29" : "24",
-      description: "La herramienta definitiva para profesionales independientes.",
+      description: "Para profesionales independientes.",
       features: [
         "Citas ILIMITADAS",
-        "Agenda Médica Inteligente",
-        "Ficha paciente básica (RGPD)",
-        "Recordatorios WhatsApp/Email",
-        "Soporte vía Ticket",
-        "Sincronización Google Calendar"
+        "Agenda Médica",
+        "Ficha paciente básica",
+        "Recordatorios Email",
+        "Soporte Estándar"
       ],
-      cta: "Empezar gratis",
+      cta: "Empezar prueba gratis",
       popular: false
     },
     {
       name: "Pro",
       getPrice: (cycle: string) => cycle === 'monthly' ? "59" : "49",
-      description: "Gestiona tu equipo y automatiza tareas con Inteligencia Artificial.",
+      description: "El más popular para clínicas en crecimiento.",
       features: [
-        "Todo lo de Starter",
-        "Hasta 5 Empleados",
-        "IA Generativa (Notas SOAP)",
+        "Todo lo del Starter",
+        "Hasta 5 Profesionales",
+        "IA Generativa Incluida",
         "Facturación y Presupuestos",
-        "Arqueos de caja avanzados",
         "Soporte Prioritario"
       ],
       cta: "Prueba 14 días",
@@ -77,264 +85,350 @@ export default function LandingPage() {
     {
       name: "Elite",
       getPrice: (cycle: string) => cycle === 'monthly' ? "99" : "84",
-      description: "Para centros de alto rendimiento y cadenas de clínicas.",
+      description: "Cadenas y centros avanzados.",
       features: [
-        "Todo lo de Pro",
-        "EMPLEADOS ILIMITADOS",
-        "Multi-sede Incluido",
-        "Dashboard BI y Analítica",
-        "API para integraciones",
-        "Account Manager dedicado"
+        "Profesionales ILIMITADOS",
+        "Múltiples Sedes",
+        "Cuadros de Mando BI",
+        "Integraciones API",
+        "Account Manager"
       ],
-      cta: "Contactar",
+      cta: "Hablar con ventas",
       popular: false
     }
   ];
 
   return (
     <div className="min-h-screen bg-white text-[#1a1f36] font-sans selection:bg-[#008477]/10 selection:text-[#008477]">
-      
       <FrontendNavbar />
 
-      {/* Hero Section: Replicated Style */}
+      {/* Hero Section */}
+      <section className="relative pt-32 lg:pt-48 pb-20 overflow-hidden">
+        <div className="absolute inset-0 bg-[#008477]/[0.02] -z-10" />
+        <div className="absolute top-0 right-0 -mr-40 -mt-40 w-96 h-96 bg-[#008477]/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -ml-40 -mb-40 w-96 h-96 bg-[#008477]/10 rounded-full blur-[100px] pointer-events-none" />
 
-      {/* Hero Section: Replicated Style */}
-      <section className="relative pt-32 lg:pt-52 pb-24 border-b border-gray-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col items-center text-center max-w-4xl mx-auto space-y-8">
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+          <div className="space-y-8 relative z-10 text-center lg:text-left">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#008477]/5 border border-[#008477]/10 rounded-full text-[#008477] text-[13px] font-bold"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="inline-flex flex-wrap justify-center lg:justify-start items-center gap-2 px-4 py-2 bg-[#008477]/5 border border-[#008477]/10 rounded-full text-[#008477] text-[13px] font-bold shadow-sm"
             >
-              <NexoraLogo size={16} /> Software médico 3.0
+              <NexoraLogo size={16} /> 
+              <span>Votado #1 Software Clínico 2026</span>
             </motion.div>
             
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-4xl md:text-7xl font-bold tracking-tight text-[#1a1f36] leading-[1.1]"
+              transition={{ delay: 0.1 }}
+              className="text-5xl md:text-6xl font-black tracking-tight leading-[1.1] text-slate-900"
             >
-              El software médico que <span className="text-[#008477]">transforma tu tiempo</span> en resultados
+              Todo tu centro médico,<br /> 
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#008477] to-[#059669]">
+                en un único lugar
+              </span>
             </motion.h1>
             
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-lg md:text-xl text-[#4f566b] max-w-2xl leading-relaxed font-medium"
+              transition={{ delay: 0.2 }}
+              className="text-lg md:text-xl text-gray-600 max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium"
             >
-              Sin instalaciones. Sin complicaciones. Todo lo que necesitas para gestionar tu consulta, facturar y cuidar a tus pacientes mientras ahorras un 40% de tu tiempo administrativo.
+              Desde la reserva online hasta la facturación. Nexora automatiza el papeleo para que puedas enfocarte en la salud de tus pacientes.
             </motion.p>
             
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="flex flex-col sm:flex-row items-center gap-4 pt-4"
+              transition={{ delay: 0.3 }}
+              className="flex flex-col sm:flex-row justify-center lg:justify-start items-center gap-4 pt-4"
             >
               <button 
                 onClick={() => navigate('/dashboard')}
-                className="w-full sm:w-auto px-10 py-4 bg-[#008477] hover:bg-[#006b60] text-white text-lg font-bold rounded-xl transition-all shadow-lg active:scale-95"
+                className="w-full sm:w-auto px-8 py-4 bg-[#008477] hover:bg-[#007065] text-white text-base font-bold rounded-xl transition-all shadow-lg hover:shadow-[#008477]/30 transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
               >
-                Empezar 14 días gratis
+                Empezar gratis
+                <ArrowRight className="w-5 h-5" />
               </button>
-              <p className="text-sm text-[#8792a2] font-semibold flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-500" /> Sin tarjeta de crédito
-              </p>
+              <button 
+                onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })}
+                className="w-full sm:w-auto px-8 py-4 bg-white border border-gray-200 text-slate-700 text-base font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+              >
+                <Play className="w-5 h-5 text-[#008477]" />
+                Ver demo
+              </button>
             </motion.div>
-
-            {/* Social Proof */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="flex items-center gap-4 pt-12"
-            >
-              <div className="flex -space-x-2">
-                {[1,2,3,4].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-gray-200" />
-                ))}
-              </div>
-              <div className="text-left">
-                <div className="flex items-center gap-1 text-yellow-400">
-                  {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 fill-current" />)}
-                  <span className="text-[#1a1f36] font-bold text-sm ml-1">4.9/5</span>
-                </div>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Confianza máxima de nuestros clientes</p>
-              </div>
-            </motion.div>
+            <div className="flex flex-row justify-center lg:justify-start items-center gap-3 pt-4 opacity-70">
+                <Check className="w-4 h-4 text-[#008477]"/> <span className="text-[13px] font-bold">Sin descargas</span>
+                <Check className="w-4 h-4 text-[#008477] ml-2"/> <span className="text-[13px] font-bold">Sin tarjeta </span>
+                <Check className="w-4 h-4 text-[#008477] ml-2"/> <span className="text-[13px] font-bold">Soporte gratis</span>
+            </div>
           </div>
+
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 }}
+            className="relative lg:h-[600px] hidden md:block"
+          >
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#008477]/20 to-transparent rounded-[40px] transform rotate-3" />
+            <img 
+              src="https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&q=80&w=1600" 
+              alt="Nexora Dashboard" 
+              className="relative z-10 w-full h-full object-cover rounded-[32px] shadow-2xl border flex border-white/50"
+            />
+          </motion.div>
         </div>
       </section>
 
-      {/* Grid Features: Minimalist Style */}
-      <section className="py-24 bg-white">
+      {/* Stats Section */}
+      <section className="py-12 bg-[#008477]">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-20 space-y-4">
-            <h2 className="text-3xl font-bold tracking-tight">Funcionalidades diseñadas por y para profesionales</h2>
-            <p className="text-gray-500 font-medium leading-relaxed">Simplificamos la complejidad tecnológica para que te centres en lo que importa: tus pacientes.</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, i) => (
-              <div key={i} className="p-8 rounded-2xl bg-gray-50 border border-gray-100 hover:border-[#008477]/30 transition-all group">
-                <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  {feature.icon}
-                </div>
-                <h3 className="font-bold text-lg mb-3 tracking-tight">{feature.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed font-medium">{feature.description}</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-white/20">
+            {stats.map((stat, i) => (
+              <div key={i} className="text-center px-4">
+                <div className="text-3xl md:text-4xl font-black text-white mb-1">{stat.value}</div>
+                <div className="text-[12px] font-bold text-emerald-100 uppercase tracking-widest">{stat.label}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Difference / Values Section */}
-      <section className="py-24 bg-gray-50">
+      {/* Showcase Features Section with Tabs */}
+      <section id="demo" className="py-24 bg-gray-50 border-y border-gray-100">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-8">
-              <h2 className="text-4xl font-bold tracking-tight leading-tight">Nuestra diferencia: tecnología que entiende tu consulta.</h2>
-              <div className="space-y-6">
-                {[
-                  { title: "Razonamiento Clínico Inteligente", desc: "IA que ayuda en la toma de decisiones clínicas y estructuración de datos." },
-                  { title: "Acceso Universal Real", desc: "Multi-dispositivo sin límites. Gestiona desde tu móvil, tablet o PC sin apps pesadas." },
-                  { title: "Soporte Humano 100%", desc: "Nada de bots. Un equipo experto te ayuda a migrar tus datos y configurar tu centro." }
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-4">
-                    <div className="shrink-0 w-6 h-6 rounded-full bg-[#008477] text-white flex items-center justify-center mt-1">
-                      <Check className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-[#1a1f36]">{item.title}</h4>
-                      <p className="text-sm text-gray-500 mt-1 leading-relaxed">{item.desc}</p>
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-4">La solución completa para tu clínica</h2>
+            <p className="text-lg text-gray-500 font-medium">Olvídate de utilizar 4 aplicaciones diferentes. Con Nexora tienes la gestión, comunicación y control en una sola ventana.</p>
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-12">
+            {/* Tabs Sidebar */}
+            <div className="lg:w-1/3 flex flex-row lg:flex-col gap-4 overflow-x-auto pb-4 lg:pb-0 scrollbar-none">
+              {showcaseFeatures.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveFeatureTab(item.id)}
+                  className={`flex-none lg:w-full flex items-start gap-4 p-5 rounded-2xl text-left transition-all border ${activeFeatureTab === item.id ? 'bg-white border-[#008477] shadow-xl shadow-[#008477]/5 scale-100' : 'bg-transparent border-transparent hover:bg-gray-100/50 grayscale opacity-80'}`}
+                >
+                  <div className={`p-3 rounded-xl flex items-center justify-center transition-colors ${activeFeatureTab === item.id ? 'bg-[#008477] text-white' : 'bg-gray-200 text-gray-500'}`}>
+                    {item.icon}
+                  </div>
+                  <div className="hidden lg:block">
+                    <h3 className={`font-bold text-lg mb-1 transition-colors ${activeFeatureTab === item.id ? 'text-[#008477]' : 'text-slate-700'}`}>{item.title}</h3>
+                    <p className={`text-[13px] leading-relaxed transition-opacity ${activeFeatureTab === item.id ? 'text-gray-600' : 'text-gray-400 line-clamp-2'}`}>
+                      {item.description}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Showcase Image Area */}
+            <div className="lg:w-2/3">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeFeatureTab}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-white p-2 rounded-3xl border border-gray-100 shadow-2xl overflow-hidden group"
+                >
+                  {/* Fake Browser Top Bar */}
+                  <div className="bg-gray-50 flex items-center px-4 py-3 rounded-tl-2xl rounded-tr-2xl border-b border-gray-100 gap-2">
+                     <div className="flex gap-1.5">
+                       <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                       <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                       <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                     </div>
+                     <div className="flex-1 text-center">
+                        <div className="w-64 mx-auto bg-white border border-gray-200 rounded-md py-1 px-3 text-[10px] text-gray-400 flex items-center justify-center gap-2">
+                          <Shield className="w-3 h-3" /> app.nexora.co
+                        </div>
+                     </div>
+                  </div>
+                  <div className="relative aspect-[16/10] overflow-hidden rounded-bl-2xl rounded-br-2xl bg-gray-100">
+                    <img 
+                      src={activeShowcase?.image} 
+                      alt={activeShowcase?.title}
+                      className="w-full h-full object-cover object-left-top transition-transform duration-700 group-hover:scale-105"
+                    />
+                    {/* Overlay info box on mobile */}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/90 to-transparent p-6 lg:hidden">
+                       <h3 className="text-white font-bold text-xl mb-2">{activeShowcase?.title}</h3>
+                       <p className="text-gray-200 text-sm leading-relaxed">{activeShowcase?.description}</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-            <div className="relative">
-              <div className="aspect-video bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1000" 
-                  alt="Interface Nexora" 
-                  className="w-full h-full object-cover opacity-90"
-                />
-              </div>
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Simple Pricing Banner */}
-      <section id="precios" className="py-32 bg-white">
+      {/* Security & Tech Specs */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+           <div className="flex flex-col md:flex-row items-center justify-between gap-12 bg-slate-900 rounded-[32px] p-10 md:p-16 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-[#008477]/30 to-purple-600/30 blur-[100px] pointer-events-none" />
+              
+              <div className="relative z-10 max-w-2xl text-left">
+                <h2 className="text-3xl md:text-4xl font-black text-white mb-6">Seguridad LOPD de grado bancario</h2>
+                <p className="text-gray-300 text-lg mb-8 leading-relaxed">
+                  Tus datos y los de tus pacientes están seguros. Cumplimos estrictamente la RGPD europea con servidores alojados en UE. Copias de seguridad diarias, encriptación AES-256 e historial de accesos.
+                </p>
+                <div className="grid grid-cols-2 gap-6">
+                   <div className="flex items-center gap-3">
+                     <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center"><Server className="w-5 h-5 text-emerald-400" /></div>
+                     <span className="text-sm font-bold text-white">Servidores AWS (EU)</span>
+                   </div>
+                   <div className="flex items-center gap-3">
+                     <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center"><Shield className="w-5 h-5 text-emerald-400" /></div>
+                     <span className="text-sm font-bold text-white">Certificado ISO 27001</span>
+                   </div>
+                </div>
+              </div>
+
+              <div className="relative z-10 shrink-0">
+                <div className="w-48 h-48 rounded-full border-[8px] border-white/10 flex items-center justify-center relative">
+                   <Shield className="w-20 h-20 text-emerald-400" />
+                   <div className="absolute inset-0 rounded-full border-2 border-emerald-400 animate-ping opacity-20" />
+                </div>
+              </div>
+           </div>
+        </div>
+      </section>
+
+      {/* Detailed Pricing */}
+      <section id="precios" className="pt-16 pb-32 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <div className="max-w-3xl mx-auto space-y-6 mb-12">
-            <h2 className="text-4xl font-bold tracking-tight">Precios diseñados para crecer contigo</h2>
-            <p className="text-lg text-gray-500 font-medium">Únete a más de 500 clínicas que han ahorrado un 30% en costes tecnológicos al cambiarse a Nexora.</p>
+          <div className="max-w-3xl mx-auto space-y-4 mb-16">
+            <h2 className="text-4xl font-black tracking-tight">Elige el plan ideal</h2>
+            <p className="text-lg text-gray-500 font-medium">Total transparencia, puedes cancelar cuando quieras. Paga en euros, sin sorpresas ni comisiones ocultas.</p>
           </div>
 
-          {/* Billing Toggle */}
           <div className="flex items-center justify-center gap-4 mb-16">
-            <span className={`text-sm font-semibold transition-colors ${billingCycle === 'monthly' ? 'text-[#1a1f36]' : 'text-gray-400'}`}>Mensual</span>
+            <span className={`text-sm font-bold transition-colors ${billingCycle === 'monthly' ? 'text-[#1a1f36]' : 'text-gray-400'}`}>Mensual</span>
             <button 
               onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'annually' : 'monthly')}
-              className="w-14 h-7 bg-gray-100 rounded-full p-1 relative flex items-center"
+              className="w-16 h-8 bg-gray-200 rounded-full p-1 relative flex items-center cursor-pointer shadow-inner"
             >
               <motion.div 
-                animate={{ x: billingCycle === 'monthly' ? 0 : 28 }}
-                className="w-5 h-5 bg-[#008477] rounded-full shadow-sm"
+                animate={{ x: billingCycle === 'monthly' ? 0 : 32 }}
+                className="w-6 h-6 bg-[#008477] rounded-full shadow-md"
               />
             </button>
-            <span className={`text-sm font-semibold transition-colors ${billingCycle === 'annually' ? 'text-[#1a1f36]' : 'text-gray-400'}`}>
-              Anual <span className="text-[#008477] bg-[#008477]/10 px-2 py-0.5 rounded text-[11px] ml-1">-20% AHORRO</span>
+            <span className={`text-sm font-bold transition-colors ${billingCycle === 'annually' ? 'text-[#1a1f36]' : 'text-gray-400'}`}>
+              Anual <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md text-[10px] ml-1 uppercase tracking-widest">-20% OUT</span>
             </span>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {plans.map((plan, i) => (
-              <div key={i} className={`p-10 rounded-[32px] border transition-all text-left flex flex-col h-full ${plan.popular ? 'border-[#008477] bg-white shadow-xl shadow-[#008477]/5' : 'border-gray-100 bg-white'}`}>
+              <div key={i} className={`p-10 rounded-3xl border transition-all text-left flex flex-col h-full bg-white relative ${plan.popular ? 'border-[#008477] shadow-xl ring-2 ring-[#008477]/20 scale-105 z-10' : 'border-gray-200 hover:border-[#008477]/50'}`}>
                 {plan.popular && (
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#008477] mb-4 bg-[#008477]/5 px-3 py-1 rounded w-fit">Recomendado</span>
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#008477] text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-md">
+                     Más Elegido
+                  </div>
                 )}
-                <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                <div className="flex items-baseline gap-1 mb-6">
+                <h3 className="text-2xl font-black mb-2">{plan.name}</h3>
+                <p className="text-sm text-gray-500 font-medium mb-6 h-10">{plan.description}</p>
+                
+                <div className="flex items-baseline gap-1 mb-8">
                   <span className="text-5xl font-black">{plan.getPrice(billingCycle)}€</span>
                   <span className="text-gray-400 font-bold">/mes</span>
                 </div>
-                <p className="text-sm text-gray-500 font-medium mb-8 flex-1">{plan.description}</p>
                 
-                <div className="space-y-3 mb-10">
+                <div className="space-y-4 mb-10 border-t border-gray-100 pt-8 flex-1">
                   {plan.features.map((f, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-sm font-semibold text-gray-600">
-                      <Check className="w-3.5 h-3.5 text-[#008477]" /> {f}
+                    <div key={idx} className="flex items-start gap-3">
+                      <div className="shrink-0 w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center mt-0.5">
+                         <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      </div>
+                      <span className="text-[14px] font-bold text-gray-700">{f}</span>
                     </div>
                   ))}
                 </div>
 
                 <button 
                   onClick={() => navigate('/dashboard')}
-                  className={`w-full py-4 rounded-xl text-sm font-bold transition-all active:scale-95 ${plan.popular ? 'bg-[#008477] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                  className={`w-full py-4 rounded-xl text-[15px] font-black transition-all active:scale-95 flex justify-center items-center gap-2 ${plan.popular ? 'bg-[#008477] hover:bg-[#007065] text-white shadow-lg shadow-[#008477]/20' : 'bg-gray-100 text-slate-800 hover:bg-gray-200'}`}
                 >
                   {plan.cta}
                 </button>
               </div>
             ))}
           </div>
-          
-          <div className="mt-16 p-8 bg-gray-50 rounded-2xl border border-gray-100 inline-flex flex-col md:flex-row items-center gap-6">
-            <div className="text-left">
-              <h4 className="font-bold text-[#1a1f36]">Web Corporativa para tu Clínica</h4>
-              <p className="text-sm text-gray-500">Diseño específico, SEO local y motor de reservas integrado.</p>
-            </div>
-            <div className="text-right">
-              <span className="text-2xl font-black">600€ <span className="text-xs font-bold text-gray-400">+ IVA</span></span>
-              <button className="ml-4 px-6 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold hover:bg-gray-50 transition-colors">Saber más</button>
-            </div>
+
+          <div className="mt-20 flex flex-col items-center">
+            <h4 className="text-xl font-bold mb-4">¿Tienes una gran red de clínicas?</h4>
+            <button className="px-8 py-3 bg-white border-2 border-gray-200 rounded-xl font-bold flex items-center justify-center gap-2 hover:border-[#008477] hover:text-[#008477] transition-all">
+               <Phone className="w-5 h-5" /> Contacta con Ventas
+            </button>
           </div>
         </div>
       </section>
 
-      {/* Footer Simplified */}
-      <footer className="bg-white border-t border-gray-100 pt-24 pb-12">
+      {/* Footer Complete */}
+      <footer className="bg-slate-900 border-t border-gray-800 pt-24 pb-12 text-gray-300">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-12 mb-20 text-center md:text-left">
-            <div className="space-y-4 max-w-xs">
-              <div className="flex items-center gap-2 justify-center md:justify-start">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+            <div className="col-span-1 md:col-span-1">
+              <div className="flex items-center gap-2 mb-6">
                 <NexoraLogo size={32} />
-                <span className="font-bold text-xl text-[#1a1f36]">Nexora</span>
+                <span className="font-black text-2xl text-white">Nexora</span>
               </div>
-              <p className="text-[14px] text-gray-400 font-medium leading-relaxed">
-                El software de gestión que ahorra un 40% de tiempo a los profesionales de la salud.
+              <p className="text-[13px] text-gray-400 font-medium leading-relaxed mb-6">
+                Software clínico integral. Revolucionando el sector de la salud con Inteligencia Artificial.
               </p>
             </div>
             
-            <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 text-sm font-bold text-gray-500 tracking-tight">
-              <a href="#" className="hover:text-[#008477] transition-colors">Servicios</a>
-              <a href="#" className="hover:text-[#008477] transition-colors">Soluciones</a>
-              <a href="#precios" className="hover:text-[#008477] transition-colors">Precios</a>
-              <a href="#" className="hover:text-[#008477] transition-colors">Privacidad</a>
-              <a href="#" className="hover:text-[#008477] transition-colors">Cookies</a>
+            <div>
+               <h4 className="font-bold text-white mb-6 uppercase tracking-widest text-[12px]">Soluciones</h4>
+               <ul className="space-y-4 text-[14px] font-medium text-gray-400">
+                 <li><button onClick={() => navigate('/soluciones/dental')} className="hover:text-emerald-400 transition-colors">Clínicas Dentales</button></li>
+                 <li><button onClick={() => navigate('/soluciones/fisioterapia')} className="hover:text-emerald-400 transition-colors">Centros de Fisioterapia</button></li>
+                 <li><button onClick={() => navigate('/soluciones/psicologos')} className="hover:text-emerald-400 transition-colors">Gabinetes de Psicología</button></li>
+                 <li><button onClick={() => navigate('/soluciones/nutricion')} className="hover:text-emerald-400 transition-colors">Nutrición y Dietética</button></li>
+                 <li><button onClick={() => navigate('/soluciones/estetica')} className="hover:text-emerald-400 transition-colors">Medicina Estética</button></li>
+               </ul>
+            </div>
+
+            <div>
+               <h4 className="font-bold text-white mb-6 uppercase tracking-widest text-[12px]">Producto</h4>
+               <ul className="space-y-4 text-[14px] font-medium text-gray-400">
+                 <li><button onClick={() => document.getElementById('demo')?.scrollIntoView()} className="hover:text-emerald-400 transition-colors">Funcionalidades</button></li>
+                 <li><button onClick={() => document.getElementById('precios')?.scrollIntoView()} className="hover:text-emerald-400 transition-colors">Tarifas</button></li>
+                 <li><button onClick={() => navigate('/dashboard')} className="hover:text-emerald-400 transition-colors">App Pacientes</button></li>
+                 <li><button onClick={() => navigate('/dashboard')} className="hover:text-emerald-400 transition-colors">Cita Online Pública</button></li>
+               </ul>
+            </div>
+
+            <div>
+               <h4 className="font-bold text-white mb-6 uppercase tracking-widest text-[12px]">Legal e Info</h4>
+               <ul className="space-y-4 text-[14px] font-medium text-gray-400">
+                 <li><a href="#" className="hover:text-emerald-400 transition-colors">Contacto</a></li>
+                 <li><a href="#" className="hover:text-emerald-400 transition-colors">Política de Privacidad</a></li>
+                 <li><a href="#" className="hover:text-emerald-400 transition-colors">Términos y Condiciones</a></li>
+                 <li><a href="#" className="hover:text-emerald-400 transition-colors">Política de Cookies</a></li>
+               </ul>
             </div>
           </div>
           
-          <div className="pt-8 border-t border-gray-50 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-[13px] font-bold text-gray-400 italic">by Antigravity Systems</div>
-            <div className="text-[13px] font-bold text-gray-400">© 2026 Nexora. Todos los derechos reservados.</div>
+          <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="text-[13px] font-bold text-gray-500">© 2026 Nexora. Todos los derechos reservados. Desarrollado con dedicación para médicos.</div>
+            <div className="text-[13px] font-bold text-gray-500 flex items-center gap-2">
+               by <span className="text-white hover:text-[#008477]">Antigravity Systems</span>
+            </div>
           </div>
         </div>
       </footer>
-
-      {/* Global CSS Styles */}
-      <style>{`
-        @theme {
-          --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-        }
-      `}</style>
-
     </div>
   );
 }
+

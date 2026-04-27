@@ -38,6 +38,7 @@ export function useDashboardData() {
     try {
       const token = localStorage.getItem('clinic_token');
       const headers = { 
+        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
         'Authorization': `Bearer ${token || 'demo-token'}`,
         'Content-Type': 'application/json'
       };
@@ -77,6 +78,7 @@ export async function createPatientApi(data: { fullName: string, email?: string,
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
+        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
         'Authorization': `Bearer ${token || 'demo-token'}` 
       },
       body: JSON.stringify(data),
@@ -97,6 +99,7 @@ export async function updatePatientApi(id: string, data: any) {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
         'Authorization': `Bearer ${token || 'demo-token'}`
       },
       body: JSON.stringify(data),
@@ -114,6 +117,7 @@ export async function deletePatientApi(id: string) {
     const response = await fetch(`/api/patients/${id}`, {
       method: 'DELETE',
       headers: {
+        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
         'Authorization': `Bearer ${token || 'demo-token'}`
       }
     });
@@ -131,6 +135,7 @@ export async function createAppointmentApi(data: { patientId: string, doctorId?:
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
+        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
         'Authorization': `Bearer ${token || 'demo-token'}` 
       },
       body: JSON.stringify(data),
@@ -151,6 +156,7 @@ export async function updateAppointmentApi(id: string, data: any) {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
         'Authorization': `Bearer ${token || 'demo-token'}`
       },
       body: JSON.stringify(data),
@@ -168,6 +174,7 @@ export async function deleteAppointmentApi(id: string) {
     const response = await fetch(`/api/appointments/${id}`, {
       method: 'DELETE',
       headers: {
+        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
         'Authorization': `Bearer ${token || 'demo-token'}`
       }
     });
@@ -185,6 +192,7 @@ export async function generatePatientSummary(notes: string) {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
+        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
         'Authorization': `Bearer ${token || 'demo-token'}`
       },
       body: JSON.stringify({ notes }),
@@ -204,6 +212,7 @@ export async function generateWhatsAppDraft(patientName: string, appointmentType
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
+        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
         'Authorization': `Bearer ${token || 'demo-token'}`
       },
       body: JSON.stringify({ patientName, appointmentType, time, goal }),

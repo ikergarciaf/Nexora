@@ -18,6 +18,11 @@ import { PainMap } from '../components/specialties/PainMap';
 import { NutritionPlan } from '../components/specialties/NutritionPlan';
 import { SessionDiary } from '../components/specialties/SessionDiary';
 import { AestheticGal } from '../components/specialties/AestheticGal';
+import { QuotesManager } from '../components/specialties/QuotesManager';
+import { WeightEvolution } from '../components/specialties/WeightEvolution';
+import { ExercisePlan } from '../components/specialties/ExercisePlan';
+import { PsychometricTests } from '../components/specialties/PsychometricTests';
+import { VialStock } from '../components/specialties/VialStock';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -32,7 +37,7 @@ export default function Dashboard() {
 
   // Clinic Configuration State
   const [clinicConfig, setClinicConfig] = useState({
-    name: localStorage.getItem('clinic-name') || 'Nexora Clinic',
+    name: localStorage.getItem('clinic-name') || 'Tu Clínica',
     plan: localStorage.getItem('clinic-plan') || 'Pro',
     specialty: localStorage.getItem('clinic-specialty') || 'Odontología', // Default to Dentistry as requested
     owner: 'Iker',
@@ -96,10 +101,10 @@ export default function Dashboard() {
       patientModule: 'NutritionPlan'
     },
     'Fisioterapia': {
-      productName: 'Nexora Physio',
-      primaryColor: '#2563eb',
-      secondaryColor: 'bg-[#2563eb]',
-      accentColor: 'text-[#2563eb]',
+      productName: 'Nexora Fisioterapia',
+      primaryColor: '#0f172a',
+      secondaryColor: 'bg-slate-900',
+      accentColor: 'text-slate-900',
       icon: <Map className="w-5 h-5" />,
       specializedItems: [
         { id: 'mapa_dolor', label: 'Mapa de Dolor', icon: <Settings className="w-4 h-4" /> },
@@ -112,7 +117,7 @@ export default function Dashboard() {
       patientModule: 'PainMap'
     },
     'Psicología': {
-      productName: 'Nexora Psico',
+      productName: 'Nexora Psicología',
       primaryColor: '#7c3aed',
       secondaryColor: 'bg-[#7c3aed]',
       accentColor: 'text-[#7c3aed]',
@@ -128,7 +133,7 @@ export default function Dashboard() {
       patientModule: 'SessionDiary'
     },
     'Estética': {
-      productName: 'Nexora Glow',
+      productName: 'Nexora Estética',
       primaryColor: '#db2777',
       secondaryColor: 'bg-[#db2777]',
       accentColor: 'text-[#db2777]',
@@ -144,7 +149,7 @@ export default function Dashboard() {
       patientModule: 'AestheticGal'
     },
     'Medicina General': {
-      productName: 'Nexora Health',
+      productName: 'Nexora Clinical',
       primaryColor: '#5469d4',
       secondaryColor: 'bg-[#5469d4]',
       accentColor: 'text-[#5469d4]',
@@ -186,7 +191,7 @@ export default function Dashboard() {
         updateClinicConfig({ specialty: mappedSpecialty });
       }
     }
-  }, [location.search, updateClinicConfig]);
+  }, [location.search, updateClinicConfig, navigate]);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const globalAddRef = useRef<HTMLDivElement>(null);
@@ -283,6 +288,7 @@ export default function Dashboard() {
       { id: 13, status: 'healthy' },
       { id: 21, status: 'restored' },
     ],
+    quotes: [],
     painPoints: [
       { id: 'p1', x: 45, y: 30, intensity: 8, notes: 'Dolor lumbar agudo tras esfuerzo físico.' },
       { id: 'p2', x: 55, y: 45, intensity: 4, notes: 'Molestia leve en zona cervical.' }
@@ -300,6 +306,10 @@ export default function Dashboard() {
        { type: 'Antes', date: '01 Mar 2026', url: 'https://images.unsplash.com/photo-1512413316925-fd4b93f31521?w=400&auto=format&fit=crop&q=60' },
        { type: 'Después', date: '20 Abr 2026', url: 'https://images.unsplash.com/photo-1512413316925-fd4b93f31521?w=400&auto=format&fit=crop&q=60' }
     ],
+    weightLogs: [],
+    exercises: [],
+    tests: [],
+    vials: [],
     generalNotes: "Paciente colaborador con buena predisposición al tratamiento."
   });
 
@@ -410,7 +420,8 @@ export default function Dashboard() {
       const response = await fetch(`/api/portal/generate/${patientId}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('clinic_token') || 'demo-token'}`
+          'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
+        'Authorization': `Bearer ${localStorage.getItem('clinic_token') || 'demo-token'}`
         }
       });
       if (response.ok) {
@@ -512,7 +523,7 @@ export default function Dashboard() {
     doc.text('FACTURA', 14, 22);
     
     doc.setFontSize(14);
-    doc.text('Nexora Clinic', 14, 32);
+    doc.text(clinicConfig.name, 14, 32);
     
     doc.setFontSize(10);
     doc.setTextColor(100);
@@ -825,7 +836,7 @@ export default function Dashboard() {
               <span className={`w-8 h-8 rounded-[4px] flex items-center justify-center transition-colors ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-[#e3e8ee] text-[#5469d4]'}`}>
                 <Brain className="w-5 h-5" />
               </span>
-              Nexora Intelligence 
+              {currentSpecialtyConfig.productName} Intelligence 
             </h1>
             <p className={`text-[14px] mt-1 ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Automatiza tareas rutinarias y extrae valor de tus datos médicos con IA Generativa.</p>
           </div>
@@ -1456,27 +1467,17 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className={`rounded-xl border shadow-sm overflow-hidden min-h-[500px] ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+          <div className={`rounded-xl border shadow-sm overflow-hidden min-h-[500px] bg-white ${isDarkMode ? 'border-[#334155]' : 'border-[#e3e8ee]'}`}>
              {activeView === 'odontograma' && <Odontogram isDarkMode={isDarkMode} value={patientRecord.odontogram} onChange={(v) => setPatientRecord(prev => ({...prev, odontogram: v}))} />}
              {activeView === 'dietas' && <NutritionPlan isDarkMode={isDarkMode} value={patientRecord.nutritionPlan} onChange={(v) => setPatientRecord(prev => ({...prev, nutritionPlan: v}))} />}
              {activeView === 'mapa_dolor' && <PainMap isDarkMode={isDarkMode} value={patientRecord.painPoints} onChange={(v) => setPatientRecord(prev => ({...prev, painPoints: v}))} />}
              {activeView === 'sesiones' && <SessionDiary isDarkMode={isDarkMode} value={patientRecord.psychSessions} onChange={(v) => setPatientRecord(prev => ({...prev, psychSessions: v}))} />}
              {activeView === 'galeria' && <AestheticGal isDarkMode={isDarkMode} value={patientRecord.aestheticPhotos} onChange={(v) => setPatientRecord(prev => ({...prev, aestheticPhotos: v}))} />}
-             
-             {['presupuestos', 'evolucion', 'ejercicios', 'test', 'stock_estetica'].includes(activeView) && (
-                <div className={`p-20 text-center flex flex-col items-center gap-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                   <div className={`w-16 h-16 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
-                      {specializedView.icon}
-                   </div>
-                   <div>
-                      <h4 className="font-bold text-lg">{specializedView.label}</h4>
-                      <p className="text-sm text-gray-500 max-w-sm mt-1">Este módulo avanzado permite gestionar {specializedView.label.toLowerCase()} de forma optimizada para {clinicConfig.specialty}.</p>
-                   </div>
-                   <button className="mt-4 px-6 py-2 bg-[#5469d4] text-white rounded-lg text-sm font-bold shadow-md">
-                      Configurar {specializedView.label}
-                   </button>
-                </div>
-             )}
+             {activeView === 'presupuestos' && <QuotesManager isDarkMode={isDarkMode} value={patientRecord.quotes} onChange={(v) => setPatientRecord(prev => ({...prev, quotes: v}))} />}
+             {activeView === 'evolucion' && <WeightEvolution isDarkMode={isDarkMode} value={patientRecord.weightLogs} onChange={(v) => setPatientRecord(prev => ({...prev, weightLogs: v}))} />}
+             {activeView === 'ejercicios' && <ExercisePlan isDarkMode={isDarkMode} value={patientRecord.exercises} onChange={(v) => setPatientRecord(prev => ({...prev, exercises: v}))} />}
+             {activeView === 'test' && <PsychometricTests isDarkMode={isDarkMode} value={patientRecord.tests} onChange={(v) => setPatientRecord(prev => ({...prev, tests: v}))} />}
+             {activeView === 'stock_estetica' && <VialStock isDarkMode={isDarkMode} value={patientRecord.vials} onChange={(v) => setPatientRecord(prev => ({...prev, vials: v}))} />}
           </div>
         </div>
       );
@@ -2245,7 +2246,7 @@ export default function Dashboard() {
               </span>
               Insights Avanzados
             </h1>
-            <p className={`text-[14px] mt-1 ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Análisis predictivo de Nexora AI sobre tu base de datos.</p>
+            <p className={`text-[14px] mt-1 ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Análisis predictivo de AI sobre tu base de datos.</p>
           </div>
 
           <div className="grid grid-cols-1 gap-6">
@@ -2261,7 +2262,7 @@ export default function Dashboard() {
                 </div>
                 <h3 className={`text-[20px] font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Optimización de Agenda Predictiva</h3>
                 <p className={`text-[14px] max-w-2xl mb-6 leading-relaxed ${isDarkMode ? 'text-gray-300' : 'text-[#4f566b]'}`}>
-                  Nexora ha detectado que los martes de 10:00 a 12:00 tienen una tasa de cancelación un 35% superior a la media. 
+                  El sistema ha detectado que los martes de 10:00 a 12:00 tienen una tasa de cancelación un 35% superior a la media. 
                   Sugerimos implementar recordatorios automáticos de WhatsApp 4 horas antes para este intervalo.
                 </p>
                 <div className="flex gap-3">
@@ -2320,7 +2321,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-[#5469d4] flex items-center justify-center font-bold text-[12px] text-white">NX</div>
                   <div>
-                    <h4 className="text-[15px] font-bold text-white">Nexora AI Chat</h4>
+                    <h4 className="text-[15px] font-bold text-white">Asistente AI Chat</h4>
                     <span className="text-[11px] text-[#8792a2]">Consultoría de Negocio 24/7</span>
                   </div>
                 </div>
@@ -2330,7 +2331,7 @@ export default function Dashboard() {
               </div>
               <div className="space-y-4 mb-6">
                 <div className="bg-[#2d334d] p-3 rounded-[8px] text-[13px] max-w-[80%] border-l-4 border-[#5469d4] text-white">
-                  ¿Cómo puedo ayudarte a mejorar la rentabilidad de Nexora Clinic hoy?
+                  ¿Cómo puedo ayudarte a mejorar la rentabilidad de tu clínica hoy?
                 </div>
                 <div className="bg-[#5469d4] p-3 rounded-[8px] text-[13px] max-w-[80%] ml-auto text-right text-white">
                   Muéstrame los pacientes con mayor riesgo de abandono.
@@ -2511,7 +2512,7 @@ export default function Dashboard() {
               <h1 className={`text-[24px] font-bold tracking-tight mb-2 flex items-center gap-2 transition-colors ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
                 <HelpCircle className="w-6 h-6 text-[#5469d4]" /> Automatizaciones Inteligentes
               </h1>
-              <p className={`text-[13px] ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Configura tus flujos automáticos potenciados por Inteligencia Nexora.</p>
+              <p className={`text-[13px] ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Configura tus flujos automáticos potenciados por IA.</p>
             </div>
             <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#5469d4] text-white rounded-[4px] font-bold text-[13px] hover:opacity-90 transition-opacity shadow-sm">
               <Plus className="w-4 h-4" /> Nueva automatización
@@ -3045,7 +3046,7 @@ export default function Dashboard() {
                     {clinicConfig.name}
                   </div>
                   <div className={`text-[12px] leading-tight mt-0.5 truncate ${isDarkMode ? 'text-gray-500 font-bold' : 'text-[#4f566b] font-medium'}`}>
-                    Nexora {clinicConfig.specialty}
+                    {clinicConfig.specialty}
                   </div>
                 </div>
               </div>
@@ -3183,7 +3184,7 @@ export default function Dashboard() {
             >
               <div className="flex items-center gap-3">
                 <HelpCircle className="w-4 h-4 text-[#8792a2]" />
-                Inteligencia Nexora
+                Inteligencia {currentSpecialtyConfig.productName}
               </div>
               <ChevronDown className={`w-3.5 h-3.5 text-[#8792a2] transition-transform ${isNexoraAiOpen ? 'rotate-180' : ''}`} />
             </button>
