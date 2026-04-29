@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
+  Globe,
   ArrowRight,
   Check,
   Calendar,
@@ -81,14 +82,6 @@ const SPECIALTIES: SpecialtyCard[] = [
     image:
       'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200',
   },
-  {
-    slug: 'app-clientes',
-    name: 'App para pacientes',
-    description: 'Marca blanca con self-checkin, carpeta de salud y reservas.',
-    icon: <Smartphone className="w-5 h-5" />,
-    image:
-      'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&q=80&w=1200',
-  },
 ];
 
 const TESTIMONIALS = [
@@ -145,28 +138,28 @@ const CLIENT_LOGOS = [
 
 const FEATURES = [
   {
-    icon: <Calendar className="w-5 h-5" />,
-    title: 'Agenda inteligente',
+    icon: <Globe className="w-5 h-5" />,
+    title: 'Web Médica Personalizada',
     description:
-      'Disponibilidad de todo el equipo en una pantalla, recordatorios automáticos y huecos optimizados.',
+      'Diseñamos y desarrollamos el sitio web oficial de tu clínica. Totalmente optimizado para buscadores (SEO) y conectado a tu agenda Nexora. Desde 399€ pago único.',
+  },
+  {
+    icon: <Smartphone className="w-5 h-5" />,
+    title: 'Secretaria IA en WhatsApp',
+    description:
+      'Tus pacientes agendan, cancelan o mueven citas por WhatsApp 24/7 sin que tú muevas un dedo. Nexora AI entiende el lenguaje natural.',
   },
   {
     icon: <FileText className="w-5 h-5" />,
-    title: 'Historia clínica',
+    title: 'Historia clínica flexible',
     description:
-      'Visión 360 del paciente con consentimientos firmados y herramientas específicas por especialidad.',
-  },
-  {
-    icon: <CreditCard className="w-5 h-5" />,
-    title: 'Presupuestos y facturación',
-    description:
-      'Crea presupuestos en segundos, factura con un clic y mantén el control de caja al día.',
+      'Visión 360 del paciente con módulos específicos por especialidad. Firma digital de consentimientos integrada.',
   },
   {
     icon: <Sparkles className="w-5 h-5" />,
-    title: 'Inteligencia artificial',
+    title: 'Resúmenes Médicos IA',
     description:
-      'Resúmenes automáticos tras cada visita y sugerencias clínicas a partir de los síntomas.',
+      'Ahorra horas de documentación. Nuestra IA genera resúmenes clínicos precisos a partir de tus notas de sesión.',
   },
 ];
 
@@ -735,14 +728,17 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 lg:shrink-0">
-              <a
-                href="mailto:hola@nexora.co?subject=Demo%20personalizada%20Nexora"
+              <button
+                onClick={(e) => {
+                  const subject = encodeURIComponent('Demo personalizada Nexora');
+                  window.location.href = `mailto:hola@nexora.co?subject=${subject}`;
+                }}
                 className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-slate-900 text-white text-[14px] font-medium hover:bg-[#008477] transition-colors"
               >
                 Reservar demo <ArrowRight className="w-4 h-4" />
-              </a>
+              </button>
               <a
-                href="https://wa.me/34000000000?text=Hola%2C%20quiero%20más%20info%20de%20Nexora"
+                href="https://wa.me/34000000000?text=Hola%2C%20quiero%20m%C3%A1s%20info%20de%20Nexora"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-white text-slate-700 text-[14px] font-medium ring-1 ring-slate-200 hover:ring-slate-300 transition-colors"
@@ -868,6 +864,13 @@ function cell(value: boolean, highlight: boolean) {
 
 function FloatingContact() {
   const [open, setOpen] = useState(false);
+  
+  const handleEmailClick = (e: React.MouseEvent, type: string) => {
+    // Standard mailto handling, ensuring it doesn't get blocked
+    const subject = type === 'demo' ? 'Demo personalizada Nexora' : 'Consulta Nexora';
+    window.location.href = `mailto:hola@nexora.co?subject=${encodeURIComponent(subject)}`;
+  };
+
   return (
     <div className="fixed bottom-5 right-5 z-[90]">
       {open && (
@@ -895,20 +898,20 @@ function FloatingContact() {
               <span className="text-[13.5px] font-medium text-slate-800">WhatsApp</span>
               <ArrowRight className="w-4 h-4 text-slate-400" />
             </a>
-            <a
-              href="mailto:hola@nexora.co?subject=Consulta%20Nexora"
-              className="flex items-center justify-between gap-3 p-2.5 rounded-lg ring-1 ring-slate-200 hover:bg-slate-50 transition-colors"
+            <button
+              onClick={(e) => handleEmailClick(e, 'consulta')}
+              className="w-full flex items-center justify-between gap-3 p-2.5 rounded-lg ring-1 ring-slate-200 hover:bg-slate-50 transition-colors text-left"
             >
               <span className="text-[13.5px] font-medium text-slate-800">Email</span>
               <ArrowRight className="w-4 h-4 text-slate-400" />
-            </a>
-            <a
-              href="mailto:hola@nexora.co?subject=Demo%20personalizada%20Nexora"
-              className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-slate-900 text-white hover:bg-[#008477] transition-colors"
+            </button>
+            <button
+              onClick={(e) => handleEmailClick(e, 'demo')}
+              className="w-full flex items-center justify-between gap-3 p-2.5 rounded-lg bg-slate-900 text-white hover:bg-[#008477] transition-colors text-left"
             >
               <span className="text-[13.5px] font-medium">Reservar demo</span>
               <ArrowRight className="w-4 h-4" />
-            </a>
+            </button>
           </div>
         </motion.div>
       )}

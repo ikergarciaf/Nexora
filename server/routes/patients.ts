@@ -118,40 +118,82 @@ patientRouter.delete('/:id', requireRole(['ADMIN']), async (req, res) => {
 });
 
 // Update patient
-patientRouter.put('/:id', requireRole(['ADMIN']), async (req, res) => {
+patientRouter.put('/:id', requireRole(['OWNER', 'STAFF', 'ADMIN', 'SUPERADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
-    const { fullName, email, phone } = req.body;
+    const { fullName, email, phone, medicalRecord, exercises, nutritionalPlan } = req.body;
     
     if (!process.env.DATABASE_URL) {
       const idx = mockPatients.findIndex(p => p.id === id);
       if (idx !== -1) {
-        mockPatients[idx] = { ...mockPatients[idx], fullName, email, phone };
+        mockPatients[idx] = { ...mockPatients[idx], fullName, email, phone, medicalRecord, exercises, nutritionalPlan };
         return res.json(mockPatients[idx]);
       }
       return res.status(404).json({ error: "Mock patient not found" });
     }
 
-    const updated = await prisma.patient.updateMany({
+    const updated = await prisma.patient.update({
       where: {
         id,
-        tenantId: req.user!.tenantId
+        tenantId: req.user!.tenantId!
       },
       data: {
         fullName,
         email,
-        phone
+        phone,
+        medicalRecord: medicalRecord || undefined,
+        exercises: exercises || undefined,
+        nutritionalPlan: nutritionalPlan || undefined
       }
     });
 
-    if (updated.count === 0) {
-      return res.status(404).json({ error: "Patient not found or unauthorized." });
-    }
-
-    res.json({ success: true, message: "Patient updated" });
+    res.json(updated);
   } catch (error) {
     console.error("[Patient Update Error]", error);
     res.status(500).json({ error: "Failed to update patient." });
+  }
+});
+
+// Generate or Reset Portal Token
+patientRouter.post('/:id/portal-token', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.user!.tenantId!;
+
+    // Generate a secure random token (using simple random string for now)
+    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+    const updated = await prisma.patient.update({
+      where: { id, tenantId },
+      data: { portalToken: token }
+    });
+
+    res.json({ token });
+  } catch (error) {
+    console.error("[Portal Token Error]", error);
+    res.status(500).json({ error: "Failed to generate portal token." });
+  }
+});
+
+patientRouter.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.user!.tenantId!;
+
+    if (!process.env.DATABASE_URL) {
+      const patient = mockPatients.find(p => p.id === id);
+      if (patient) return res.json(patient);
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+
+    const patient = await prisma.patient.findFirst({
+      where: { id, tenantId }
+    });
+
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+    res.json(patient);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 

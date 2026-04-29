@@ -129,7 +129,10 @@ authRouter.post('/tenants', requireAuth, async (req, res) => {
     if (!name) return res.status(400).json({ error: 'Missing clinic name' });
 
     const tenant = await prisma.tenant.create({
-      data: { name }
+      data: { 
+        name,
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14 days trial
+      }
     });
 
     await prisma.tenantUser.create({

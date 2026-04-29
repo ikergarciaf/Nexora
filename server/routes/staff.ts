@@ -40,10 +40,15 @@ let mockShifts = [
 staffRouter.get('/users', async (req, res) => {
   try {
     if (process.env.DATABASE_URL) {
-      const users = await prisma.user.findMany({
+      const tenantUsers = await prisma.tenantUser.findMany({
         where: { tenantId: req.user!.tenantId },
-        select: { id: true, name: true, role: true }
+        include: { user: true }
       });
+      const users = tenantUsers.map(tu => ({
+        id: tu.user.id,
+        name: tu.user.name,
+        role: tu.role
+      }));
       if (users.length > 0) return res.json(users);
     }
     return res.json(mockUsers);

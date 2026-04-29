@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
+import { aiService } from '../services/aiService';
+
 export interface Patient {
   id: string;
   fullName: string;
@@ -31,6 +33,7 @@ export function useDashboardData() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [tenantConfig, setTenantConfig] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
@@ -43,15 +46,17 @@ export function useDashboardData() {
         'Content-Type': 'application/json'
       };
 
-      const [patientsRes, appointmentsRes, statsRes] = await Promise.all([
+      const [patientsRes, appointmentsRes, statsRes, configRes] = await Promise.all([
         fetch('/api/patients', { headers }),
         fetch('/api/appointments', { headers }),
-        fetch('/api/dashboard/stats', { headers })
+        fetch('/api/dashboard/stats', { headers }),
+        fetch('/api/tenant/config', { headers })
       ]);
 
       if (patientsRes.ok) setPatients(await patientsRes.json());
       if (appointmentsRes.ok) setAppointments(await appointmentsRes.json());
       if (statsRes.ok) setStats(await statsRes.json());
+      if (configRes.ok) setTenantConfig(await configRes.json());
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
@@ -68,7 +73,7 @@ export function useDashboardData() {
     setPatients(prev => [newPatient, ...prev]);
   };
 
-  return { patients, appointments, stats, isLoading, refreshData: fetchData, addPatientLocally };
+  return { patients, appointments, stats, tenantConfig, isLoading, refreshData: fetchData, addPatientLocally };
 }
 
 export async function createPatientApi(data: { fullName: string, email?: string, phone?: string }): Promise<Patient | null> {
@@ -124,6 +129,25 @@ export async function deletePatientApi(id: string) {
     return response.ok;
   } catch (error) {
     console.error('Failed to delete patient:', error);
+    return false;
+  }
+}
+
+export async function updateTenantConfigApi(data: any): Promise<boolean> {
+  try {
+    const token = localStorage.getItem('clinic_token');
+    const response = await fetch('/api/tenant/config', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
+        'Authorization': `Bearer ${token || 'demo-token'}`
+      },
+      body: JSON.stringify(data),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to update config:', error);
     return false;
   }
 }
@@ -185,20 +209,49 @@ export async function deleteAppointmentApi(id: string) {
   }
 }
 
-export async function generatePatientSummary(notes: string) {
+export async function fetchPatientRecordApi(id: string): Promise<any | null> {
   try {
     const token = localStorage.getItem('clinic_token');
-    const response = await fetch('/api/ai/summary', {
-      method: 'POST',
-      headers: { 
+    const response = await fetch(`/api/patients/${id}`, {
+      headers: {
+        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
+        'Authorization': `Bearer ${token || 'demo-token'}`
+      }
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (err) {
+    console.error('Failed to fetch patient record', err);
+    return null;
+  }
+}
+
+export async function savePatientRecordApi(id: string, record: any): Promise<boolean> {
+  try {
+    const token = localStorage.getItem('clinic_token');
+    const response = await fetch(`/api/patients/${id}`, {
+      method: 'PUT',
+      headers: {
         'Content-Type': 'application/json',
         'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
         'Authorization': `Bearer ${token || 'demo-token'}`
       },
-      body: JSON.stringify({ notes }),
+      body: JSON.stringify({ 
+        medicalRecord: record,
+        exercises: record.exercises,
+        nutritionalPlan: record.nutritionPlan // Mapping from UI state name to DB field name
+      })
     });
-    const data = await response.json();
-    return data.summary;
+    return response.ok;
+  } catch (err) {
+    console.error('Failed to save record', err);
+    return false;
+  }
+}
+
+export async function generatePatientSummary(notes: string) {
+  try {
+    return await aiService.summarizePatientHistory(notes);
   } catch (error) {
     console.error('Failed to generate summary', error);
     return null;
@@ -207,18 +260,7 @@ export async function generatePatientSummary(notes: string) {
 
 export async function generateWhatsAppDraft(patientName: string, appointmentType: string, time: string, goal: 'reminder' | 'follow_up' | 'reactivation' = 'reminder') {
   try {
-    const token = localStorage.getItem('clinic_token');
-    const response = await fetch('/api/ai/whatsapp-draft', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}`
-      },
-      body: JSON.stringify({ patientName, appointmentType, time, goal }),
-    });
-    const data = await response.json();
-    return data.draft;
+    return await aiService.generateWhatsAppDraft(patientName, appointmentType, time, goal);
   } catch (error) {
     console.error('Failed to generate whatsapp draft', error);
     return null;

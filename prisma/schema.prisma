@@ -10,6 +10,7 @@ datasource db {
 model Tenant {
   id                   String        @id @default(uuid())
   name                 String
+  slug                 String?       @unique
   taxId                String?
   stripeCustomerId     String?
   stripeSubscriptionId String?
@@ -17,6 +18,17 @@ model Tenant {
   subscriptionStatus   String        @default("trialing")
   subscriptionPlan     String        @default("STARTER")
   trialEndsAt          DateTime?
+  
+  // Customization fields
+  logoUrl              String?
+  address              String?
+  ownerName            String?
+  specialty            String        @default("Fisioterapia")
+  description          String?
+  themeColor           String?       @default("#008477")
+  contactPhone         String?
+  contactEmail         String?
+
   createdAt            DateTime      @default(now())
   appointments         Appointment[]
   invoices             Invoice[]
@@ -63,9 +75,15 @@ model Patient {
   cachedAt            DateTime?
   lastVisit           DateTime?
   portalToken         String?       @unique // For the patient self-service portal
+  exercises           Json?         @default("[]")
+  nutritionalPlan      Json?         @default("{}")
+  lastPortalAccess    DateTime?
+  medicalRecord        Json?         @default("{}")
   appointments        Appointment[]
   invoices            Invoice[]
   tenant              Tenant        @relation(fields: [tenantId], references: [id])
+
+  @@unique([id, tenantId])
 }
 
 model Appointment {
@@ -83,6 +101,8 @@ model Appointment {
   internalNotes   String?
   patient         Patient  @relation(fields: [patientId], references: [id])
   tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  
+  @@unique([id, tenantId])
 }
 
 model Invoice {
@@ -95,6 +115,8 @@ model Invoice {
   issuedDate DateTime @default(now())
   patient    Patient  @relation(fields: [patientId], references: [id])
   tenant     Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([id, tenantId])
 }
 
 model Room {
@@ -103,6 +125,8 @@ model Room {
   name      String
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
   shifts    Shift[]
+
+  @@unique([id, tenantId])
 }
 
 model Shift {
@@ -117,4 +141,6 @@ model Shift {
   user      User     @relation(fields: [userId], references: [id])
   room      Room?    @relation(fields: [roomId], references: [id])
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([id, tenantId])
 }

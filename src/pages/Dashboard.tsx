@@ -2,14 +2,17 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, Wallet, ArrowRightLeft, Users, Package, CreditCard, FileText, BarChart, MoreHorizontal, 
-  Code, Search, Grid, HelpCircle, Bell, Settings, Plus, ChevronDown, CheckCircle2, Info, X, Map, User, LogOut, ArrowRight, Menu, Mail, Phone, Pencil, Trash2, Download, Sun, Moon, Brain, Rocket, Clock, Calendar, Video, Mic, MicOff, VideoOff, PhoneCall, Sparkles, Stethoscope
+  Code, Search, Grid, HelpCircle, Bell, Settings, Plus, ChevronDown, CheckCircle2, Info, X, Map, User, LogOut, ArrowRight, Menu, Mail, Phone, Pencil, Trash2, Download, Sun, Moon, Brain, Rocket, Clock, Calendar, Video, Mic, MicOff, VideoOff, PhoneCall, Sparkles, Stethoscope, Loader2
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { 
   ResponsiveContainer, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell 
 } from 'recharts';
-import { useDashboardData, createPatientApi, createAppointmentApi, updatePatientApi, deletePatientApi, updateAppointmentApi, deleteAppointmentApi } from '../hooks/useDashboardData';
+import { 
+  useDashboardData, createPatientApi, createAppointmentApi, updatePatientApi, deletePatientApi, 
+  updateAppointmentApi, deleteAppointmentApi, fetchPatientRecordApi, savePatientRecordApi, updateTenantConfigApi
+} from '../hooks/useDashboardData';
 import { useStaffData, createShiftApi, deleteShiftApi, createRoomApi, updateRoomApi, deleteRoomApi } from '../hooks/useStaffData';
 import { NexoraLogo } from '../components/NexoraLogo';
 import { TelemedicineRoom } from '../components/TelemedicineRoom';
@@ -27,23 +30,35 @@ import { VialStock } from '../components/specialties/VialStock';
 export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { stats, appointments, patients, refreshData } = useDashboardData();
+  const { stats, appointments, patients, tenantConfig, refreshData } = useDashboardData();
   const { users, rooms, shifts, refreshStaffData } = useStaffData();
 
   const [activeView, setActiveView] = useState('inicio');
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNexoraAiOpen, setIsNexoraAiOpen] = useState(false);
 
   // Clinic Configuration State
   const [clinicConfig, setClinicConfig] = useState({
-    name: localStorage.getItem('clinic-name') || 'Tu Clínica',
-    plan: localStorage.getItem('clinic-plan') || 'Pro',
-    specialty: localStorage.getItem('clinic-specialty') || 'Odontología', // Default to Dentistry as requested
+    name: 'Tu Clínica',
+    slug: '',
+    plan: 'Pro',
+    specialty: 'Odontología',
     owner: 'Iker',
     email: 'ikergarciafdez1@gmail.com',
     address: 'Calle Principal 123, Madrid',
     phone: '+34 600 000 000',
+    description: '',
+    themeColor: '#008477',
+    logoUrl: '',
+    contactPhone: '',
+    contactEmail: '',
     aiEnabled: true,
     autoSummaries: false,
     appointmentInterval: 30,
@@ -57,6 +72,15 @@ export default function Dashboard() {
       { day: 'Domingo', open: '00:00', close: '00:00', closed: true },
     ]))
   });
+
+  useEffect(() => {
+    if (tenantConfig) {
+      setClinicConfig(prev => ({
+        ...prev,
+        ...tenantConfig
+      }));
+    }
+  }, [tenantConfig]);
 
   const SPECIALTY_MAP: Record<string, {
     productName: string,
@@ -239,6 +263,7 @@ export default function Dashboard() {
   const [newPatientForm, setNewPatientForm] = useState({ fullName: '', email: '', phone: '' });
   const [isSubmittingPatient, setIsSubmittingPatient] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [activeRecordTab, setActiveRecordTab] = useState<'specialty' | 'exercises' | 'nutrition'>('specialty');
 
   // Edit Patient Modal State
   const [isEditPatientModalOpen, setIsEditPatientModalOpen] = useState(false);
@@ -282,36 +307,61 @@ export default function Dashboard() {
 
   // Patient Clinical Record State
   const [patientRecord, setPatientRecord] = useState<any>({
-    odontogram: [
-      { id: 11, status: 'healthy' },
-      { id: 12, status: 'caries' },
-      { id: 13, status: 'healthy' },
-      { id: 21, status: 'restored' },
-    ],
+    odontogram: [],
+    painPoints: [],
+    nutritionPlan: [],
     quotes: [],
-    painPoints: [
-      { id: 'p1', x: 45, y: 30, intensity: 8, notes: 'Dolor lumbar agudo tras esfuerzo físico.' },
-      { id: 'p2', x: 55, y: 45, intensity: 4, notes: 'Molestia leve en zona cervical.' }
-    ],
-    nutritionPlan: {
-       desayuno: ['Avena con frutos rojos', 'Café sin azúcar'],
-       almuerzo: ['Pechuga de pollo a la plancha', 'Arroz integral', 'Brocoli al vapor'],
-       cena: ['Ensalada mixta', 'Pescado blanco', 'Infusión']
-    },
-    psychSessions: [
-       { date: '22 Abr 2026', duration: '50 min', summary: 'El paciente muestra avances significativos en la gestión de la ansiedad social.' },
-       { date: '15 Abr 2026', duration: '55 min', summary: 'Primer contacto y evaluación del entorno familiar.' }
-    ],
-    aestheticPhotos: [
-       { type: 'Antes', date: '01 Mar 2026', url: 'https://images.unsplash.com/photo-1512413316925-fd4b93f31521?w=400&auto=format&fit=crop&q=60' },
-       { type: 'Después', date: '20 Abr 2026', url: 'https://images.unsplash.com/photo-1512413316925-fd4b93f31521?w=400&auto=format&fit=crop&q=60' }
-    ],
     weightLogs: [],
     exercises: [],
+    psychSessions: [],
+    aestheticPhotos: [],
     tests: [],
     vials: [],
-    generalNotes: "Paciente colaborador con buena predisposición al tratamiento."
+    generalNotes: ""
   });
+  const [isSavingRecord, setIsSavingRecord] = useState(false);
+
+  useEffect(() => {
+    async function loadRecord() {
+      if (!selectedPatientId) return;
+      const data = await fetchPatientRecordApi(selectedPatientId);
+      if (data && data.medicalRecord) {
+        // Merge with defaults to ensure all keys exist
+        setPatientRecord((prev: any) => ({
+          ...prev,
+          ...(typeof data.medicalRecord === 'string' ? JSON.parse(data.medicalRecord) : data.medicalRecord)
+        }));
+      } else {
+        // Reset if no record
+        setPatientRecord({
+          odontogram: [],
+          painPoints: [],
+          nutritionPlan: [],
+          quotes: [],
+          weightLogs: [],
+          exercises: [],
+          psychSessions: [],
+          aestheticPhotos: [],
+          tests: [],
+          vials: [],
+          generalNotes: ""
+        });
+      }
+    }
+    loadRecord();
+  }, [selectedPatientId]);
+
+  const handleSavePatientRecord = async () => {
+    if (!selectedPatientId) return;
+    setIsSavingRecord(true);
+    const success = await savePatientRecordApi(selectedPatientId, patientRecord);
+    if (success) {
+      showToast('Registro clínico guardado con éxito.', 'success');
+    } else {
+      showToast('Error al guardar el registro clínico.', 'error');
+    }
+    setIsSavingRecord(false);
+  };
 
   // Copy Link States
   const [copiedStates, setCopiedStates] = useState<{ [key: string]: boolean }>({});
@@ -417,26 +467,29 @@ export default function Dashboard() {
 
   const handleGeneratePortalLink = async (patientId: string) => {
     try {
-      const response = await fetch(`/api/portal/generate/${patientId}`, {
+      const response = await fetch(`/api/patients/${patientId}/portal-token`, {
         method: 'POST',
         headers: {
           'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${localStorage.getItem('clinic_token') || 'demo-token'}`
+          'Authorization': `Bearer ${localStorage.getItem('clinic_token') || 'demo-token'}`
         }
       });
       if (response.ok) {
-        const { token } = await response.json();
-        const portalUrl = `${window.location.origin}/portal/${token}`;
+        const { portalToken } = await response.json();
+        const portalUrl = `${window.location.origin}/portal/${portalToken}`;
+        
+        // Update local state so WhatsApp link shows up immediately
+        await refreshData();
         
         handleCopyLink(portalUrl, `portal-${patientId}`);
-        
+        showToast('Enlace de acceso generado y copiado al portapapeles');
       } else {
         const err = await response.json();
-        window.alert('Error al generar el enlace: ' + (err.error || 'Desconocido'));
+        showToast('Error al generar el enlace: ' + (err.error || 'Desconocido'), 'error');
       }
     } catch (e) {
       console.error(e);
-      window.alert('Error de red al generar enlace.');
+      showToast('Error de red al generar enlace.', 'error');
     }
   };
 
@@ -461,9 +514,10 @@ export default function Dashboard() {
       await refreshStaffData();
       setIsAddShiftModalOpen(false);
       setNewShiftForm({ userId: '', roomId: '', date: '', startTime: '09:00', endTime: '17:00', type: 'WORK', notes: '' });
+      showToast('Turno añadido con éxito');
     } catch (error) {
       console.error('Error adding shift:', error);
-      alert('Error al generar el turno.');
+      showToast('Error al generar el turno.', 'error');
     } finally {
       setIsSubmittingShift(false);
     }
@@ -479,9 +533,10 @@ export default function Dashboard() {
       await refreshStaffData();
       setIsAddRoomModalOpen(false);
       setNewRoomForm({ name: '' });
+      showToast('Sala añadida con éxito');
     } catch (error) {
       console.error('Error adding room:', error);
-      alert('Error al generar la sala.');
+      showToast('Error al generar la sala.', 'error');
     } finally {
       setIsSubmittingRoom(false);
     }
@@ -497,9 +552,10 @@ export default function Dashboard() {
       await refreshStaffData();
       setIsEditRoomModalOpen(false);
       setEditingRoom(null);
+      showToast('Sala actualizada con éxito');
     } catch (error) {
       console.error('Error editing room:', error);
-      alert('Error al actualizar la sala.');
+      showToast('Error al actualizar la sala.', 'error');
     } finally {
       setIsSubmittingRoom(false);
     }
@@ -510,8 +566,9 @@ export default function Dashboard() {
       try {
         await deleteRoomApi(id);
         await refreshStaffData();
+        showToast('Sala eliminada con éxito');
       } catch (error) {
-         alert('Error al eliminar la sala.');
+         showToast('Error al eliminar la sala.', 'error');
       }
     }
   };
@@ -665,6 +722,110 @@ export default function Dashboard() {
   }, [patients]);
 
   const renderContent = () => {
+    if (activeView === 'whatsapp_bot') {
+      return (
+        <div className="px-4 md:px-8 max-w-6xl mx-auto pb-24 mt-8 transition-colors">
+          <div className="mb-8">
+            <h1 className={`text-[24px] font-bold tracking-tight flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
+              <Phone className="w-6 h-6 text-[#25D366]" /> Gestión WhatsApp AI Bot
+            </h1>
+            <p className={`text-[14px] mt-1 ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Configura tu asistente automático para agendar citas por WhatsApp.</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <div className={`rounded-[12px] border p-8 transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className={`text-[17px] font-bold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
+                    Estado del Bot
+                  </h3>
+                  <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">ACTIVO</span>
+                </div>
+                
+                <div className="space-y-6">
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-xl">
+                    <p className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-1 flex items-center gap-2">
+                       <Info className="w-4 h-4" /> ¿Cómo funciona?
+                    </p>
+                    <p className="text-xs text-blue-700 dark:text-blue-400">
+                      Cuando un paciente escribe a tu número de WhatsApp, Nexora AI entiende si quiere una cita y le ofrece los huecos libres según tu calendario de "Agenda".
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                      <div>
+                        <div className={`text-[14px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Agendamiento Automático</div>
+                        <div className="text-[12px] text-gray-400">Permitir que el bot reserve citas directamente en la agenda.</div>
+                      </div>
+                      <button className="w-12 h-6 rounded-full bg-[#25D366] relative">
+                        <div className="absolute top-1 left-7 w-4 h-4 rounded-full bg-white" />
+                      </button>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-4 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                      <div>
+                        <div className={`text-[14px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Notificaciones de Cancelación</div>
+                        <div className="text-[12px] text-gray-400">Enviar aviso por WhatsApp cuando el bot detecte una cancelación.</div>
+                      </div>
+                      <button className="w-12 h-6 rounded-full bg-gray-300 relative">
+                        <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-white" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className={`rounded-[12px] border p-8 transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+                 <h3 className={`text-[17px] font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Instrucciones de Personalización</h3>
+                 <p className="text-sm text-gray-500 mb-4">Puedes dar "instrucciones extra" a tu bot para que sepa cómo responder a ciertas preguntas (ej. "No aceptamos Adeslas").</p>
+                 <textarea 
+                    className={`w-full p-4 border rounded-xl text-sm outline-none ${isDarkMode ? 'bg-[#0f172a] border-slate-700 text-white' : 'bg-gray-50 border-gray-200'}`}
+                    placeholder="Ej. Si preguntan por seguros, diles que solo trabajamos con Sanitas y Mapfre..."
+                    rows={4}
+                 />
+                 <button className="mt-4 px-6 py-2 bg-[#25D366] text-white rounded-xl font-bold hover:brightness-90 transition-all">
+                    Guardar Instrucciones
+                 </button>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-gradient-to-br from-[#075e54] to-[#128c7e] p-6 rounded-[20px] text-white shadow-xl shadow-green-900/10">
+                 <h4 className="font-bold mb-2 flex items-center gap-2">
+                   <Rocket className="w-5 h-5" /> Pruébalo ahora
+                 </h4>
+                 <p className="text-xs opacity-90 mb-6">Hemos habilitado una demo interactiva donde puedes simular ser un paciente escribiéndole a tu propia clínica.</p>
+                 <button 
+                    onClick={() => window.open(`/whatsapp-demo?slug=${clinicConfig.slug || 'demo'}`)}
+                    className="w-full py-3 bg-white text-[#075e54] rounded-xl font-bold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
+                 >
+                   <Phone className="w-4 h-4" /> Abrir Chat Demo
+                 </button>
+              </div>
+
+              <div className={`border rounded-[12px] p-6 transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+                <h4 className={`text-sm font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Estadísticas del Bot</h4>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-500">Conversaciones hoy</span>
+                    <span className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>12</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-500">Citas agendadas (Bot)</span>
+                    <span className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>4</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-500">Ahorro tiempo est.</span>
+                    <span className="text-sm font-bold text-green-500">1.5h</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
     if (activeView === 'historial_clinico') {
       const patient = patients.find(p => p.id === selectedPatientId);
       if (!patient) return <div>No se encontró el paciente</div>;
@@ -692,20 +853,44 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               {/* Specialized Component based on Specialty */}
-              <div className={`border rounded-[12px] shadow-sm overflow-hidden transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
-                <div className={`px-5 py-4 border-b flex items-center justify-between transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155]' : 'bg-slate-50 border-[#e3e8ee]'}`}>
-                   <h3 className={`text-[15px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
-                     {clinicConfig.specialty === 'Odontología' ? 'Odontograma Interactivo' : 
-                      clinicConfig.specialty === 'Fisioterapia' ? 'Mapa de Dolor Palpable' :
-                      clinicConfig.specialty === 'Nutrición' ? 'Seguimiento Antropométrico' :
-                      clinicConfig.specialty === 'Psicología' ? 'Línea de Vida y Sesiones' :
-                      clinicConfig.specialty === 'Estética' ? 'Protocolo Tratamiento Estético' :
-                      'Historia Clínica General'}
-                   </h3>
-                   <div className="text-[11px] font-medium text-gray-500">Última actualización: Hoy</div>
+              <div className={`border rounded-[12px] shadow-sm overflow-hidden transition-colors flex flex-col ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+                <div className={`px-5 py-2 border-b flex items-center justify-between transition-colors ${isDarkMode ? 'bg-[#0f172a] border-[#334155]' : 'bg-slate-50 border-[#e3e8ee]'}`}>
+                   <div className="flex items-center gap-1">
+                      <button 
+                        onClick={() => setActiveRecordTab('specialty')}
+                        className={`px-4 py-3 text-[13px] font-bold transition-all border-b-2 ${activeRecordTab === 'specialty' ? 'border-[#5469d4] text-[#5469d4]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                      >
+                        {clinicConfig.specialty}
+                      </button>
+                      <button 
+                        onClick={() => setActiveRecordTab('exercises')}
+                        className={`px-4 py-3 text-[13px] font-bold transition-all border-b-2 ${activeRecordTab === 'exercises' ? 'border-[#5469d4] text-[#5469d4]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                      >
+                        Ejercicios
+                      </button>
+                      <button 
+                        onClick={() => setActiveRecordTab('nutrition')}
+                        className={`px-4 py-3 text-[13px] font-bold transition-all border-b-2 ${activeRecordTab === 'nutrition' ? 'border-[#5469d4] text-[#5469d4]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                      >
+                        Nutrición
+                      </button>
+                   </div>
+                   <div className="hidden sm:block text-[11px] font-medium text-gray-400">Autoguardado: 12:45</div>
                 </div>
-                <div className="p-0">
-                  {clinicConfig.specialty === 'Odontología' ? (
+                <div className="p-0 flex-1">
+                  {activeRecordTab === 'exercises' ? (
+                    <ExercisePlan 
+                      isDarkMode={isDarkMode}
+                      value={patientRecord.exercises}
+                      onChange={(val) => setPatientRecord({...patientRecord, exercises: val})}
+                    />
+                  ) : activeRecordTab === 'nutrition' ? (
+                    <NutritionPlan 
+                      isDarkMode={isDarkMode}
+                      value={patientRecord.nutritionPlan}
+                      onChange={(val) => setPatientRecord({...patientRecord, nutritionPlan: val})}
+                    />
+                  ) : clinicConfig.specialty === 'Odontología' ? (
                     <Odontogram 
                       isDarkMode={isDarkMode} 
                       value={patientRecord.odontogram} 
@@ -805,7 +990,42 @@ export default function Dashboard() {
                  </div>
                  <button className="w-full mt-6 py-2.5 border border-dashed border-gray-300 rounded-[8px] text-[12px] font-bold text-gray-500 hover:bg-gray-50 transition-colors">
                     Ver Expediente Completo
-                 </button>
+                  </button>
+
+                  <div className={`mt-6 pt-6 border-t ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
+                    <h4 className={`text-[12px] font-bold mb-3 uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Portal del Paciente</h4>
+                    <p className={`text-[11px] mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Permite al paciente ver sus ejercicios, dietas y próximas citas de forma segura.
+                    </p>
+                    <button 
+                      onClick={() => handleGeneratePortalLink(patient.id)}
+                      className={`w-full py-2.5 rounded-[8px] text-[12px] font-bold flex items-center justify-center gap-2 transition-all ${
+                        copiedStates[`portal-${patient.id}`] 
+                        ? 'bg-green-600 text-white' 
+                        : 'bg-[#1b4d3e] text-white hover:bg-[#143a2f]'
+                      }`}
+                    >
+                      {copiedStates[`portal-${patient.id}`] ? (
+                        <><CheckCircle2 className="w-4 h-4" /> ¡Enlace Copiado!</>
+                      ) : (
+                        <><Rocket className="w-4 h-4" /> Generar Enlace Acceso</>
+                      )}
+                    </button>
+                    {patient.portalToken && (
+                      <div className="mt-3 flex items-center justify-center gap-4">
+                        <button 
+                          onClick={() => {
+                            const url = `${window.location.origin}/portal/${patient.portalToken}`;
+                            const text = encodeURIComponent(`Hola ${patient.fullName}, aquí tienes acceso a tu portal personal de ${clinicConfig.name}: ${url}`);
+                            window.open(`https://wa.me/${patient.phone?.replace(/\s/g, '')}?text=${text}`, '_blank');
+                          }}
+                          className="text-[11px] font-bold text-[#075e54] hover:underline flex items-center gap-1"
+                        >
+                          <Phone className="w-3 h-3" /> Enviar por WhatsApp
+                        </button>
+                      </div>
+                    )}
+                  </div>
               </div>
 
               {/* Digital Assets */}
@@ -914,9 +1134,21 @@ export default function Dashboard() {
                 {aiDraftResult && (
                   <div className={`mt-4 p-4 border rounded-[6px] relative transition-colors ${isDarkMode ? 'bg-blue-900/20 border-blue-800' : 'bg-[#f8fcfb] border-[#a6ebd3]'}`}>
                     <p className={`text-[13px] italic ${isDarkMode ? 'text-blue-200' : 'text-[#1b4d3e]'}`}>"{aiDraftResult}"</p>
-                    <button onClick={()=>{handleCopyLink(aiDraftResult, 'ai-draft');}} className={`absolute top-2 right-2 text-[11px] font-bold ${copiedStates['ai-draft'] ? 'text-green-600' : 'text-[#5469d4] hover:underline'}`}>
-                      {copiedStates['ai-draft'] ? '¡Copiado!' : 'Copiar'}
-                    </button>
+                    <div className="absolute top-2 right-2 flex items-center gap-3">
+                      <button onClick={()=>{handleCopyLink(aiDraftResult, 'ai-draft');}} className={`text-[11px] font-bold ${copiedStates['ai-draft'] ? 'text-green-600' : 'text-[#5469d4] hover:underline'}`}>
+                        {copiedStates['ai-draft'] ? '¡Copiado!' : 'Copiar'}
+                      </button>
+                      <div className="w-[1px] h-3 bg-gray-300 mx-1"></div>
+                      <button 
+                        onClick={() => {
+                          const encoded = encodeURIComponent(aiDraftResult);
+                          window.open(`https://wa.me/?text=${encoded}`, '_blank');
+                        }} 
+                        className="text-[11px] font-bold text-[#075e54] hover:underline flex items-center gap-1"
+                      >
+                        <Phone className="w-3 h-3" /> WhatsApp
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -958,18 +1190,46 @@ export default function Dashboard() {
       );
     }
     if (activeView === 'configuracion') {
+      const handleSaveConfig = async () => {
+        const ok = await updateTenantConfigApi({ 
+          name: clinicConfig.name, 
+          slug: clinicConfig.slug,
+          address: clinicConfig.address,
+          owner: clinicConfig.owner,
+          specialty: clinicConfig.specialty,
+          description: clinicConfig.description,
+          themeColor: clinicConfig.themeColor,
+          logoUrl: clinicConfig.logoUrl,
+          contactPhone: clinicConfig.contactPhone,
+          contactEmail: clinicConfig.contactEmail
+        });
+        if (ok) {
+          alert('Configuración guardada correctamente.');
+        } else {
+          alert('Hubo un error al guardar la configuración.');
+        }
+      };
+
       return (
         <div className="px-4 md:px-8 max-w-4xl mx-auto pb-24 mt-8">
-          <div className="mb-10">
-            <h1 className={`text-[28px] font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Configuración</h1>
-            <p className={`text-[14px] ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Gestiona los detalles de tu clínica y las preferencias del sistema.</p>
+          <div className="mb-10 flex items-center justify-between">
+            <div>
+              <h1 className={`text-[28px] font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Configuración</h1>
+              <p className={`text-[14px] ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Gestiona los detalles de tu clínica y las preferencias del sistema.</p>
+            </div>
+            <button 
+              onClick={handleSaveConfig}
+              className="px-6 py-2.5 bg-[#5469d4] text-white rounded-xl font-bold shadow-md hover:bg-[#4c5ed1] transition-colors"
+            >
+              Guardar Configuración
+            </button>
           </div>
 
           <div className="space-y-8">
             {/* General Info */}
             <div className={`rounded-[12px] border p-8 transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
               <h3 className={`text-[17px] font-bold mb-6 flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
-                <User className="w-5 h-5 text-[#5469d4]" /> Información General
+                <User className="w-5 h-5 text-[#5469d4]" /> Información General de la Clínica
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1.5">
@@ -990,6 +1250,15 @@ export default function Dashboard() {
                     className={`w-full px-4 py-2 rounded-[6px] border text-[14px] outline-none transition-all ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-[#5469d4]' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4]'}`}
                   />
                 </div>
+                <div className="space-y-1.5">
+                  <label className={`text-[13px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Color Corporativo (Hex)</label>
+                  <input 
+                    type="text" 
+                    value={clinicConfig.themeColor || '#008477'}
+                    onChange={(e) => updateClinicConfig({ themeColor: e.target.value })}
+                    className={`w-full px-4 py-2 rounded-[6px] border text-[14px] outline-none transition-all ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-[#5469d4]' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4]'}`}
+                  />
+                </div>
                 <div className="space-y-1.5 md:col-span-2">
                   <label className={`text-[13px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Dirección Física</label>
                   <input 
@@ -999,8 +1268,27 @@ export default function Dashboard() {
                     className={`w-full px-4 py-2 rounded-[6px] border text-[14px] outline-none transition-all ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-[#5469d4]' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4]'}`}
                   />
                 </div>
+                <div className="space-y-1.5">
+                  <label className={`text-[13px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Teléfono de Contacto</label>
+                  <input 
+                    type="text" 
+                    value={clinicConfig.contactPhone || ''}
+                    onChange={(e) => updateClinicConfig({ contactPhone: e.target.value })}
+                    className={`w-full px-4 py-2 rounded-[6px] border text-[14px] outline-none transition-all ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-[#5469d4]' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4]'}`}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className={`text-[13px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Email de Contacto</label>
+                  <input 
+                    type="email" 
+                    value={clinicConfig.contactEmail || ''}
+                    onChange={(e) => updateClinicConfig({ contactEmail: e.target.value })}
+                    className={`w-full px-4 py-2 rounded-[6px] border text-[14px] outline-none transition-all ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-[#5469d4]' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4]'}`}
+                  />
+                </div>
+
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className={`text-[13px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Especialidad de la Clínica</label>
+                  <label className={`text-[13px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Especialidad Clínica Principal</label>
                   <select 
                     value={clinicConfig.specialty}
                     onChange={(e) => updateClinicConfig({ specialty: e.target.value })}
@@ -1009,6 +1297,7 @@ export default function Dashboard() {
                     <option value="Odontología">Odontología (Odontograma)</option>
                     <option value="Fisioterapia">Fisioterapia (Mapa de Dolor)</option>
                     <option value="General">Medicina General / Otros</option>
+                    <option value="Nutrición">Nutrición</option>
                   </select>
                   <p className="text-[11px] text-gray-500 mt-1">Este ajuste cambiará automáticamente el tipo de ficha médica que verás en cada paciente.</p>
                 </div>
@@ -1063,6 +1352,25 @@ export default function Dashboard() {
                     </button>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Public Links */}
+            <div className={`rounded-[12px] border p-8 transition-colors flex flex-col gap-4 ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+              <h3 className={`text-[17px] font-bold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
+                <Rocket className="w-5 h-5 text-[#5469d4]" /> Portal y Links Públicos
+              </h3>
+              <p className={`text-[14px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Comparte estos enlaces con tus pacientes para que puedan registrarse e interactuar con tu clínica.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <a href={window.location.origin + '/c/' + (clinicConfig.slug || localStorage.getItem('active_tenant_id') || '')} target="_blank" rel="noreferrer" className="p-4 border rounded-xl hover:border-[#008477] transition-all flex flex-col gap-2 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+                  <div className="font-bold text-[#008477] flex items-center gap-2"><Map className="w-4 h-4"/>Portal Web de Captación</div>
+                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Enlace público donde los pacientes pueden registrarse a tu clínica.</div>
+                </a>
+                <a href={window.location.origin + '/whatsapp-demo?slug=' + (clinicConfig.slug || localStorage.getItem('active_tenant_id') || '')} target="_blank" rel="noreferrer" className="p-4 border rounded-xl hover:border-[#25D366] transition-all flex flex-col gap-2 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+                  <div className="font-bold text-[#25D366] flex items-center gap-2"><Phone className="w-4 h-4"/> Demo WhatsApp Bot</div>
+                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Prueba tu asistente de WhatsApp de Nexora configurado para tu clínica.</div>
+                </a>
               </div>
             </div>
 
@@ -1465,6 +1773,14 @@ export default function Dashboard() {
               </h1>
               <p className={`text-[14px] mt-1 ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Módulo especializado para {clinicConfig.specialty}.</p>
             </div>
+            <button 
+              onClick={handleSavePatientRecord}
+              disabled={isSavingRecord}
+              className="flex items-center gap-2 px-4 py-2 bg-[#008477] text-white rounded-lg font-bold hover:opacity-90 disabled:opacity-50 transition-all shadow-sm"
+            >
+              {isSavingRecord ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              Guardar Cambios
+            </button>
           </div>
           
           <div className={`rounded-xl border shadow-sm overflow-hidden min-h-[500px] bg-white ${isDarkMode ? 'border-[#334155]' : 'border-[#e3e8ee]'}`}>
@@ -1549,7 +1865,11 @@ export default function Dashboard() {
                         </td>
                         <td className="px-4 py-3">
                           <div className={`flex flex-col text-[12px] ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>
-                            {patient.email && <span className="flex items-center gap-1.5"><Mail className="w-3 h-3" /> {patient.email}</span>}
+                            {patient.email && (
+                              <a href={`mailto:${patient.email}`} className="flex items-center gap-1.5 hover:text-[#008477] transition-all cursor-pointer">
+                                <Mail className="w-3 h-3" /> {patient.email}
+                              </a>
+                            )}
                             {patient.phone ? <span className="flex items-center gap-1.5 mt-0.5"><Phone className="w-3 h-3" /> {patient.phone}</span> : null}
                             {!patient.email && !patient.phone && <span className="text-[#8792a2]">Sin contacto</span>}
                           </div>
@@ -3178,6 +3498,20 @@ export default function Dashboard() {
             ))}
 
             <div className={`mt-8 mb-2 px-3 text-[11px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-[#8792a2]'}`}>Plataforma</div>
+            {[
+              { id: 'whatsapp_bot', label: 'Gestión WhatsApp Bot', icon: Phone },
+            ].map(item => (
+              <button 
+                key={item.id}
+                onClick={() => handleMenuClick(item.id)} 
+                className={`w-full flex items-center justify-between px-3 py-1.5 rounded-[4px] font-medium text-[13px] transition-colors ${activeView === item.id ? (isDarkMode ? 'bg-[#334155] text-white' : 'bg-[#e3e8ee] text-[#000000]') : (isDarkMode ? 'text-gray-400 hover:text-white hover:bg-[#334155]' : 'text-[#425466] hover:text-[#1a1f36] hover:bg-[#e3e8ee]')}`}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon className={`w-4 h-4 ${activeView === item.id ? (isDarkMode ? 'text-blue-400' : 'text-[#5469d4]') : 'text-[#8792a2]'}`} />
+                  {item.label}
+                </div>
+              </button>
+            ))}
             <button 
               onClick={() => setIsNexoraAiOpen(!isNexoraAiOpen)} 
               className={`w-full flex items-center justify-between px-3 py-1.5 rounded-[4px] font-medium text-[13px] transition-colors ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-[#334155]' : 'text-[#425466] hover:text-[#1a1f36] hover:bg-[#e3e8ee]'} ${isNexoraAiOpen ? (isDarkMode ? 'text-white' : 'text-[#1a1f36]') : ''}`}
@@ -3469,6 +3803,13 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-[1000] px-6 py-3 rounded-lg shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300 ${toast.type === 'success' ? 'bg-[#1b4d3e] text-white' : 'bg-red-600 text-white'}`}>
+          {toast.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-green-400" /> : <X className="w-5 h-5 text-white" />}
+          <span className="text-[14px] font-medium">{toast.message}</span>
+        </div>
+      )}
     </div>
   );
 }
