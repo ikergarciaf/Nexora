@@ -53,7 +53,7 @@ const SPECIALTIES: SpecialtyCard[] = [
   {
     slug: 'psicologos',
     name: 'Psicología',
-    description: 'Notas cifradas, escalas DSM-V y teleconsulta segura.',
+    description: 'Notas cifradas, escalas DSM-V y seguimiento de sesiones.',
     icon: <Brain className="w-5 h-5" />,
     image:
       'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=1200',
@@ -61,7 +61,7 @@ const SPECIALTIES: SpecialtyCard[] = [
   {
     slug: 'nutricion',
     name: 'Nutrición',
-    description: 'Diseñador de dietas IA, antropometría y portal de recetas.',
+    description: 'Diseñador de dietas IA, antropometría y planes nutricionales.',
     icon: <Apple className="w-5 h-5" />,
     image:
       'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=1200',
@@ -101,7 +101,7 @@ const TESTIMONIALS = [
   },
   {
     quote:
-      'Las notas terapéuticas cifradas me dan tranquilidad. Y la teleconsulta no necesita instalar nada, mis pacientes mayores la usan sin problemas.',
+      'Las notas terapéuticas cifradas me dan tranquilidad. La agenda inteligente me avisa de conflictos antes de que ocurran.',
     name: 'Carla Domínguez',
     role: 'Psicóloga clínica',
     specialty: 'Psicología',
@@ -113,7 +113,7 @@ const INTEGRATIONS = [
   { name: 'WhatsApp', tag: 'Recordatorios al paciente' },
   { name: 'Google Calendar', tag: 'Agenda sincronizada' },
   { name: 'Verifactu', tag: 'Facturación electrónica' },
-  { name: 'Zoom', tag: 'Teleconsulta' },
+  { name: 'Meta', tag: 'Presencia en redes' },
   { name: 'Outlook', tag: 'Email del equipo' },
 ];
 
@@ -139,9 +139,9 @@ const CLIENT_LOGOS = [
 const FEATURES = [
   {
     icon: <Globe className="w-5 h-5" />,
-    title: 'Web Médica Personalizada',
+    title: 'Desarrollo Web Profesional',
     description:
-      'Diseñamos y desarrollamos el sitio web oficial de tu clínica. Totalmente optimizado para buscadores (SEO) y conectado a tu agenda Nexora. Desde 399€ pago único.',
+      'Diseñamos tu web médica profesional con SEO local, integración directa con tu agenda Nexora y formulario de citas. Pago único de 599€ incluye hosting el primer año.',
   },
   {
     icon: <Smartphone className="w-5 h-5" />,
@@ -247,12 +247,27 @@ const PLANS = [
       'Múltiples sedes',
       'Cuadros de mando avanzados',
       'Integraciones API',
-      'Account manager dedicado',
+      '20% descuento en desarrollo web',
     ],
     cta: 'Hablar con ventas',
     highlighted: false,
   },
 ];
+
+const WEB_SERVICE = {
+  name: 'Desarrollo Web',
+  description: 'Web profesional para tu clínica con SEO local y agenda integrada.',
+  price: '599€ pago único',
+  features: [
+    'Diseño personalizado profesional',
+    'SEO local optimizado',
+    'Formulario de citas conectado a Nexora',
+    'Hosting incluido primer año',
+    'Certificado SSL gratuito',
+    'Soporte técnico 30 días',
+  ],
+  note: 'Después del primer año: 49€/mes (hosting + mantenimiento)',
+};
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -618,6 +633,37 @@ export default function LandingPage() {
                 </ul>
               </div>
             ))}
+          </div>
+
+          {/* Web Development Service */}
+          <div className="mt-12 p-8 rounded-2xl bg-gradient-to-br from-[#008477]/5 to-[#008477]/10 ring-1 ring-[#008477]/20">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Globe className="w-5 h-5 text-[#008477]" />
+                  <h3 className="text-xl font-semibold text-slate-900">{WEB_SERVICE.name}</h3>
+                </div>
+                <p className="text-slate-600 mb-4">{WEB_SERVICE.description}</p>
+                <ul className="grid sm:grid-cols-2 gap-2">
+                  {WEB_SERVICE.features.map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-[13px] text-slate-700">
+                      <Check className="w-3.5 h-3.5 text-[#008477]" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-[12px] text-slate-500">{WEB_SERVICE.note}</p>
+              </div>
+              <div className="flex flex-col items-start md:items-end gap-3">
+                <div className="text-3xl font-semibold text-[#008477]">{WEB_SERVICE.price}</div>
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="h-11 px-6 rounded-lg bg-[#008477] text-white text-[14px] font-medium hover:bg-[#006b60] transition-colors"
+                >
+                  Solicitar web
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </section>

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Home, Wallet, ArrowRightLeft, Users, Package, CreditCard, FileText, BarChart, MoreHorizontal, 
-  Code, Search, Grid, HelpCircle, Bell, Settings, Plus, ChevronDown, CheckCircle2, Info, X, Map, User, LogOut, ArrowRight, Menu, Mail, Phone, Pencil, Trash2, Download, Sun, Moon, Brain, Rocket, Clock, Calendar, Video, Mic, MicOff, VideoOff, PhoneCall, Sparkles, Stethoscope, Loader2
+import {
+  Home, Wallet, ArrowRightLeft, Users, Package, CreditCard, FileText, BarChart, MoreHorizontal,
+  Code, Search, Grid, HelpCircle, Bell, Settings, Plus, ChevronDown, CheckCircle2, Info, X, Map, User, LogOut, ArrowRight, Menu, Mail, Phone, Pencil, Trash2, Download, Sun, Moon, Brain, Rocket, Clock, Calendar, Sparkles, Stethoscope, Loader2, Globe, Dumbbell
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -15,7 +15,6 @@ import {
 } from '../hooks/useDashboardData';
 import { useStaffData, createShiftApi, deleteShiftApi, createRoomApi, updateRoomApi, deleteRoomApi } from '../hooks/useStaffData';
 import { NexoraLogo } from '../components/NexoraLogo';
-import { TelemedicineRoom } from '../components/TelemedicineRoom';
 import { Odontogram } from '../components/specialties/Odontogram';
 import { PainMap } from '../components/specialties/PainMap';
 import { NutritionPlan } from '../components/specialties/NutritionPlan';
@@ -132,7 +131,7 @@ export default function Dashboard() {
       icon: <Map className="w-5 h-5" />,
       specializedItems: [
         { id: 'mapa_dolor', label: 'Mapa de Dolor', icon: <Settings className="w-4 h-4" /> },
-        { id: 'ejercicios', label: 'Pautas Ejercicios', icon: <Video className="w-4 h-4" /> }
+        { id: 'ejercicios', label: 'Pautas Ejercicios', icon: <Dumbbell className="w-4 h-4" /> }
       ],
       kpis: [
         { label: 'Sesiones Restantes', key: 'sessions', suffix: '' },
@@ -302,8 +301,7 @@ export default function Dashboard() {
   const [editingService, setEditingService] = useState<any>(null);
   const [newServiceForm, setNewServiceForm] = useState({ name: '', description: '', category: '', duration: 30, price: 0 });
 
-  // Telemedicine State
-  const [activeTelemedicineCall, setActiveTelemedicineCall] = useState<any>(null);
+  // Telemedicine State - removed, will be added later
 
   // Patient Clinical Record State
   const [patientRecord, setPatientRecord] = useState<any>({
@@ -459,37 +457,9 @@ export default function Dashboard() {
   };
 
   const handleDeletePatient = async (id: string) => {
-    if (window.confirm('¿Seguro que quieres eliminar este cliente? Esta acción no se puede deshacer.')) {
+    if (window.confirm('¿Seguro que quieres eliminar este paciente? Esta acción no se puede deshacer.')) {
       await deletePatientApi(id);
       await refreshData();
-    }
-  };
-
-  const handleGeneratePortalLink = async (patientId: string) => {
-    try {
-      const response = await fetch(`/api/patients/${patientId}/portal-token`, {
-        method: 'POST',
-        headers: {
-          'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-          'Authorization': `Bearer ${localStorage.getItem('clinic_token') || 'demo-token'}`
-        }
-      });
-      if (response.ok) {
-        const { portalToken } = await response.json();
-        const portalUrl = `${window.location.origin}/portal/${portalToken}`;
-        
-        // Update local state so WhatsApp link shows up immediately
-        await refreshData();
-        
-        handleCopyLink(portalUrl, `portal-${patientId}`);
-        showToast('Enlace de acceso generado y copiado al portapapeles');
-      } else {
-        const err = await response.json();
-        showToast('Error al generar el enlace: ' + (err.error || 'Desconocido'), 'error');
-      }
-    } catch (e) {
-      console.error(e);
-      showToast('Error de red al generar enlace.', 'error');
     }
   };
 
@@ -586,7 +556,7 @@ export default function Dashboard() {
     doc.setTextColor(100);
     doc.text(`Fecha: ${invoiceInfo.date}`, 14, 42);
     doc.text(`Nº Factura: ${invoiceInfo.number}`, 14, 48);
-    doc.text(`Cliente: ${invoiceInfo.client}`, 14, 54);
+    doc.text(`Paciente: ${invoiceInfo.client}`, 14, 54);
     
     autoTable(doc, {
       startY: 65,
@@ -793,15 +763,12 @@ export default function Dashboard() {
             <div className="space-y-6">
               <div className="bg-gradient-to-br from-[#075e54] to-[#128c7e] p-6 rounded-[20px] text-white shadow-xl shadow-green-900/10">
                  <h4 className="font-bold mb-2 flex items-center gap-2">
-                   <Rocket className="w-5 h-5" /> Pruébalo ahora
+                   <Rocket className="w-5 h-5" /> Próximamente
                  </h4>
-                 <p className="text-xs opacity-90 mb-6">Hemos habilitado una demo interactiva donde puedes simular ser un paciente escribiéndole a tu propia clínica.</p>
-                 <button 
-                    onClick={() => window.open(`/whatsapp-demo?slug=${clinicConfig.slug || 'demo'}`)}
-                    className="w-full py-3 bg-white text-[#075e54] rounded-xl font-bold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
-                 >
-                   <Phone className="w-4 h-4" /> Abrir Chat Demo
-                 </button>
+                 <p className="text-xs opacity-90 mb-4">La integración completa con WhatsApp Business estará disponible próximamente para planes Pro y Elite.</p>
+                 <div className="text-xs bg-white/10 rounded-lg p-3">
+                   <span className="font-semibold">Funciones previstas:</span> Agendamiento automático, recordatorios de citas, y respuestas a preguntas frecuentes.
+                 </div>
               </div>
 
               <div className={`border rounded-[12px] p-6 transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
@@ -993,39 +960,14 @@ export default function Dashboard() {
                   </button>
 
                   <div className={`mt-6 pt-6 border-t ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
-                    <h4 className={`text-[12px] font-bold mb-3 uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Portal del Paciente</h4>
-                    <p className={`text-[11px] mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      Permite al paciente ver sus ejercicios, dietas y próximas citas de forma segura.
-                    </p>
-                    <button 
-                      onClick={() => handleGeneratePortalLink(patient.id)}
-                      className={`w-full py-2.5 rounded-[8px] text-[12px] font-bold flex items-center justify-center gap-2 transition-all ${
-                        copiedStates[`portal-${patient.id}`] 
-                        ? 'bg-green-600 text-white' 
-                        : 'bg-[#1b4d3e] text-white hover:bg-[#143a2f]'
-                      }`}
-                    >
-                      {copiedStates[`portal-${patient.id}`] ? (
-                        <><CheckCircle2 className="w-4 h-4" /> ¡Enlace Copiado!</>
-                      ) : (
-                        <><Rocket className="w-4 h-4" /> Generar Enlace Acceso</>
-                      )}
-                    </button>
-                    {patient.portalToken && (
-                      <div className="mt-3 flex items-center justify-center gap-4">
-                        <button 
-                          onClick={() => {
-                            const url = `${window.location.origin}/portal/${patient.portalToken}`;
-                            const text = encodeURIComponent(`Hola ${patient.fullName}, aquí tienes acceso a tu portal personal de ${clinicConfig.name}: ${url}`);
-                            window.open(`https://wa.me/${patient.phone?.replace(/\s/g, '')}?text=${text}`, '_blank');
-                          }}
-                          className="text-[11px] font-bold text-[#075e54] hover:underline flex items-center gap-1"
-                        >
-                          <Phone className="w-3 h-3" /> Enviar por WhatsApp
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                     <h4 className={`text-[12px] font-bold mb-3 uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Próximas Citas</h4>
+                     <button 
+                       onClick={() => { setActiveView('agenda'); }}
+                       className="w-full py-2.5 rounded-[8px] text-[12px] font-bold flex items-center justify-center gap-2 transition-all bg-[#5469d4] text-white hover:bg-[#4c5ed1]"
+                     >
+                       <Calendar className="w-4 h-4" /> Ver agenda de este paciente
+                     </button>
+                   </div>
               </div>
 
               {/* Digital Assets */}
@@ -1355,22 +1297,20 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Public Links */}
+            {/* WhatsApp Integration */}
             <div className={`rounded-[12px] border p-8 transition-colors flex flex-col gap-4 ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
               <h3 className={`text-[17px] font-bold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
-                <Rocket className="w-5 h-5 text-[#5469d4]" /> Portal y Links Públicos
+                <Phone className="w-5 h-5 text-[#25D366]" /> Integración WhatsApp
               </h3>
-              <p className={`text-[14px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Comparte estos enlaces con tus pacientes para que puedan registrarse e interactuar con tu clínica.</p>
+              <p className={`text-[14px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tus pacientes pueden agendar citas automáticamente mediante WhatsApp.</p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <a href={window.location.origin + '/c/' + (clinicConfig.slug || localStorage.getItem('active_tenant_id') || '')} target="_blank" rel="noreferrer" className="p-4 border rounded-xl hover:border-[#008477] transition-all flex flex-col gap-2 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
-                  <div className="font-bold text-[#008477] flex items-center gap-2"><Map className="w-4 h-4"/>Portal Web de Captación</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Enlace público donde los pacientes pueden registrarse a tu clínica.</div>
-                </a>
-                <a href={window.location.origin + '/whatsapp-demo?slug=' + (clinicConfig.slug || localStorage.getItem('active_tenant_id') || '')} target="_blank" rel="noreferrer" className="p-4 border rounded-xl hover:border-[#25D366] transition-all flex flex-col gap-2 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
-                  <div className="font-bold text-[#25D366] flex items-center gap-2"><Phone className="w-4 h-4"/> Demo WhatsApp Bot</div>
-                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Prueba tu asistente de WhatsApp de Nexora configurado para tu clínica.</div>
-                </a>
+              <div className="p-4 border rounded-xl border-[#25D366]/30 bg-[#25D366]/5 dark:bg-[#25D366]/10 flex flex-col gap-2">
+                <div className="font-bold text-[#25D366] flex items-center gap-2">
+                  <Phone className="w-4 h-4"/> Bot de Citas WhatsApp
+                </div>
+                <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Disponible en planes Pro y Elite. Los pacientes escriben por WhatsApp y el bot agenda automáticamente.
+                </div>
               </div>
             </div>
 
@@ -1422,12 +1362,76 @@ export default function Dashboard() {
                     <div className="text-[12px] text-gray-400">Tu suscripción se renueva el 15 de Mayo, 2026.</div>
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={() => window.alert('Próximamente: Pasarela de cambio de plan.')}
                   className="px-4 py-2 bg-[#5469d4] text-white rounded-lg text-[13px] font-bold hover:opacity-90 transition-all"
                 >
                   Mejorar Plan
                 </button>
+              </div>
+            </div>
+
+            {/* Web Development Service */}
+            <div className={`rounded-[12px] border p-8 transition-colors ${isDarkMode ? 'bg-gradient-to-br from-[#008477]/10 to-[#008477]/5 border-[#008477]/30' : 'bg-gradient-to-br from-[#008477]/5 to-[#008477]/10 border-[#008477]/20'}`}>
+              <h3 className={`text-[17px] font-bold mb-6 flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
+                <Globe className="w-5 h-5 text-[#008477]" /> Desarrollo Web Profesional
+              </h3>
+              
+              <div className="grid md:grid-cols-2 gap-8">
+                {/* Info y precios */}
+                <div className="space-y-4">
+                  <p className={`text-[14px] ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>
+                    Web médica personalizada con SEO local, diseño profesional y formulario de citas integrado.
+                  </p>
+                  <ul className={`text-[13px] space-y-2 ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#008477]" /> Diseño personalizado profesional</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#008477]" /> SEO local optimizado Google</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#008477]" /> Agenda Nexora integrada</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#008477]" /> Hosting + SSL primer año</li>
+                  </ul>
+                  <div className="pt-2">
+                    <span className="text-3xl font-bold text-[#008477]">599€</span>
+                    <span className={`text-[13px] ml-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>pago único</span>
+                  </div>
+                  <p className={`text-[12px] ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Desde año 2: 49€/mes mantenimiento</p>
+                  {clinicConfig.plan === 'Elite' && (
+                    <div className="text-[12px] text-[#008477] font-medium">✓ 20% descuento incluido (Plan Elite)</div>
+                  )}
+                </div>
+                
+                {/* Formulario de solicitud */}
+                <div className={`p-5 rounded-xl border ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+                  <h4 className={`text-[15px] font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Solicitar presupuesto</h4>
+                  <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); window.alert('Solicitud enviada. Te contactaremos en 24h.'); }}>
+                    <div>
+                      <label className={`block text-[12px] font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Tipo de proyecto</label>
+                      <select className={`w-full px-3 py-2 rounded-lg text-[13px] border ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white' : 'bg-white border-gray-200'}`}>
+                        <option value="CLINIC_WEB">Web para Clínica (599€)</option>
+                        <option value="REDESIGN">Rediseño Web (799€)</option>
+                        <option value="LANDING">Landing Page (299€)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={`block text-[12px] font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Nombre de contacto *</label>
+                      <input type="text" required className={`w-full px-3 py-2 rounded-lg text-[13px] border ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white' : 'bg-white border-gray-200'}`} placeholder="Tu nombre" />
+                    </div>
+                    <div>
+                      <label className={`block text-[12px] font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Email *</label>
+                      <input type="email" required className={`w-full px-3 py-2 rounded-lg text-[13px] border ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white' : 'bg-white border-gray-200'}`} placeholder="tu@email.com" />
+                    </div>
+                    <div>
+                      <label className={`block text-[12px] font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Teléfono</label>
+                      <input type="tel" className={`w-full px-3 py-2 rounded-lg text-[13px] border ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white' : 'bg-white border-gray-200'}`} placeholder="+34 600 000 000" />
+                    </div>
+                    <div>
+                      <label className={`block text-[12px] font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Notas adicionales</label>
+                      <textarea className={`w-full px-3 py-2 rounded-lg text-[13px] border ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white' : 'bg-white border-gray-200'}`} rows={2} placeholder="¿Tienes web actual? ¿Algo específico que necesites?" />
+                    </div>
+                    <button type="submit" className="w-full py-2.5 bg-[#008477] text-white rounded-lg text-[13px] font-bold hover:bg-[#006b60] transition-all">
+                      Enviar solicitud
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
@@ -1449,7 +1453,7 @@ export default function Dashboard() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-[4px] font-semibold text-[13px] transition-colors shadow-sm ${copiedStates['agenda-link'] ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800/50 dark:text-green-400' : isDarkMode ? 'bg-[#1e293b] border-[#334155] text-white hover:bg-[#334155]' : 'bg-white border-[#e3e8ee] text-[#1a1f36] hover:bg-[#f6f9fc]'}`}
               >
                 {copiedStates['agenda-link'] ? <CheckCircle2 className="w-4 h-4" /> : <Plus className="w-4 h-4 rotate-45" />}
-                {copiedStates['agenda-link'] ? '¡Copiado!' : 'Compartir Link Cliente'}
+                {copiedStates['agenda-link'] ? '¡Copiado!' : 'Enlace de Reserva'}
               </button>
               <button 
                 onClick={() => setIsAddAppointmentModalOpen(true)}
@@ -1566,7 +1570,7 @@ export default function Dashboard() {
                 <form onSubmit={handleEditAppointmentSubmit} className="p-6">
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-[13px] font-medium text-[#1a1f36] mb-1.5">Paciente/Cliente</label>
+                      <label className="block text-[13px] font-medium text-[#1a1f36] mb-1.5">Paciente</label>
                       <select 
                         required
                         value={editingAppointment.patientId}
@@ -1665,7 +1669,7 @@ export default function Dashboard() {
                 <form onSubmit={handleAddAppointmentSubmit} className="p-6">
                   {patients.length === 0 ? (
                     <div className="text-center py-6">
-                      <p className="text-[14px] text-[#4f566b] mb-4">Debes dar de alta a un cliente/paciente antes de poder agendar una cita.</p>
+                      <p className="text-[14px] text-[#4f566b] mb-4">Debes dar de alta a un paciente antes de poder agendar una cita.</p>
                       <button 
                         type="button"
                         onClick={() => {
@@ -1675,14 +1679,14 @@ export default function Dashboard() {
                         }}
                         className="text-[#5469d4] font-semibold text-[13px] hover:underline"
                       >
-                        Crear mi primer cliente
+                        Crear mi primer paciente
                       </button>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-[13px] font-medium text-[#1a1f36] mb-1.5">Paciente/Cliente *</label>
-                        <select 
+                        <label className="block text-[13px] font-medium text-[#1a1f36] mb-1.5">Paciente *</label>
+                        <select
                           required
                           value={newAppointmentForm.patientId}
                           onChange={(e) => setNewAppointmentForm({...newAppointmentForm, patientId: e.target.value})}
@@ -1803,7 +1807,7 @@ export default function Dashboard() {
       return (
         <div className="px-4 md:px-8 max-w-6xl mx-auto pb-24 mt-8">
           <div className="flex items-center justify-between mb-8">
-            <h1 className={`text-[24px] font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Clientes / Pacientes</h1>
+            <h1 className={`text-[24px] font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Pacientes</h1>
             <button 
               onClick={() => setIsAddPatientModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-[#5469d4] text-white rounded-[4px] font-semibold text-[13px] hover:opacity-90 transition-opacity shadow-sm"
@@ -1815,7 +1819,7 @@ export default function Dashboard() {
           <div className={`border rounded-[8px] overflow-hidden shadow-sm transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
             <div className={`flex items-center gap-3 px-4 py-3 border-b relative text-[13px] font-medium transition-colors focus-within:border-[#5469d4] focus-within:ring-1 focus-within:ring-[#5469d4] ${isDarkMode ? 'bg-[#0f172a] border-[#334155]' : 'bg-[#f6f9fc] border-[#e3e8ee]'}`}>
               <Search className="w-4 h-4 text-[#8792a2]" />
-              <input type="text" placeholder="Filtrar clientes por nombre..." className={`bg-transparent border-none outline-none w-full placeholder:text-[#8792a2] ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`} />
+              <input type="text" placeholder="Filtrar pacientes por nombre..." className={`bg-transparent border-none outline-none w-full placeholder:text-[#8792a2] ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`} />
             </div>
 
             <div className="overflow-x-auto min-h-[400px]">
@@ -1834,13 +1838,13 @@ export default function Dashboard() {
                       <td colSpan={4} className="px-4 py-16 text-center">
                         <div className="flex flex-col items-center justify-center">
                           <Users className="w-8 h-8 text-[#8792a2] mb-3" />
-                          <h3 className={`text-[14px] font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>No hay clientes todavía</h3>
+                          <h3 className={`text-[14px] font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>No hay pacientes todavía</h3>
                           <p className={`text-[13px] mb-4 ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Empieza añadiendo tu primer paciente.</p>
-                          <button 
+                          <button
                             onClick={() => setIsAddPatientModalOpen(true)}
                             className="text-[#5469d4] font-semibold text-[13px] hover:underline dark:text-[#a5b4fc]"
                           >
-                            Añadir cliente
+                            Añadir paciente
                           </button>
                         </div>
                       </td>
@@ -1888,9 +1892,7 @@ export default function Dashboard() {
                             </button>
                             {activeDropdown === `patient-${patient.id}` && (
                               <div className={`absolute right-8 top-0 w-32 border rounded-[6px] shadow-[0_4px_12px_rgba(0,0,0,0.1)] py-1 z-50 animate-in fade-in zoom-in-95 duration-100 ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
-                                <button onClick={(e) => { e.stopPropagation(); setActiveDropdown(null); handleGeneratePortalLink(patient.id); }} className={`w-full text-left px-3 py-1.5 text-[13px] flex items-center gap-2 transition-colors ${copiedStates['portal-'+patient.id] ? 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/30 hover:opacity-80' : isDarkMode ? 'text-gray-300 hover:text-white hover:bg-[#334155]' : 'text-[#4f566b] hover:text-[#1a1f36] hover:bg-[#f6f9fc]'}`}>
-                                  {copiedStates[`portal-${patient.id}`] ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Code className="w-3.5 h-3.5" />} {copiedStates[`portal-${patient.id}`] ? 'Copiado!' : 'Enlace Paciente'}
-                                </button>
+
                                 <button onClick={(e) => { e.stopPropagation(); setActiveDropdown(null); setEditingPatient(patient); setIsEditPatientModalOpen(true); }} className={`w-full text-left px-3 py-1.5 text-[13px] flex items-center gap-2 transition-colors ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-[#334155]' : 'text-[#4f566b] hover:text-[#1a1f36] hover:bg-[#f6f9fc]'}`}>
                                   <Pencil className="w-3.5 h-3.5" /> Editar
                                 </button>
@@ -1918,7 +1920,7 @@ export default function Dashboard() {
             <div className="fixed inset-0 bg-[#1a1f36]/40 z-[200] flex items-center justify-center p-4">
               <div className="bg-white rounded-[8px] shadow-lg w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 <div className="px-6 py-4 border-b border-[#e3e8ee] flex items-center justify-between">
-                  <h3 className="text-[16px] font-bold text-[#1a1f36]">Editar cliente</h3>
+                  <h3 className="text-[16px] font-bold text-[#1a1f36]">Editar paciente</h3>
                   <button onClick={() => { setIsEditPatientModalOpen(false); setEditingPatient(null); }} className="text-[#8792a2] hover:text-[#1a1f36]">
                     <X className="w-5 h-5" />
                   </button>
@@ -1980,7 +1982,7 @@ export default function Dashboard() {
             <div className="fixed inset-0 bg-[#1a1f36]/40 z-[200] flex items-center justify-center p-4">
               <div className="bg-white rounded-[8px] shadow-lg w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 <div className="px-6 py-4 border-b border-[#e3e8ee] flex items-center justify-between">
-                  <h3 className="text-[16px] font-bold text-[#1a1f36]">Añadir cliente / paciente</h3>
+                  <h3 className="text-[16px] font-bold text-[#1a1f36]">Añadir paciente</h3>
                   <button onClick={() => setIsAddPatientModalOpen(false)} className="text-[#8792a2] hover:text-[#1a1f36]">
                     <X className="w-5 h-5" />
                   </button>
@@ -2032,7 +2034,7 @@ export default function Dashboard() {
                       disabled={isSubmittingPatient}
                       className="px-4 py-2 bg-[#5469d4] text-white rounded-[4px] font-semibold text-[13px] hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50"
                     >
-                      {isSubmittingPatient ? 'Guardando...' : 'Guardar cliente'}
+                      {isSubmittingPatient ? 'Guardando...' : 'Guardar paciente'}
                     </button>
                   </div>
                 </form>
@@ -2341,7 +2343,7 @@ export default function Dashboard() {
           <div className={`border rounded-[8px] overflow-hidden shadow-sm transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
             <div className={`flex items-center gap-3 px-4 py-3 border-b relative text-[13px] font-medium transition-colors focus-within:border-[#5469d4] focus-within:ring-1 focus-within:ring-[#5469d4] ${isDarkMode ? 'bg-[#0f172a] border-[#334155]' : 'bg-[#f6f9fc] border-[#e3e8ee]'}`}>
               <Search className="w-4 h-4 text-[#8792a2]" />
-              <input type="text" placeholder="Buscar por cliente, nº factura o importe..." className={`bg-transparent border-none outline-none w-full placeholder:text-[#8792a2] transition-colors ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`} />
+              <input type="text" placeholder="Buscar por paciente, nº factura o importe..." className={`bg-transparent border-none outline-none w-full placeholder:text-[#8792a2] transition-colors ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`} />
             </div>
 
             <div className="overflow-x-auto min-h-[400px]">
@@ -2349,7 +2351,7 @@ export default function Dashboard() {
                 <thead>
                   <tr className={`border-b transition-colors ${isDarkMode ? 'border-[#334155] bg-[#0f172a]' : 'border-[#e3e8ee] bg-white'}`}>
                     <th className={`px-4 py-3 text-[12px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-[#1a1f36]'}`}>Fecha / Factura</th>
-                    <th className={`px-4 py-3 text-[12px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-[#1a1f36]'}`}>Cliente</th>
+                    <th className={`px-4 py-3 text-[12px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-[#1a1f36]'}`}>Paciente</th>
                     <th className={`px-4 py-3 text-[12px] font-bold uppercase tracking-wider text-right ${isDarkMode ? 'text-gray-400' : 'text-[#1a1f36]'}`}>Importe</th>
                     <th className={`px-4 py-3 text-[12px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-[#1a1f36]'}`}>Estado</th>
                     <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wider"></th>
@@ -2926,77 +2928,98 @@ export default function Dashboard() {
       );
     }
 
-    if (activeView === 'telemedicina') {
-      if (activeTelemedicineCall) {
-        return (
-          <div className="h-full w-full p-4 animate-in fade-in zoom-in-95 duration-300 relative bg-black">
-            <TelemedicineRoom 
-              isDarkMode={isDarkMode} 
-              appointmentInfo={activeTelemedicineCall}
-              onEndCall={() => setActiveTelemedicineCall(null)} 
-            />
-          </div>
-        );
-      }
-
+    if (activeView === 'web_clinica') {
       return (
         <div className="px-4 md:px-8 max-w-6xl mx-auto pb-24 mt-8 transition-colors">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
             <div>
               <h1 className={`text-[24px] font-bold tracking-tight mb-2 flex items-center gap-2 transition-colors ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
-                <Video className="w-6 h-6 text-[#5469d4]" /> Videoconsultas
+                <Globe className="w-6 h-6 text-[#008477]" /> Web de tu Clínica
               </h1>
-              <p className={`text-[13px] ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Gestiona y accede a tus citas de telemedicina cifradas de extremo a extremo.</p>
+              <p className={`text-[13px] ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Potencia la presencia online de tu clínica con una web profesional y optimizada para SEO.</p>
             </div>
-            {/* Start direct room */}
             <button 
-              onClick={() => setActiveTelemedicineCall({ patientName: 'Paciente (Invitado)' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-black text-white dark:bg-white dark:text-black rounded-[4px] font-bold text-[13px] hover:opacity-90 transition-opacity shadow-sm"
+              onClick={(e) => {
+                const subject = encodeURIComponent(`Presupuesto Web - ${clinicConfig.name}`);
+                window.location.href = `mailto:hola@nexora.co?subject=${subject}`;
+              }}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#008477] hover:bg-[#007065] text-white rounded-lg text-[13px] font-semibold transition-colors"
             >
-              <PhoneCall className="w-4 h-4" /> Iniciar sesión urgente
+              <Mail className="w-4 h-4" /> Solicitar Presupuesto
             </button>
           </div>
 
-          <div className="space-y-4">
-            <h3 className={`text-[15px] font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Citas Online Programadas (Hoy)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {appointments.filter(a => a.status === 'scheduled').slice(0, 3).map((app, idx) => (
-                 <div key={idx} className={`p-5 rounded-[8px] border transition-colors flex flex-col justify-between ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-[#fcfdff] border-[#e3e8ee]'}`}>
-                    <div>
-                       <div className="flex justify-between items-start mb-3">
-                          <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
-                            E2E Secure Video
-                          </span>
-                          <div className="flex items-center gap-1 text-[12px] text-gray-500">
-                             <Clock className="w-3.5 h-3.5" />
-                             {app.time}
-                          </div>
-                       </div>
-                       <h4 className={`text-[16px] font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Consulta con Paciente ID: {app.patientId.slice(0,8)}</h4>
-                       <p className={`text-[13px] mb-4 ${isDarkMode ? 'text-gray-400' : 'text-[#8792a2]'}`}>{app.notes || 'Revisión general online.'}</p>
-                    </div>
-                    
-                    <button 
-                      onClick={() => setActiveTelemedicineCall({ patientName: 'Paciente ID: ' + app.patientId.slice(0,8), time: app.time })}
-                      className="w-full py-2.5 bg-[#5469d4] hover:bg-[#4c5ed1] text-white text-[13px] font-bold rounded-[6px] transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Video className="w-4 h-4" /> Unirse a la sala
-                    </button>
-                 </div>
-              ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            {[
+              {
+                title: 'Web Básica',
+                price: '399€',
+                desc: 'Ideal para empezar. Presencia online profesional y clara.',
+                features: ['Diseño responsive (móvil y PC)', 'Sección de contacto y mapa', 'Formulario de citas integrado', 'SEO básico'],
+                color: 'bg-slate-100 dark:bg-slate-800'
+              },
+              {
+                title: 'Web Profesional',
+                price: '799€',
+                desc: 'Para clínicas establecidas que buscan destacar.',
+                features: ['Diseño premium personalizado', 'Catálogo de servicios/tratamientos', 'Blog autogestionable', 'SEO avanzado', 'Integración WhatsApp'],
+                color: 'bg-[#008477]/10 border-[#008477] border-2',
+                badge: 'Recomendado'
+              },
+              {
+                title: 'Web Premium',
+                price: '1.499€',
+                desc: 'La solución definitiva con todas las integraciones.',
+                features: ['Diseño exclusivo y animaciones', 'Portal completo de servicios', 'Integración con agenda Nexora', 'Multidioma (2 idiomas)', 'Analítica avanzada'],
+                color: 'bg-slate-900 text-white dark:bg-slate-950'
+              }
+            ].map((plan, i) => (
+              <div key={i} className={`relative p-6 rounded-2xl flex flex-col h-full ${plan.color} ${!plan.badge && isDarkMode && i === 0 ? 'border border-slate-700' : ''} ${!plan.badge && isDarkMode && i === 2 ? 'border border-slate-700' : ''}`}>
+                {plan.badge && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#008477] text-white px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase shadow-sm">
+                    {plan.badge}
+                  </div>
+                )}
+                <h3 className={`text-xl font-bold mb-2 ${plan.title === 'Web Premium' ? 'text-white' : (isDarkMode && i !== 0 ? 'text-white' : 'text-slate-900')} ${i === 0 && isDarkMode ? 'text-white' : ''} ${i === 1 && isDarkMode ? 'text-white' : ''}`}>{plan.title}</h3>
+                <div className={`text-[13px] mb-4 min-h-[40px] ${plan.title === 'Web Premium' ? 'text-slate-300' : (isDarkMode && i !== 0 ? 'text-slate-300' : 'text-slate-600')} ${i === 0 && isDarkMode ? 'text-slate-300' : ''} ${i === 1 && isDarkMode ? 'text-slate-300' : ''}`}>{plan.desc}</div>
+                <div className="flex items-baseline gap-1 mb-6">
+                  <span className={`text-3xl font-extrabold ${plan.title === 'Web Premium' ? 'text-white' : (isDarkMode && i !== 0 ? 'text-white' : 'text-slate-900')} ${i === 0 && isDarkMode ? 'text-white' : ''} ${i === 1 && isDarkMode ? 'text-white' : ''}`}>{plan.price}</span>
+                  <span className={`text-[12px] ${plan.title === 'Web Premium' ? 'text-slate-400' : 'text-slate-500'}`}>pago único</span>
+                </div>
+                
+                <ul className="space-y-3 mb-8 flex-1">
+                  {plan.features.map((feat, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <CheckCircle2 className={`w-4 h-4 mt-0.5 shrink-0 ${plan.title === 'Web Premium' ? 'text-[#008477]' : 'text-[#008477]'}`} />
+                      <span className={`text-[13px] ${plan.title === 'Web Premium' ? 'text-slate-300' : (isDarkMode && i !== 0 ? 'text-slate-300' : 'text-slate-700')} ${i === 0 && isDarkMode ? 'text-slate-300' : ''} ${i === 1 && isDarkMode ? 'text-slate-300' : ''}`}>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
 
-              {/* Empty placeholder if no upcoming */}
-              {appointments.filter(a => a.status === 'scheduled').length === 0 && (
-                 <div className="col-span-full py-16 text-center text-[13px] text-gray-500">
-                    No hay citas online programadas para hoy.
-                 </div>
-              )}
+          <div className={`p-6 rounded-xl border flex flex-col md:flex-row items-center justify-between gap-6 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+            <div className="flex items-center gap-4">
+               <div className="w-12 h-12 rounded-full bg-[#008477]/10 flex items-center justify-center shrink-0">
+                  <Settings className="w-6 h-6 text-[#008477]" />
+               </div>
+               <div>
+                 <h4 className={`text-[15px] font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Mantenimiento y Soporte Continuo</h4>
+                 <p className={`text-[13px] mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                   Nos encargamos de que tu web siempre funcione, sea rápida y segura. Incluye dominio, hosting premium y cambios menores de contenido.
+                 </p>
+               </div>
+            </div>
+            <div className="flex items-center gap-4 shrink-0">
+              <div className="text-right">
+                <div className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>79€<span className="text-[14px] font-normal text-slate-500">/mes</span></div>
+              </div>
             </div>
           </div>
         </div>
       );
     }
-    
     return (
       <div className="px-4 md:px-8 max-w-6xl mx-auto pb-24">
         {/* HOY Section */}
@@ -3466,7 +3489,7 @@ export default function Dashboard() {
               { id: 'pacientes', label: 'Clientes / Pacientes', icon: Users, isActive: activeView === 'pacientes' || activeView === 'historial_clinico' },
               { id: 'tratamientos', label: 'Servicios', icon: Package },
               { id: 'staff', label: 'Personal y Turnos', icon: User },
-              { id: 'telemedicina', label: 'Videoconsulta', icon: Video },
+              { id: 'web_clinica', label: 'Web para tu Clínica', icon: Globe },
             ].map(item => (
               <button 
                 key={item.id}

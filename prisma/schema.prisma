@@ -36,6 +36,8 @@ model Tenant {
   memberships          TenantUser[]
   rooms                Room[]
   shifts               Shift[]
+  webDevRequests       WebDevelopmentRequest[]
+  smsNotifications     SMSNotification[]
 }
 
 model User {
@@ -74,13 +76,13 @@ model Patient {
   aiSummary           String?
   cachedAt            DateTime?
   lastVisit           DateTime?
-  portalToken         String?       @unique // For the patient self-service portal
   exercises           Json?         @default("[]")
-  nutritionalPlan      Json?         @default("{}")
-  lastPortalAccess    DateTime?
-  medicalRecord        Json?         @default("{}")
+  nutritionalPlan     Json?         @default("{}")
+  medicalRecord       Json?         @default("{}")
   appointments        Appointment[]
   invoices            Invoice[]
+  smsNotifications    SMSNotification[]
+  notificationPrefs   PatientNotificationPrefs?
   tenant              Tenant        @relation(fields: [tenantId], references: [id])
 
   @@unique([id, tenantId])
@@ -143,4 +145,110 @@ model Shift {
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
 
   @@unique([id, tenantId])
+}
+
+// Solicitudes de desarrollo web para clínicas
+model WebDevelopmentRequest {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+
+  // Información de contacto
+  contactName     String
+  contactEmail    String
+  contactPhone    String?
+
+  // Detalles del proyecto
+  projectType     String   @default("CLINIC_WEB") // CLINIC_WEB, REDESIGN, LANDING, ECOMMERCE
+  currentWebsite  String?
+  desiredFeatures String[] // Array de características solicitadas
+  budgetRange     String?  // Ej: "599", "1000-2000", "2000+"
+
+  // Estado de la solicitud
+  status          String   @default("PENDING") // PENDING, REVIEWING, IN_PROGRESS, COMPLETED, CANCELLED
+  priority        String   @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+
+  // Notas y seguimiento
+  notes           String?
+  adminNotes      String?
+
+  // Fechas importantes
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  completedAt     DateTime?
+
+  // Presupuesto y facturación
+  quotedPrice     Float?
+  finalPrice      Float?
+  invoiceId       String?
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Notificaciones SMS enviadas a pacientes
+model SMSNotification {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  // Destinatario
+  patientId   String?
+  patient     Patient? @relation(fields: [patientId], references: [id])
+  phoneNumber String
+
+  // Contenido del mensaje
+  message     String
+  type        String   @default("APPOINTMENT_REMINDER") // APPOINTMENT_REMINDER, CONFIRMATION, CANCELLATION, PROMOTION, CUSTOM
+
+  // Estado del envío
+  status      String   @default("PENDING") // PENDING, SENT, DELIVERED, FAILED
+  provider    String   @default("twilio") // twilio, vonage, etc.
+  providerId  String?  // ID del mensaje en el proveedor
+
+  // Metadatos del envío
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  failedAt    DateTime?
+  errorMessage String?
+
+  // Relación con cita (opcional)
+  appointmentId String?
+
+  // Costo (para tracking)
+  cost        Float?
+  currency    String   @default("EUR")
+
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([patientId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Preferencias de notificación por paciente
+model PatientNotificationPrefs {
+  id            String   @id @default(uuid())
+  patientId     String   @unique
+  patient       Patient  @relation(fields: [patientId], references: [id])
+
+  // Canales de comunicación
+  emailEnabled  Boolean  @default(true)
+  smsEnabled    Boolean  @default(true)
+  whatsappEnabled Boolean @default(false)
+
+  // Tipos de notificaciones
+  appointmentReminders Boolean @default(true)
+  confirmations   Boolean  @default(true)
+  cancellations   Boolean  @default(true)
+  marketing       Boolean  @default(false)
+
+  // Horario preferido para contacto
+  preferredContactTime String? // "MORNING", "AFTERNOON", "EVENING"
+
+  updatedAt       DateTime @updatedAt
+
+  @@index([patientId])
 }

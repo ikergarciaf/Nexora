@@ -154,27 +154,6 @@ patientRouter.put('/:id', requireRole(['OWNER', 'STAFF', 'ADMIN', 'SUPERADMIN'])
   }
 });
 
-// Generate or Reset Portal Token
-patientRouter.post('/:id/portal-token', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const tenantId = req.user!.tenantId!;
-
-    // Generate a secure random token (using simple random string for now)
-    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-    const updated = await prisma.patient.update({
-      where: { id, tenantId },
-      data: { portalToken: token }
-    });
-
-    res.json({ token });
-  } catch (error) {
-    console.error("[Portal Token Error]", error);
-    res.status(500).json({ error: "Failed to generate portal token." });
-  }
-});
-
 patientRouter.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
