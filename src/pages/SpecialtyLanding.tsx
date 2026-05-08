@@ -245,36 +245,51 @@ const specialties: Record<string, SpecialtyData> = {
   },
   'web-clinicas': {
     brandName: 'Nexora Web',
-    title: 'Desarrollo Web y SEO para Clínicas',
-    subtitle: 'Tu clínica abierta 24/7 con reserva online',
+    title: 'Desarrollo Web Premium para Clínicas',
+    subtitle: 'Sitio profesional + reserva online 24/7',
     description:
-      'Creamos páginas web profesionales que no solo lucen bien, sino que están diseñadas para convertir visitas en pacientes y sincronizarse con tu agenda Nexora.',
+      'Creamos páginas web profesionales para clínicas y centros de salud. Diseño moderno, velocidad extrema y sincronización total con tu agenda Nexora para que conviertas más visitas en pacientes sin esfuerzo.',
     image:
       'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1600',
     testimonial: {
       quote:
-        'Desde que lanzamos la nueva web con la reserva online integrada, hemos aumentado un 40% las citas de nuevos pacientes sin que recepción tenga que atender más llamadas.',
+        'Desde que lanzamos la nueva web con reserva online integrada, las citas de nuevos pacientes han subido un 40% y recepción ha dejado de atender llamadas repetitivas. Se paga sola cada mes.',
       name: 'Dr. Julián Castro',
       role: 'Director · Centro Médico Avanzado',
     },
     features: [
       {
-        title: 'Reserva online directa',
-        description: 'Sincronización total con tu agenda. El paciente reserva y la cita aparece mágicamente en Nexora.',
+        title: 'Reserva online integrada',
+        description: 'El paciente elige día y hora desde la web. La cita aparece al instante en tu agenda Nexora, sin intervención de recepción.',
         icon: <Calendar className="w-5 h-5" />,
       },
       {
         title: 'SEO Médico Local',
-        description: 'Optimizamos tu web para que aparezcas el primero en Google cuando busquen tu especialidad en tu ciudad.',
+        description: 'Posicionamos tu clínica en Google Maps y búsquedas locales para que te encuentren justo cuando te buscan en tu ciudad.',
         icon: <Globe className="w-5 h-5" />,
       },
       {
-        title: 'Diseño ultra-rápido',
-        description: 'Webs ligeras que cargan en menos de 1 segundo, mejorando la experiencia del paciente y el ranking en Google.',
+        title: 'Landing por servicio',
+        description: 'Páginas individuales para cada tratamiento con formulario de contacto, galería y llamada a la acción directa.',
+        icon: <FileText className="w-5 h-5" />,
+      },
+      {
+        title: 'Diseño ultrarrápido',
+        description: 'Carga en menos de 1 segundo. Mejora experiencia de usuario, reduce rebote y sube posiciones en Google.',
         icon: <Zap className="w-5 h-5" />,
       },
+      {
+        title: 'Blog de salud profesional',
+        description: 'Artículos optimizados para atraer pacientes orgánicos y posicionarte como referente en tu especialidad.',
+        icon: <Globe className="w-5 h-5" />,
+      },
+      {
+        title: 'Panel de analítica',
+        description: 'Métricas claras de visitas, procedencia, reservas y conversiones para saber qué funciona.',
+        icon: <Monitor className="w-5 h-5" />,
+      },
     ],
-    benefits: ['Dominio y Hosting incluidos', 'Blog de salud integrado', 'Analítica de conversiones'],
+    benefits: ['Dominio .es/.com 1 año gratis', 'Hosting ultrarrápido incluido', 'Certificado SSL', 'Mantenimiento mensual', 'Formulario inteligente', 'Galería antes/después'],
   },
 };
 
@@ -344,19 +359,39 @@ export default function SpecialtyLanding() {
                 transition={{ duration: 0.5, delay: 0.15 }}
                 className="mt-8 flex flex-col sm:flex-row gap-3"
               >
-                <button
-                  onClick={() => navigate(`/dashboard?specialty=${specialty}`)}
-                  className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-slate-900 text-white text-[15px] font-medium hover:bg-[#008477] transition-colors"
-                >
-                  Empezar gratis
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => navigate('/')}
-                  className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-700 text-[15px] font-medium ring-1 ring-slate-200 hover:ring-slate-300 transition-colors"
-                >
-                  Ver precios
-                </button>
+                {specialty === 'web-clinicas' ? (
+                  <>
+                    <button
+                      onClick={() => navigate('/demo?type=quote')}
+                      className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-slate-900 text-white text-[15px] font-medium hover:bg-[#008477] transition-colors"
+                    >
+                      Solicitar presupuesto
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => document.getElementById('planes-web')?.scrollIntoView({ behavior: 'smooth' })}
+                      className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-700 text-[15px] font-medium ring-1 ring-slate-200 hover:ring-slate-300 transition-colors"
+                    >
+                      Ver planes
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => navigate(`/dashboard?specialty=${specialty}`)}
+                      className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-slate-900 text-white text-[15px] font-medium hover:bg-[#008477] transition-colors"
+                    >
+                      Empezar gratis
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => navigate('/')}
+                      className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-700 text-[15px] font-medium ring-1 ring-slate-200 hover:ring-slate-300 transition-colors"
+                    >
+                      Ver precios
+                    </button>
+                  </>
+                )}
               </motion.div>
               <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-slate-500">
                 {data.benefits.map((b) => (
@@ -450,29 +485,187 @@ export default function SpecialtyLanding() {
         </section>
       )}
 
+      {specialty === 'web-clinicas' && (
+        <>
+          {/* Planes */}
+          <section id="planes-web" className="py-20 lg:py-24 bg-slate-50/60 border-y border-slate-200/70">
+            <div className="max-w-5xl mx-auto px-6">
+              <div className="max-w-2xl mb-12">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#008477] mb-3">
+                  Planes de desarrollo
+                </p>
+                <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900">
+                  Elige el plan que mejor se adapte a tu clínica
+                </h2>
+              </div>
+              <div className="grid md:grid-cols-3 gap-6">
+                {[
+                  {
+                    name: 'Starter',
+                    price: '490 €',
+                    setup: 'Pago único',
+                    desc: 'Perfecto para profesionales que empiezan o quieren una presencia digital básica.',
+                    features: [
+                      'Landing page 1 sección',
+                      'Diseño responsive',
+                      'Reserva online integrada',
+                      'Formulario de contacto',
+                      'Certificado SSL',
+                      'Hosting 6 meses',
+                    ],
+                  },
+                  {
+                    name: 'Profesional',
+                    price: '990 €',
+                    setup: 'Pago único',
+                    desc: 'Lo más elegido. Web completa con blog y SEO para atraer pacientes de forma orgánica.',
+                    features: [
+                      'Hasta 5 páginas',
+                      'Blog de salud integrado',
+                      'SEO On-page completo',
+                      'Reserva online integrada',
+                      'Galería de imágenes',
+                      'Hosting 12 meses',
+                      'Google My Business',
+                      'Formulario inteligente',
+                    ],
+                    featured: true,
+                  },
+                  {
+                    name: 'Premium',
+                    price: '1.990 €',
+                    setup: 'Pago único',
+                    desc: 'Solución integral con SEO continuo, mantenimiento y prioridad absoluta en soporte.',
+                    features: [
+                      'Web ilimitada en páginas',
+                      'SEO Local + Maps',
+                      'Blog + calendario editorial',
+                      'Mantenimiento 12 meses',
+                      'Hosting 12 meses',
+                      'Dominio .es/.com 1 año',
+                      'Analítica y reportes',
+                      'Soporte prioritario 24/7',
+                      'Copywriting profesional',
+                    ],
+                  },
+                ].map((plan) => (
+                  <div
+                    key={plan.name}
+                    className={`relative p-6 rounded-xl bg-white ring-1 transition-all hover:shadow-lg ${
+                      (plan as any).featured ? 'ring-2 ring-[#008477] shadow-md scale-[1.02]' : 'ring-slate-200/70'
+                    }`}
+                  >
+                    {(plan as any).featured && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-[#008477] text-white text-[11px] font-bold uppercase tracking-wider rounded-full">
+                        Más popular
+                      </div>
+                    )}
+                    <h3 className="text-lg font-semibold text-slate-900 mt-1">{plan.name}</h3>
+                    <div className="mt-3 flex items-baseline gap-1">
+                      <span className="text-3xl font-bold text-slate-900">{plan.price}</span>
+                      <span className="text-[13px] text-slate-500">{plan.setup}</span>
+                    </div>
+                    <p className="mt-2 text-[13px] text-slate-500 leading-relaxed">{plan.desc}</p>
+                    <ul className="mt-5 space-y-2.5">
+                      {plan.features.map((f) => (
+                        <li key={f} className="flex items-start gap-2 text-[13px] text-slate-600">
+                          <Check className="w-4 h-4 text-[#008477] shrink-0 mt-0.5" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      onClick={() => navigate('/demo?type=quote')}
+                      className={`mt-6 w-full h-11 rounded-lg text-[14px] font-medium transition-colors ${
+                        (plan as any).featured
+                          ? 'bg-[#008477] text-white hover:bg-[#006b61]'
+                          : 'bg-slate-900 text-white hover:bg-slate-800'
+                      }`}
+                    >
+                      Contratar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Proceso */}
+          <section className="py-20 lg:py-24">
+            <div className="max-w-4xl mx-auto px-6">
+              <div className="max-w-2xl mb-14">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#008477] mb-3">
+                  Cómo trabajamos
+                </p>
+                <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900">
+                  De la idea a tu web funcionando en 7 días
+                </h2>
+              </div>
+              <div className="grid md:grid-cols-4 gap-6">
+                {[
+                  { step: '01', title: 'Análisis', desc: 'Estudiamos tu clínica, competencia y objetivos para definir la estrategia digital.' },
+                  { step: '02', title: 'Diseño', desc: 'Creamos el mockup y lo revisamos contigo hasta que esté perfecto.' },
+                  { step: '03', title: 'Desarrollo', desc: 'Maquetamos, integramos reserva online y optimizamos para velocidad y SEO.' },
+                  { step: '04', title: 'Publicación', desc: 'Subimos la web, configuramos dominio y te formamos para gestionarla.' },
+                ].map((p) => (
+                  <div key={p.step} className="text-center">
+                    <div className="w-12 h-12 rounded-full bg-[#008477]/10 text-[#008477] text-lg font-bold flex items-center justify-center mx-auto mb-4">
+                      {p.step}
+                    </div>
+                    <h3 className="font-semibold text-[15px] text-slate-900 mb-1.5">{p.title}</h3>
+                    <p className="text-[13px] text-slate-500 leading-relaxed">{p.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        </>
+      )}
+
       {/* CTA */}
       <section className="py-20 lg:py-28">
         <div className="max-w-5xl mx-auto px-6">
           <div className="rounded-2xl bg-slate-900 px-8 py-14 lg:px-14 lg:py-20 text-center">
             <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight text-white">
-              Empieza con {data.brandName} hoy
+              {specialty === 'web-clinicas' ? '¿Listo para digitalizar tu clínica?' : `Empieza con ${data.brandName} hoy`}
             </h2>
             <p className="mt-3 text-slate-300 max-w-xl mx-auto">
-              14 días gratis, sin tarjeta. Si no encaja, te ayudamos a exportar tus datos.
+              {specialty === 'web-clinicas'
+                ? 'Solicita una consultoría gratuita sin compromiso. Te explicamos cómo podemos ayudarte a atraer más pacientes.'
+                : '14 días gratis, sin tarjeta. Si no encaja, te ayudamos a exportar tus datos.'}
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                onClick={() => navigate(`/dashboard?specialty=${specialty}`)}
-                className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-900 text-[15px] font-medium hover:bg-slate-100 transition-colors"
-              >
-                Probar gratis <ArrowRight className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => navigate('/')}
-                className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg ring-1 ring-white/20 text-white text-[15px] font-medium hover:bg-white/5 transition-colors"
-              >
-                Ver todas las especialidades
-              </button>
+              {specialty === 'web-clinicas' ? (
+                <>
+                    <button
+                      onClick={() => navigate('/demo?type=quote')}
+                      className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-900 text-[15px] font-medium hover:bg-slate-100 transition-colors"
+                    >
+                      Solicitar consultoría <ArrowRight className="w-4 h-4" />
+                    </button>
+                  <button
+                    onClick={() => navigate('/')}
+                    className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg ring-1 ring-white/20 text-white text-[15px] font-medium hover:bg-white/5 transition-colors"
+                  >
+                    Ver otros servicios
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => navigate(`/dashboard?specialty=${specialty}`)}
+                    className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-900 text-[15px] font-medium hover:bg-slate-100 transition-colors"
+                  >
+                    Probar gratis <ArrowRight className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => navigate('/')}
+                    className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg ring-1 ring-white/20 text-white text-[15px] font-medium hover:bg-white/5 transition-colors"
+                  >
+                    Ver todas las especialidades
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

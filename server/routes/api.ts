@@ -20,7 +20,7 @@ apiRouter.use('/whatsapp', whatsappRouter); // WhatsApp integration bot
 apiRouter.use('/clinic', clinicRouter); // Public clinic info (minimal)
 
 // The following routes are only accessible to Authenticated Clinics with active trials or subscriptions!
-const enforceBilling = process.env.NODE_ENV === 'production' ? requireActiveSubscription : requireActiveSubscription; 
+const enforceBilling = process.env.NODE_ENV === 'production' ? requireActiveSubscription : (_req: any, _res: any, next: any) => next(); 
 // Added to the router chain
 apiRouter.use('/dashboard', requireAuth, enforceBilling, dashboardRouter);
 apiRouter.use('/patients', requireAuth, enforceBilling, patientRouter); 

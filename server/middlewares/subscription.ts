@@ -44,7 +44,7 @@ export const requireActiveSubscription = async (req: Request, res: Response, nex
     const isTrialActive = tenant.trialEndsAt && new Date() < tenant.trialEndsAt;
     const isSubscriptionActive = tenant.subscriptionStatus === 'active';
 
-    if (!isTrialActive && !isSubscriptionActive && tenant.subscriptionStatus !== 'trialing') {
+    if (!isTrialActive && !isSubscriptionActive) {
       // Payment wall - standard SaaS practice
       res.status(402).json({ 
         error: 'Payment Required', 

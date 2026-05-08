@@ -195,14 +195,58 @@ authRouter.get('/tenants', requireAuth, async (req, res) => {
   }
 });
 
+authRouter.post('/demo-register', async (req, res) => {
+  try {
+    const { name, email, phone, clinicType, clinicName, password } = req.body;
+    if (!name || !email || !password || !clinicName) {
+      return res.status(400).json({ error: 'Faltan campos obligatorios' });
+    }
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) return res.status(400).json({ error: 'El email ya está registrado' });
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    const user = await prisma.user.create({
+      data: { email, name, passwordHash, isActive: true },
+    });
+
+    const tenant = await prisma.tenant.create({
+      data: {
+        name: clinicName,
+        specialty: clinicType || 'Fisioterapia',
+        contactPhone: phone || '',
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        subscriptionStatus: 'trialing',
+        subscriptionPlan: 'STARTER',
+      },
+    });
+
+    await prisma.tenantUser.create({
+      data: { userId: user.id, tenantId: tenant.id, role: 'OWNER' },
+    });
+
+    const token = jwt.sign({ id: user.id, isSuperAdmin: user.isSuperAdmin }, JWT_SECRET, { expiresIn: '12h' });
+
+    res.status(201).json({
+      token,
+      user: { id: user.id, email: user.email, name: user.name, isSuperAdmin: user.isSuperAdmin },
+      tenant: { id: tenant.id, name: tenant.name, specialty: tenant.specialty },
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 authRouter.post('/tenants', requireAuth, async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, specialty } = req.body;
     if (!name) return res.status(400).json({ error: 'Missing clinic name' });
 
     const tenant = await prisma.tenant.create({
       data: { 
         name,
+        specialty: specialty || 'Fisioterapia',
         trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14 days trial
       }
     });

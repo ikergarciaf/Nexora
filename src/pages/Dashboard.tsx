@@ -2,8 +2,8 @@ import React, { lazy, Suspense, useState, useRef, useEffect, useMemo, useCallbac
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Home, Wallet, ArrowRightLeft, Users, Package, CreditCard, FileText, BarChart, MoreHorizontal,
-  Code, Search, Grid, HelpCircle, Bell, Settings, Plus, ChevronDown, CheckCircle2, Info, X, Map, User, LogOut, ArrowRight, Menu, Mail, Phone, Pencil, Trash2, Download, Sun, Moon, Brain, Rocket, Clock, Calendar, Sparkles, Stethoscope, Loader2
-} from 'lucide-react';
+  Code, Search, Grid, HelpCircle, Bell, Settings, Plus, ChevronDown, CheckCircle2, Info, X, Map, User, LogOut, ArrowRight, Menu, Mail, Phone, Pencil, Trash2, Download, Sun, Moon, Brain, Rocket, Clock, Calendar, Sparkles, Stethoscope, Loader2,
+  Globe } from 'lucide-react';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useStaffData } from '../hooks/useStaffData';
 import { NexoraLogo } from '../components/NexoraLogo';
@@ -296,7 +296,7 @@ export default function Dashboard() {
       case 'historial_clinico':
         return (
           <Suspense fallback={<ViewLoader />}>
-            <ClinicalHistoryView isDarkMode={isDarkMode} />
+            <ClinicalHistoryView isDarkMode={isDarkMode} clinicConfig={clinicConfig} onBack={() => setActiveView('pacientes')} />
           </Suspense>
         );
       case 'tratamientos':
@@ -412,14 +412,6 @@ export default function Dashboard() {
                   </button>
                 </div>
                 <div className={`py-1 border-t transition-colors ${isDarkMode ? 'border-[#334155]' : 'border-[#e3e8ee]'}`}>
-                  <button className={`w-full text-left px-5 py-2.5 flex items-center justify-between text-[13px] font-bold transition-colors ${isDarkMode ? 'text-gray-400 hover:bg-[#334155] hover:text-white' : 'text-[#4f566b] hover:bg-[#f6f9fc] hover:text-[#1a1f36]'}`}>
-                    <div className="flex items-center gap-3">
-                      <Grid className="w-[16px] h-[16px]" /> Otras cuentas
-                    </div>
-                    <ArrowRight className="w-3.5 h-3.5 opacity-30" />
-                  </button>
-                </div>
-                <div className={`py-1 border-t transition-colors ${isDarkMode ? 'border-[#334155]' : 'border-[#e3e8ee]'}`}>
                   <div className={`w-full text-left px-5 py-2.5 flex items-center justify-between text-[13px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>
                     <div className="flex items-center gap-3">
                       <div className="w-5 h-5 rounded-full bg-[#008477] text-white flex items-center justify-center text-[10px]">I</div>
@@ -428,10 +420,16 @@ export default function Dashboard() {
                     <Info className="w-[14px] h-[14px] opacity-30" />
                   </div>
                   <button
-                    onClick={() => navigate('/')}
+                    onClick={() => { localStorage.clear(); navigate('/login'); }}
                     className="w-full text-left px-5 py-2.5 flex items-center gap-3 text-[13px] font-bold text-red-500 hover:bg-red-50 transition-colors"
                   >
                     <LogOut className="w-[16px] h-[16px]" /> Cerrar sesión
+                  </button>
+                  <button
+                    onClick={() => navigate('/')}
+                    className="w-full text-left px-5 py-2.5 flex items-center gap-3 text-[13px] font-bold text-gray-500 hover:bg-gray-50 transition-colors"
+                  >
+                    <ArrowRight className="w-[16px] h-[16px]" /> Salir a web principal
                   </button>
                 </div>
               </div>
@@ -517,6 +515,17 @@ export default function Dashboard() {
                 </div>
               </button>
             ))}
+            <a
+              href="/soluciones/web-clinicas"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`w-full flex items-center justify-between px-3 py-1.5 rounded-[4px] font-medium text-[13px] transition-colors ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-[#334155]' : 'text-[#425466] hover:text-[#1a1f36] hover:bg-[#e3e8ee]'}`}
+            >
+              <div className="flex items-center gap-3">
+                <Globe className="w-4 h-4 text-[#8792a2]" />
+                Desarrollo Web
+              </div>
+            </a>
             <button
               onClick={() => setIsNexoraAiOpen(!isNexoraAiOpen)}
               className={`w-full flex items-center justify-between px-3 py-1.5 rounded-[4px] font-medium text-[13px] transition-colors ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-[#334155]' : 'text-[#425466] hover:text-[#1a1f36] hover:bg-[#e3e8ee]'} ${isNexoraAiOpen ? (isDarkMode ? 'text-white' : 'text-[#1a1f36]') : ''}`}
@@ -547,12 +556,12 @@ export default function Dashboard() {
           </nav>
 
           <div className="p-4 mt-auto">
-            <button onClick={() => handleMenuClick('desarrolladores')} className="w-full flex items-center justify-between px-2 py-1.5 text-[#425466] hover:text-[#1a1f36] font-medium text-[13px]">
+            <a href="/api/health" target="_blank" rel="noopener noreferrer" className={`w-full flex items-center justify-between px-2 py-1.5 font-medium text-[13px] transition-colors ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-[#425466] hover:text-[#1a1f36]'}`}>
               <div className="flex items-center gap-3">
                 <Code className="w-4 h-4 text-[#8792a2]" />
-                Desarrolladores
+                API Status
               </div>
-            </button>
+            </a>
           </div>
         </aside>
 

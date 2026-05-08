@@ -1,29 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Plus, ArrowRight, ShieldCheck, LogOut } from 'lucide-react';
+import { Building2, LogOut, ShieldCheck, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { NexoraLogo } from '../components/NexoraLogo';
+
+const SPECIALTIES = [
+  { value: 'Fisioterapia', desc: 'Nexora Fisioterapia', color: '#0f172a' },
+  { value: 'Odontología', desc: 'Nexora Dental', color: '#008477' },
+  { value: 'Nutrición', desc: 'Nexora Nutrición', color: '#059669' },
+  { value: 'Psicología', desc: 'Nexora Psicología', color: '#7c3aed' },
+  { value: 'Estética', desc: 'Nexora Estética', color: '#db2777' },
+  { value: 'Medicina General', desc: 'Nexora Clinical', color: '#5469d4' },
+];
 
 export default function TenantSelector() {
   const navigate = useNavigate();
   const [tenants, setTenants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const [isCreating, setIsCreating] = useState(false);
-  const [newSaaSName, setNewSaaSName] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterSpecialty, setFilterSpecialty] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('clinic_token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-    
-    // User info
-    try {
-      const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
-      setUser(userInfo);
-    } catch(e) {}
-
+    if (!token) { navigate('/login'); return; }
+    try { setUser(JSON.parse(localStorage.getItem('user_info') || '{}')); } catch {}
     fetchTenants();
   }, [navigate]);
 
@@ -31,47 +32,22 @@ export default function TenantSelector() {
     try {
       setLoading(true);
       const res = await fetch('/api/auth/tenants', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('clinic_token')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem('clinic_token')}` }
       });
       const data = await res.json();
       if (!res.ok) throw new Error();
       setTenants(data);
-    } catch (e) {
+    } catch {
       navigate('/login');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSelectSaaS = (tenantId: string, tenantName: string) => {
+  const handleSelect = (tenantId: string, name: string) => {
     localStorage.setItem('active_tenant_id', tenantId);
-    localStorage.setItem('clinic-name', tenantName);
+    localStorage.setItem('clinic-name', name);
     navigate('/dashboard');
-  };
-
-  const handleCreateSaaS = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newSaaSName) return;
-
-    try {
-      const res = await fetch('/api/auth/tenants', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('clinic_token')}`
-        },
-        body: JSON.stringify({ name: newSaaSName })
-      });
-      
-      const data = await res.json();
-      if (res.ok) {
-        setIsCreating(false);
-        setNewSaaSName('');
-        fetchTenants();
-      }
-    } catch(e) {
-      console.error(e);
-    }
   };
 
   const logout = () => {
@@ -81,100 +57,140 @@ export default function TenantSelector() {
     navigate('/login');
   };
 
+  const grouped = SPECIALTIES.map(s => ({
+    ...s,
+    tenants: tenants.filter((t: any) => (t.specialty || 'Fisioterapia') === s.value),
+  })).filter(g => g.tenants.length > 0);
+
+  const filteredGroups = filterSpecialty
+    ? grouped.filter(g => g.value === filterSpecialty)
+    : grouped;
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col pt-20">
-      <div className="max-w-4xl mx-auto w-full px-6">
-        <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-[#f8f9fa]">
+      <header className="border-b border-gray-200 bg-white">
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <NexoraLogo size={32} />
-            <span className="text-xl font-black text-gray-900">Bienvenido/a, {user?.name || 'Usuario'}</span>
+            <NexoraLogo size={28} />
+            <span className="text-lg font-semibold text-gray-900">Nexora</span>
           </div>
-          <button onClick={logout} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-red-500 transition-colors">
-            Cerrar sesión <LogOut className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-500">{user?.email}</span>
+            <button onClick={logout} className="text-sm text-gray-500 hover:text-red-500 transition-colors flex items-center gap-1.5">
+              <LogOut className="w-4 h-4" /> Salir
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-6 py-12">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Selecciona un SaaS</h1>
+            <p className="text-gray-500 mt-1">Elige el entorno que quieres gestionar</p>
+          </div>
+
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setFilterOpen(!filterOpen)}
+              className="flex items-center gap-2 px-4 h-10 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-700 hover:border-gray-300 transition-colors"
+            >
+              {filterSpecialty
+                ? SPECIALTIES.find(s => s.value === filterSpecialty)?.desc
+                : 'Todas las especialidades'}
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
+            </button>
+            <AnimatePresence>
+              {filterOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.12 }}
+                  className="absolute top-full right-0 pt-2 z-50"
+                >
+                  <div className="w-56 bg-white rounded-xl shadow-lg ring-1 ring-slate-200/70 py-2">
+                    <button
+                      onClick={() => { setFilterSpecialty(null); setFilterOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-[14px] transition-colors ${!filterSpecialty ? 'text-[#008477] font-semibold' : 'text-slate-600 hover:text-[#008477] hover:bg-slate-50'}`}
+                    >
+                      Todas las especialidades
+                    </button>
+                    {SPECIALTIES.map(s => (
+                      <button
+                        key={s.value}
+                        onClick={() => { setFilterSpecialty(s.value); setFilterOpen(false); }}
+                        className={`w-full text-left px-4 py-2 text-[14px] transition-colors flex items-center gap-2 ${filterSpecialty === s.value ? 'text-[#008477] font-semibold' : 'text-slate-600 hover:text-[#008477] hover:bg-slate-50'}`}
+                      >
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+                        {s.desc}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {user?.isSuperAdmin && (
-          <div className="mb-6 bg-purple-50 text-purple-700 p-4 rounded-xl flex items-center gap-3 border border-purple-100 font-medium">
-            <ShieldCheck className="w-5 h-5" />
-            Ves esto porque eres Administrador Global. Puedes acceder a cualquier clínica sin pagar.
+          <div className="mb-6 bg-purple-50 text-purple-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2 border border-purple-100">
+            <ShieldCheck className="w-4 h-4 shrink-0" />
+            Administrador — tienes acceso a todos los entornos
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          <div className="p-8 border-b border-gray-100 flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-black text-gray-900">Tus clínicas (SaaS)</h1>
-              <p className="text-gray-500 mt-1">Selecciona la clínica que deseas gestionar hoy</p>
-            </div>
-            {!isCreating && (
-              <button 
-                onClick={() => setIsCreating(true)}
-                className="flex items-center gap-2 bg-[#008477] text-white px-4 py-2.5 rounded-xl font-bold hover:bg-[#007066] transition-colors"
-              >
-                <Plus className="w-4 h-4" /> Crear nuevo SaaS
-              </button>
-            )}
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
           </div>
-          
-          <div className="p-8 bg-gray-50/50">
-            {isCreating ? (
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">¿Cómo se llama tu nueva clínica?</h3>
-                <form onSubmit={handleCreateSaaS} className="flex gap-3">
-                  <input
-                    type="text"
-                    value={newSaaSName}
-                    onChange={(e) => setNewSaaSName(e.target.value)}
-                    placeholder="Ej. Clínica Dental Sonrisas"
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#008477] focus:border-[#008477] font-medium"
-                    autoFocus
-                  />
-                  <button type="submit" disabled={!newSaaSName} className="bg-[#008477] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#007066] disabled:opacity-50">
-                    Contratar Nuevo SaaS
-                  </button>
-                  <button type="button" onClick={() => setIsCreating(false)} className="px-6 py-3 bg-white border border-gray-300 rounded-xl font-bold text-gray-600 hover:bg-gray-50">
-                    Cancelar
-                  </button>
-                </form>
-              </div>
-            ) : null}
+        ) : (
+          <div className="space-y-10">
+            {filteredGroups.map(group => (
+              <section key={group.value}>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: group.color }} />
+                  <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{group.desc}</h2>
+                  <span className="text-xs text-gray-400 ml-1">({group.tenants.length})</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {group.tenants.map(tenant => (
+                    <button
+                      key={tenant.id}
+                      onClick={() => handleSelect(tenant.id, tenant.name)}
+                      className="bg-white rounded-lg border border-gray-200 px-5 py-4 text-left hover:border-gray-300 hover:shadow-sm transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                          <Building2 className="w-4 h-4 text-gray-500" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate group-hover:text-[#008477] transition-colors">
+                            {tenant.name}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-0.5">
+                            Plan {tenant.subscriptionPlan}
+                            {tenant.trialEndsAt && new Date(tenant.trialEndsAt) > new Date() && (
+                              <span className="ml-2 text-amber-500">· Trial</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ))}
 
-            {loading ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#008477]"></div>
-              </div>
-            ) : tenants.length === 0 ? (
-              <div className="text-center py-12">
-                <Building2 className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-                <h3 className="text-lg font-bold text-gray-900">Aún no tienes ningún SaaS contratado</h3>
-                <p className="mt-1 text-sm text-gray-500">Haz clic en el botón superior para crear tu primera clínica.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {tenants.map(tenant => (
-                  <div 
-                    key={tenant.id}
-                    onClick={() => handleSelectSaaS(tenant.id, tenant.name)}
-                    className="bg-white p-6 rounded-xl border border-gray-200 hover:border-[#008477] hover:shadow-md cursor-pointer transition-all group flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-teal-50 rounded-lg flex items-center justify-center text-[#008477]">
-                        <Building2 className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 group-hover:text-[#008477] transition-colors">{tenant.name}</h4>
-                        <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full mt-1 inline-block">Plan {tenant.subscriptionPlan}</span>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-[#008477] group-hover:translate-x-1 transition-all" />
-                  </div>
-                ))}
+            {filteredGroups.length === 0 && (
+              <div className="text-center py-20">
+                <Building2 className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">No hay entornos disponibles</p>
               </div>
             )}
           </div>
-        </div>
-      </div>
+        )}
+      </main>
     </div>
   );
 }

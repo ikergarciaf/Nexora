@@ -14,6 +14,7 @@ const PricingPage = lazy(() => import('./pages/PricingPage'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const ClinicWebsite = lazy(() => import('./pages/ClinicWebsite'));
+const DemoRegisterPage = lazy(() => import('./pages/DemoRegisterPage'));
 
 function PageLoader() {
   return (
@@ -77,6 +78,7 @@ export default function App() {
           <Route path="/whatsapp-demo" element={<WhatsAppDemo />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/clinica/:slug" element={<ClinicWebsite />} />
+          <Route path="/demo" element={<DemoRegisterPage />} />
 
           <Route element={<GuestGuard />}>
             <Route path="/login" element={<LoginPage />} />

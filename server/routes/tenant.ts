@@ -1,13 +1,12 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../db.ts';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Get tenant config
 router.get('/config', async (req, res) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.user?.tenantId || (req.headers['x-tenant-id'] as string);
     if (!tenantId) return res.status(401).json({ error: 'Missing tenant id' });
 
     const tenant = await prisma.tenant.findUnique({
@@ -40,7 +39,7 @@ router.get('/config', async (req, res) => {
 // Update tenant config
 router.post('/config', async (req, res) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.user?.tenantId || (req.headers['x-tenant-id'] as string);
     if (!tenantId) return res.status(401).json({ error: 'Missing tenant id' });
 
     const { 
