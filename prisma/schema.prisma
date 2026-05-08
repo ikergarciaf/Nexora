@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider      = "postgresql"
+  url           = env("DATABASE_URL")
+  relationMode  = "prisma"
+}
+
+model Tenant {
+  id                   String        @id @default(uuid())
+  name                 String
+  slug                 String?       @unique
+  taxId                String?
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  stripePriceId        String?
+  subscriptionStatus   String        @default("trialing")
+  subscriptionPlan     String        @default("STARTER")
+  trialEndsAt          DateTime?
+  
+  // Customization fields
+  logoUrl              String?
+  address              String?
+  ownerName            String?
+  specialty            String        @default("Fisioterapia")
+  description          String?
+  themeColor           String?       @default("#008477")
+  contactPhone         String?
+  contactEmail         String?
+
+  createdAt            DateTime      @default(now())
+  appointments         Appointment[]
+  invoices             Invoice[]
+  patients             Patient[]
+  memberships          TenantUser[]
+  rooms                Room[]
+  shifts               Shift[]
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String?
+  googleId     String?
+  name         String
+  isActive     Boolean       @default(true)
+  isSuperAdmin Boolean       @default(false)
+  memberships  TenantUser[]
+  shifts       Shift[]
+}
+
+model TenantUser {
+  id       String @id @default(uuid())
+  userId   String
+  tenantId String
+  role     String @default("OWNER") // OWNER, STAFF
+  
+  user     User   @relation(fields: [userId], references: [id])
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([userId, tenantId])
+}
+
+model Patient {
+  id                  String        @id @default(uuid())
+  tenantId            String
+  fullName            String
+  dob                 DateTime?
+  phone               String?
+  email               String?
+  medicalHistoryNotes String?
+  tags                String?
+  aiSummary           String?
+  cachedAt            DateTime?
+  lastVisit           DateTime?
+  nutritionalPlan      String?       @default("{}")
+  medicalRecord        String?       @default("{}")
+  appointments        Appointment[]
+  invoices            Invoice[]
+  tenant              Tenant        @relation(fields: [tenantId], references: [id])
+
+  @@unique([id, tenantId])
+}
+
+model Appointment {
+  id              String   @id @default(uuid())
+  tenantId        String
+  patientId       String
+  doctorId        String?
+  startTime       DateTime
+  endTime         DateTime
+  type            String?
+  status          String   @default("SCHEDULED")
+  aiConflictScore Float?
+  aiAlertReason   String?
+  whatsappDraft   String?
+  internalNotes   String?
+  patient         Patient  @relation(fields: [patientId], references: [id])
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  
+  @@unique([id, tenantId])
+}
+
+model Invoice {
+  id         String   @id @default(uuid())
+  tenantId   String
+  patientId  String
+  amount     Float
+  currency   String   @default("USD")
+  status     String   @default("PENDING")
+  issuedDate DateTime @default(now())
+  patient    Patient  @relation(fields: [patientId], references: [id])
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([id, tenantId])
+}
+
+model Room {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  shifts    Shift[]
+
+  @@unique([id, tenantId])
+}
+
+model Shift {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String
+  roomId    String?
+  startTime DateTime
+  endTime   DateTime
+  type      String   @default("WORK") // WORK, VACATION, SICK_LEAVE
+  notes     String?
+  user      User     @relation(fields: [userId], references: [id])
+  room      Room?    @relation(fields: [roomId], references: [id])
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([id, tenantId])
+}
