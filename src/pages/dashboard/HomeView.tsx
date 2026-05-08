@@ -9,6 +9,12 @@ interface HomeViewProps extends DashboardViewProps {
 }
 
 export default function HomeView({ isDarkMode, onNavigate, clinicConfig, currentSpecialtyConfig }: HomeViewProps) {
+  const quickActions = [
+    { id: 'pacientes', label: 'Nuevo paciente', icon: Users, color: 'bg-blue-500', desc: 'Registrar un nuevo paciente en el sistema' },
+    { id: 'agenda', label: 'Nueva cita', icon: Calendar, color: 'bg-emerald-500', desc: 'Agendar una cita en la agenda' },
+    { id: 'tratamientos', label: 'Nuevo servicio', icon: Package, color: 'bg-amber-500', desc: 'Añadir un tratamiento o servicio' },
+    { id: 'facturación', label: 'Nueva factura', icon: FileText, color: 'bg-purple-500', desc: 'Crear una factura para un paciente' },
+  ];
   const { stats, appointments, patients } = useDashboardData();
 
   const [activePeriod, setActivePeriod] = useState('Mensual');
@@ -60,10 +66,33 @@ export default function HomeView({ isDarkMode, onNavigate, clinicConfig, current
   const formatCurrency = (val: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
 
   return (
-    <div className="px-4 md:px-8 max-w-6xl mx-auto pb-24">
+    <div className="px-4 sm:px-6 lg:px-8 xl:px-12 max-w-[1440px] mx-auto pb-24">
       {/* HOY Section */}
       <div className="mt-4 mb-10">
-        <h1 className={`text-[28px] font-bold tracking-tight mb-8 transition-colors ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Hoy</h1>
+        <h1 className={`text-[28px] font-bold tracking-tight mb-6 transition-colors ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Hoy</h1>
+
+        {/* Acciones Rápidas */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+          {quickActions.map((action) => (
+            <button
+              key={action.id}
+              onClick={() => onNavigate(action.id)}
+              className={`group flex items-start gap-3 p-4 rounded-lg border transition-all hover:shadow-md ${
+                isDarkMode
+                  ? 'bg-[#1e293b] border-[#334155] hover:border-blue-500/50'
+                  : 'bg-white border-[#e3e8ee] hover:border-blue-300'
+              }`}
+            >
+              <div className={`w-10 h-10 rounded-lg ${action.color} flex items-center justify-center shrink-0 text-white shadow-sm`}>
+                <action.icon className="w-5 h-5" />
+              </div>
+              <div className="text-left min-w-0">
+                <div className={`text-[14px] font-semibold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>{action.label}</div>
+                <div className={`text-[12px] mt-0.5 leading-tight ${isDarkMode ? 'text-gray-500' : 'text-[#8792a2]'}`}>{action.desc}</div>
+              </div>
+            </button>
+          ))}
+        </div>
 
         {reactivationCandidates.length > 0 && (
           <div className={`mb-8 p-4 border rounded-[8px] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm transition-colors ${isDarkMode ? 'bg-blue-900/10 border-blue-800/50' : 'bg-blue-50 border-blue-100'}`}>

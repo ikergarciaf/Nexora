@@ -281,7 +281,7 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="pt-32 pb-20 lg:pt-40 lg:pb-28 bg-gradient-to-b from-[#008477]/5 via-white to-white">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="max-w-3xl">
             <motion.div
               initial={{ opacity: 0, y: 8 }}
@@ -367,7 +367,7 @@ export default function LandingPage() {
 
       {/* Trust bar */}
       <section className="py-12 border-y border-slate-200/70 bg-white">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <p className="text-center text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-400 mb-6">
             Construido junto a clínicas reales en España
           </p>
@@ -386,7 +386,7 @@ export default function LandingPage() {
 
       {/* Specialties */}
       <section id="especialidades" className="py-20 lg:py-28 bg-slate-50/60 border-y border-slate-200/70">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="max-w-2xl mb-12">
             <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#008477] mb-3">
               Elige tu especialidad
@@ -482,7 +482,7 @@ export default function LandingPage() {
 
       {/* Steps */}
       <section className="py-20 lg:py-28">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="max-w-2xl mb-14">
             <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#008477] mb-3">
               Cómo funciona
@@ -515,7 +515,7 @@ export default function LandingPage() {
 
       {/* Features */}
       <section className="py-20 lg:py-28 bg-slate-50/60 border-y border-slate-200/70">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="max-w-2xl mb-14">
             <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#008477] mb-3">
               Todo en un sitio
@@ -552,7 +552,7 @@ export default function LandingPage() {
 
       {/* Integrations */}
       <section className="py-20 lg:py-28">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="max-w-2xl mb-12">
             <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#008477] mb-3">
               Conectado con tu stack
@@ -587,7 +587,7 @@ export default function LandingPage() {
 
       {/* Pricing */}
       <section id="precios" className="py-20 lg:py-28">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="max-w-2xl mb-12">
             <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#008477] mb-3">
               Precios
@@ -662,7 +662,7 @@ export default function LandingPage() {
 
       {/* Testimonials */}
       <section className="py-20 lg:py-28 bg-slate-50/60 border-y border-slate-200/70">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="max-w-2xl mb-12">
             <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#008477] mb-3">
               Lo que dicen las clínicas
@@ -807,7 +807,7 @@ export default function LandingPage() {
 
       {/* CTA */}
       <section className="py-20 lg:py-28">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-8 py-14 lg:px-14 lg:py-20 text-center">
             <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight text-white">
               Empieza hoy. Sin tarjeta.
@@ -838,7 +838,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-slate-200/70 bg-white">
-        <div className="max-w-6xl mx-auto px-6 py-14">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-14">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-2 mb-3">

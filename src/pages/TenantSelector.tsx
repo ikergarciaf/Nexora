@@ -69,7 +69,7 @@ export default function TenantSelector() {
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
       <header className="border-b border-gray-200 bg-white">
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <NexoraLogo size={28} />
             <span className="text-lg font-semibold text-gray-900">Nexora</span>
@@ -83,7 +83,7 @@ export default function TenantSelector() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-12">
+      <main className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-12">
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Selecciona un SaaS</h1>

@@ -58,7 +58,7 @@ export default function ClinicWebsite() {
     <div className="min-h-screen bg-white font-sans antialiased">
       {/* Header */}
       <header className="border-b border-slate-200/70 bg-white sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {clinic.logoUrl ? (
               <img src={clinic.logoUrl} alt={clinic.name} className="h-8 w-8 rounded-lg object-cover" />
@@ -82,7 +82,7 @@ export default function ClinicWebsite() {
 
       {/* Hero */}
       <section className="py-16 lg:py-24">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[12px] font-medium mb-4" style={{ backgroundColor: `${themeColor}15`, color: themeColor }}>
@@ -123,7 +123,7 @@ export default function ClinicWebsite() {
 
       {/* Info */}
       <section className="py-16 bg-slate-50/60 border-y border-slate-200/70">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="grid md:grid-cols-3 gap-6">
             <div className="p-6 rounded-xl bg-white ring-1 ring-slate-200/70">
               <MapPin className="w-5 h-5 mb-3" style={{ color: themeColor }} />
@@ -169,7 +169,7 @@ export default function ClinicWebsite() {
 
       {/* Footer */}
       <footer className="border-t border-slate-200/70 py-8">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12.5px] text-slate-400">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12.5px] text-slate-400">
           <span>© {new Date().getFullYear()} {clinic.name}. Todos los derechos reservados.</span>
           <span>Powered by <a href="/" className="text-[#008477] font-medium hover:underline">Nexora</a></span>
         </div>

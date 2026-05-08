@@ -15,6 +15,7 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const ClinicWebsite = lazy(() => import('./pages/ClinicWebsite'));
 const DemoRegisterPage = lazy(() => import('./pages/DemoRegisterPage'));
+const ContractPage = lazy(() => import('./pages/ContractPage'));
 
 function PageLoader() {
   return (
@@ -79,6 +80,7 @@ export default function App() {
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/clinica/:slug" element={<ClinicWebsite />} />
           <Route path="/demo" element={<DemoRegisterPage />} />
+          <Route path="/contratar/:specialty" element={<ContractPage />} />
 
           <Route element={<GuestGuard />}>
             <Route path="/login" element={<LoginPage />} />

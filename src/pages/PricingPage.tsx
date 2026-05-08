@@ -72,7 +72,7 @@ export default function PricingPage() {
       <FrontendNavbar />
 
       <section className="pt-32 pb-20 lg:pt-40 lg:pb-28">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="text-center max-w-2xl mx-auto mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#008477]/8 text-[#008477] text-[12px] font-medium mb-4">
               <Sparkles className="w-3 h-3" />
@@ -105,7 +105,7 @@ export default function PricingPage() {
             </span>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {PLANS.map((plan, i) => (
               <motion.div
                 key={plan.name}

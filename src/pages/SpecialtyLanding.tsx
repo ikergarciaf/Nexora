@@ -316,7 +316,7 @@ export default function SpecialtyLanding() {
 
       {/* Hero */}
       <section className="pt-32 pb-16 lg:pt-40 lg:pb-24">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <motion.button
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -365,100 +365,17 @@ export default function SpecialtyLanding() {
                       onClick={() => navigate('/demo?type=quote')}
                       className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-slate-900 text-white text-[15px] font-medium hover:bg-[#008477] transition-colors"
                     >
-                      Solicitar presupuesto
+                      Solicitar presupuesto sin compromiso
                       <ArrowRight className="w-4 h-4" />
                     </button>
-                    <button
-                      onClick={() => document.getElementById('planes-web')?.scrollIntoView({ behavior: 'smooth' })}
-                      className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-700 text-[15px] font-medium ring-1 ring-slate-200 hover:ring-slate-300 transition-colors"
-                    >
-                      Ver planes
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => navigate(`/dashboard?specialty=${specialty}`)}
-                      className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-slate-900 text-white text-[15px] font-medium hover:bg-[#008477] transition-colors"
-                    >
-                      Empezar gratis
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => navigate('/')}
-                      className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-700 text-[15px] font-medium ring-1 ring-slate-200 hover:ring-slate-300 transition-colors"
-                    >
-                      Ver precios
-                    </button>
-                  </>
-                )}
-              </motion.div>
-              <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-slate-500">
-                {data.benefits.map((b) => (
-                  <span key={b} className="inline-flex items-center gap-1.5">
-                    <Check className="w-4 h-4 text-[#008477]" />
-                    {b}
-                  </span>
-                ))}
+                  )
+                }
               </div>
             </div>
+          </section>
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="relative"
-            >
-              <div className="absolute -inset-x-4 -inset-y-4 lg:-inset-x-8 lg:-inset-y-8 -z-10 rounded-[32px] bg-gradient-to-br from-[#008477]/10 via-transparent to-transparent blur-2xl" />
-              <div className="relative aspect-[4/5] rounded-2xl overflow-hidden ring-1 ring-slate-200/70 bg-slate-100">
-                <img
-                  src={data.image}
-                  alt={data.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-slate-900/70 via-slate-900/30 to-transparent">
-                  <div className="text-white text-[12px] font-semibold uppercase tracking-[0.14em]">
-                    {data.brandName}
-                  </div>
-                  <div className="text-white/90 text-[14px]">{data.subtitle}</div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="py-20 lg:py-24 bg-slate-50/60 border-y border-slate-200/70">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="max-w-2xl mb-12">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#008477] mb-3">
-              Funciones específicas
-            </p>
-            <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900">
-              Hecho para tu día a día
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-4">
-            {data.features.map((f) => (
-              <div
-                key={f.title}
-                className="p-6 rounded-xl bg-white ring-1 ring-slate-200/70"
-              >
-                <div className="w-9 h-9 rounded-lg bg-[#008477]/10 text-[#008477] flex items-center justify-center mb-4">
-                  {f.icon}
-                </div>
-                <h3 className="font-semibold text-[16px] text-slate-900 mb-1.5">{f.title}</h3>
-                <p className="text-[14px] text-slate-500 leading-relaxed">{f.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonial */}
-      {data.testimonial && (
-        <section className="py-20 lg:py-24">
+          {/* Proceso */}
+          <section className="py-20 lg:py-24">
           <div className="max-w-3xl mx-auto px-6">
             <div className="p-8 lg:p-10 rounded-2xl bg-white ring-1 ring-slate-200/70">
               <Quote className="w-6 h-6 text-[#008477] mb-4" />
@@ -489,7 +406,7 @@ export default function SpecialtyLanding() {
         <>
           {/* Planes */}
           <section id="planes-web" className="py-20 lg:py-24 bg-slate-50/60 border-y border-slate-200/70">
-            <div className="max-w-5xl mx-auto px-6">
+            <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
               <div className="max-w-2xl mb-12">
                 <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#008477] mb-3">
                   Planes de desarrollo
@@ -501,10 +418,8 @@ export default function SpecialtyLanding() {
               <div className="grid md:grid-cols-3 gap-6">
                 {[
                   {
-                    name: 'Starter',
-                    price: '490 €',
-                    setup: 'Pago único',
-                    desc: 'Perfecto para profesionales que empiezan o quieren una presencia digital básica.',
+                    name: 'Básico',
+                    desc: 'Perfecto para profesionales que empiezan o quieren una presencia digital profesional.',
                     features: [
                       'Landing page 1 sección',
                       'Diseño responsive',
@@ -516,8 +431,6 @@ export default function SpecialtyLanding() {
                   },
                   {
                     name: 'Profesional',
-                    price: '990 €',
-                    setup: 'Pago único',
                     desc: 'Lo más elegido. Web completa con blog y SEO para atraer pacientes de forma orgánica.',
                     features: [
                       'Hasta 5 páginas',
@@ -533,8 +446,6 @@ export default function SpecialtyLanding() {
                   },
                   {
                     name: 'Premium',
-                    price: '1.990 €',
-                    setup: 'Pago único',
                     desc: 'Solución integral con SEO continuo, mantenimiento y prioridad absoluta en soporte.',
                     features: [
                       'Web ilimitada en páginas',
@@ -561,11 +472,7 @@ export default function SpecialtyLanding() {
                       </div>
                     )}
                     <h3 className="text-lg font-semibold text-slate-900 mt-1">{plan.name}</h3>
-                    <div className="mt-3 flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-slate-900">{plan.price}</span>
-                      <span className="text-[13px] text-slate-500">{plan.setup}</span>
-                    </div>
-                    <p className="mt-2 text-[13px] text-slate-500 leading-relaxed">{plan.desc}</p>
+                    <p className="mt-3 text-[13px] text-slate-500 leading-relaxed">{plan.desc}</p>
                     <ul className="mt-5 space-y-2.5">
                       {plan.features.map((f) => (
                         <li key={f} className="flex items-start gap-2 text-[13px] text-slate-600">
@@ -582,7 +489,7 @@ export default function SpecialtyLanding() {
                           : 'bg-slate-900 text-white hover:bg-slate-800'
                       }`}
                     >
-                      Contratar
+                      Solicitar presupuesto
                     </button>
                   </div>
                 ))}
@@ -624,7 +531,7 @@ export default function SpecialtyLanding() {
 
       {/* CTA */}
       <section className="py-20 lg:py-28">
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="rounded-2xl bg-slate-900 px-8 py-14 lg:px-14 lg:py-20 text-center">
             <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight text-white">
               {specialty === 'web-clinicas' ? '¿Listo para digitalizar tu clínica?' : `Empieza con ${data.brandName} hoy`}
@@ -673,7 +580,7 @@ export default function SpecialtyLanding() {
 
       {/* Footer */}
       <footer className="border-t border-slate-200/70 bg-white">
-        <div className="max-w-5xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12.5px] text-slate-500">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12.5px] text-slate-500">
           <button onClick={() => navigate('/')} className="flex items-center gap-2">
             <NexoraLogo size={20} />
             <span className="font-medium text-slate-700">{data.brandName || 'Nexora'}</span>

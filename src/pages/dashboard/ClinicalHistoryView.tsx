@@ -84,10 +84,10 @@ export default function ClinicalHistoryView({ isDarkMode, clinicConfig, onBack }
     setIsSavingRecord(false);
   };
 
-  if (!patient) return <div className={`px-4 md:px-8 max-w-6xl mx-auto pb-24 mt-8 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>No se encontró el paciente</div>;
+  if (!patient) return <div className={`px-4 sm:px-6 lg:px-8 xl:px-12 max-w-[1440px] mx-auto pb-24 mt-8 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>No se encontró el paciente</div>;
 
   return (
-    <div className="px-4 md:px-8 max-w-6xl mx-auto pb-24 mt-8 transition-all animate-in slide-in-from-right-4 duration-300">
+    <div className="px-4 sm:px-6 lg:px-8 xl:px-12 max-w-[1440px] mx-auto pb-24 mt-8 transition-all animate-in slide-in-from-right-4 duration-300">
       <div className="flex items-center gap-4 mb-8">
         <button 
           onClick={onBack}

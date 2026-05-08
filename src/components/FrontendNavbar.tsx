@@ -11,7 +11,7 @@ const SPECIALTIES = [
   { label: 'Nutrición', slug: 'nutricion' },
   { label: 'Medicina estética', slug: 'estetica' },
   { label: 'Policlínica general', slug: 'general' },
-  { label: 'Desarrollo web', slug: 'web-clinicas', isNew: true },
+  { label: 'Desarrollo web', slug: 'web-clinicas' },
 ];
 
 export const FrontendNavbar = ({ brandName }: { brandName?: string }) => {
@@ -95,11 +95,6 @@ export const FrontendNavbar = ({ brandName }: { brandName?: string }) => {
                         className="w-full text-left px-4 py-2 text-[14px] text-slate-600 hover:text-[#008477] hover:bg-slate-50 transition-colors flex items-center justify-between"
                       >
                         <span>{s.label}</span>
-                        {s.isNew && (
-                          <span className="text-[10px] font-bold bg-[#008477]/10 text-[#008477] px-1.5 py-0.5 rounded uppercase tracking-wider">
-                            Nuevo
-                          </span>
-                        )}
                       </button>
                     ))}
                   </div>
