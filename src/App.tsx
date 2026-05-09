@@ -1,7 +1,8 @@
-import { lazy, Suspense, Component, ReactNode } from 'react';
+import { lazy, Suspense, Component, ReactNode, ErrorInfo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Loader2 } from 'lucide-react';
+import CookieConsent from './components/CookieConsent';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
@@ -16,6 +17,9 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const ClinicWebsite = lazy(() => import('./pages/ClinicWebsite'));
 const DemoRegisterPage = lazy(() => import('./pages/DemoRegisterPage'));
 const ContractPage = lazy(() => import('./pages/ContractPage'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
+const CookiesPage = lazy(() => import('./pages/CookiesPage'));
 
 function PageLoader() {
   return (
@@ -40,12 +44,11 @@ function GuestGuard() {
   return <Outlet />;
 }
 
-class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
-  constructor(props: { children: ReactNode }) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError() {
+interface ErrorBoundaryState { hasError: boolean }
+
+class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { hasError: false };
+  static getDerivedStateFromError(): ErrorBoundaryState {
     return { hasError: true };
   }
   render() {
@@ -65,7 +68,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
         </div>
       );
     }
-    return this.props.children;
+    return (this as any).props.children;
   }
 }
 
@@ -81,6 +84,9 @@ export default function App() {
           <Route path="/clinica/:slug" element={<ClinicWebsite />} />
           <Route path="/demo" element={<DemoRegisterPage />} />
           <Route path="/contratar/:specialty" element={<ContractPage />} />
+          <Route path="/privacidad" element={<PrivacyPage />} />
+          <Route path="/terminos" element={<TermsPage />} />
+          <Route path="/cookies" element={<CookiesPage />} />
 
           <Route element={<GuestGuard />}>
             <Route path="/login" element={<LoginPage />} />
@@ -112,6 +118,7 @@ export default function App() {
     <ErrorBoundary>
       <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy-client-id'}>
         {content}
+        <CookieConsent />
       </GoogleOAuthProvider>
     </ErrorBoundary>
   );

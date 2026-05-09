@@ -4,10 +4,15 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import prisma from '../db.ts';
 import { requireAuth } from '../middlewares/auth.ts';
+import { sendEmail } from '../services/emailService.ts';
+import logger from '../services/logger.ts';
 import { OAuth2Client } from 'google-auth-library';
 
 export const authRouter = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-dev-secret-do-not-use-in-prod';
+const JWT_SECRET = (() => {
+  if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
+  return process.env.JWT_SECRET;
+})();
 const googleClient = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID || 'dummy');
 
 authRouter.post('/register', async (req, res) => {
@@ -88,7 +93,7 @@ authRouter.post('/google', async (req, res) => {
       const token = jwt.sign({ id: user.id, isSuperAdmin: user.isSuperAdmin }, JWT_SECRET, { expiresIn: '12h' });
       res.json({ token, user: { id: user.id, email: user.email, name: user.name, isSuperAdmin: user.isSuperAdmin } });
     } catch (googleError) {
-      console.error(googleError);
+      logger.warn({ error: googleError }, 'Google OAuth verification failed');
       return res.status(401).json({ error: 'Invalid Google Identity' });
     }
   } catch (error) {
@@ -126,9 +131,6 @@ authRouter.get('/me', requireAuth, async (req, res) => {
   }
 });
 
-// Temporary in-memory token store for password reset (use Redis/DB in production)
-const resetTokens = new Map<string, { userId: string; expiresAt: Date }>();
-
 authRouter.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
@@ -139,13 +141,21 @@ authRouter.post('/forgot-password', async (req, res) => {
     if (!user) return res.json({ success: true });
 
     const resetToken = crypto.randomUUID();
-    resetTokens.set(resetToken, {
-      userId: user.id,
-      expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { resetToken, resetTokenExpiresAt: expiresAt },
     });
 
-    // In production, send email via SendGrid/Resend/etc.
-    console.log(`[DEV] Password reset link: ${process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`);
+    const resetUrl = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+
+    await sendEmail({
+      to: email,
+      subject: 'Restablece tu contraseña - Nexora',
+      text: `Hola ${user.name},\n\nRecibimos una solicitud para restablecer tu contraseña.\n\nHaz clic en el siguiente enlace para restablecerla:\n${resetUrl}\n\nEste enlace expira en 1 hora.\n\nSi no solicitaste esto, ignora este mensaje.\n\n— Nexora`,
+      html: `<p>Hola <strong>${user.name}</strong>,</p><p>Recibimos una solicitud para restablecer tu contraseña.</p><p><a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#008477;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold">Restablecer contraseña</a></p><p>Este enlace expira en 1 hora.</p><p>Si no solicitaste esto, ignora este mensaje.</p><p>— Nexora</p>`,
+    });
 
     res.json({ success: true });
   } catch (error) {
@@ -159,18 +169,17 @@ authRouter.post('/reset-password', async (req, res) => {
     if (!token || !password) return res.status(400).json({ error: 'Token and password are required' });
     if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
-    const stored = resetTokens.get(token);
-    if (!stored || stored.expiresAt < new Date()) {
-      return res.status(400).json({ error: 'Invalid or expired token' });
-    }
+    const user = await prisma.user.findFirst({
+      where: { resetToken: token, resetTokenExpiresAt: { gt: new Date() } },
+    });
+    if (!user) return res.status(400).json({ error: 'Invalid or expired token' });
 
     const passwordHash = await bcrypt.hash(password, 12);
     await prisma.user.update({
-      where: { id: stored.userId },
-      data: { passwordHash },
+      where: { id: user.id },
+      data: { passwordHash, resetToken: null, resetTokenExpiresAt: null },
     });
 
-    resetTokens.delete(token);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Internal Server Error' });

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middlewares/auth.ts';
 import { getStripe, PRICING_PLANS } from '../services/stripeService.ts';
 import prisma from '../db.ts';
+import logger from '../services/logger.ts';
 
 export const billingRouter = Router();
 
@@ -55,7 +56,7 @@ billingRouter.post('/checkout', async (req, res) => {
 
     res.json({ url: session.url });
   } catch (error) {
-    console.error('Stripe Checkout Error:', error);
+    logger.error({ error }, 'Stripe checkout error');
     res.status(500).json({ error: 'Failed to create checkout session' });
   }
 });
@@ -84,7 +85,7 @@ billingRouter.post('/portal', async (req, res) => {
 
     res.json({ url: session.url });
   } catch (error) {
-    console.error('Stripe Portal Error:', error);
+    logger.error({ error }, 'Stripe portal error');
     res.status(500).json({ error: 'Failed to generate portal link' });
   }
 });

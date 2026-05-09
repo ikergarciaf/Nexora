@@ -40,9 +40,10 @@ export function useDashboardData() {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('clinic_token');
+      if (!token) return;
       const headers = { 
         'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       };
 
@@ -79,12 +80,13 @@ export function useDashboardData() {
 export async function createPatientApi(data: { fullName: string, email?: string, phone?: string }): Promise<Patient | null> {
   try {
     const token = localStorage.getItem('clinic_token');
+    if (!token) return null;
     const response = await fetch('/api/patients', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
         'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}` 
+        'Authorization': `Bearer ${token}` 
       },
       body: JSON.stringify(data),
     });
@@ -100,12 +102,13 @@ export async function createPatientApi(data: { fullName: string, email?: string,
 export async function updatePatientApi(id: string, data: any) {
   try {
     const token = localStorage.getItem('clinic_token');
+    if (!token) return false;
     const response = await fetch(`/api/patients/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify(data),
     });
@@ -119,11 +122,12 @@ export async function updatePatientApi(id: string, data: any) {
 export async function deletePatientApi(id: string) {
   try {
     const token = localStorage.getItem('clinic_token');
+    if (!token) return false;
     const response = await fetch(`/api/patients/${id}`, {
       method: 'DELETE',
       headers: {
         'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}`
+        'Authorization': `Bearer ${token}`
       }
     });
     return response.ok;
@@ -136,12 +140,13 @@ export async function deletePatientApi(id: string) {
 export async function updateTenantConfigApi(data: any): Promise<boolean> {
   try {
     const token = localStorage.getItem('clinic_token');
+    if (!token) return false;
     const response = await fetch('/api/tenant/config', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify(data),
     });
@@ -155,12 +160,13 @@ export async function updateTenantConfigApi(data: any): Promise<boolean> {
 export async function createAppointmentApi(data: { patientId: string, doctorId?: string, startTime: string, durationMinutes: number }): Promise<Appointment | null> {
   try {
     const token = localStorage.getItem('clinic_token');
+    if (!token) return null;
     const response = await fetch('/api/appointments', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
         'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}` 
+        'Authorization': `Bearer ${token}` 
       },
       body: JSON.stringify(data),
     });
@@ -176,12 +182,13 @@ export async function createAppointmentApi(data: { patientId: string, doctorId?:
 export async function updateAppointmentApi(id: string, data: any) {
   try {
     const token = localStorage.getItem('clinic_token');
+    if (!token) return false;
     const response = await fetch(`/api/appointments/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify(data),
     });
@@ -195,11 +202,12 @@ export async function updateAppointmentApi(id: string, data: any) {
 export async function deleteAppointmentApi(id: string) {
   try {
     const token = localStorage.getItem('clinic_token');
+    if (!token) return false;
     const response = await fetch(`/api/appointments/${id}`, {
       method: 'DELETE',
       headers: {
         'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}`
+        'Authorization': `Bearer ${token}`
       }
     });
     return response.ok;
@@ -212,10 +220,11 @@ export async function deleteAppointmentApi(id: string) {
 export async function fetchPatientRecordApi(id: string): Promise<any | null> {
   try {
     const token = localStorage.getItem('clinic_token');
+    if (!token) return null;
     const response = await fetch(`/api/patients/${id}`, {
       headers: {
         'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}`
+        'Authorization': `Bearer ${token}`
       }
     });
     if (!response.ok) return null;
@@ -229,12 +238,13 @@ export async function fetchPatientRecordApi(id: string): Promise<any | null> {
 export async function savePatientRecordApi(id: string, record: any): Promise<boolean> {
   try {
     const token = localStorage.getItem('clinic_token');
+    if (!token) return false;
     const response = await fetch(`/api/patients/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ 
         medicalRecord: record,

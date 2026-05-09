@@ -68,9 +68,9 @@ export const Odontogram: React.FC<OdontogramProps> = ({ isDarkMode, value = [], 
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 p-0 min-h-[600px] bg-white">
+    <div className={`flex flex-col lg:flex-row gap-8 p-0 min-h-[600px] ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
       {/* Arch Section */}
-      <div className="flex-[1.5] flex flex-col gap-10 p-8 justify-center bg-gray-50/30">
+      <div className={`flex-[1.5] flex flex-col gap-10 p-8 justify-center ${isDarkMode ? 'bg-slate-800/30' : 'bg-gray-50/30'}`}>
         <div className="w-full flex flex-col items-center gap-12">
           {/* Upper Arch */}
           <div className="flex gap-2 w-full justify-center flex-wrap">
@@ -78,9 +78,9 @@ export const Odontogram: React.FC<OdontogramProps> = ({ isDarkMode, value = [], 
           </div>
 
           <div className="flex items-center gap-4 w-full max-w-lg">
-             <div className="h-[1px] flex-1 bg-gray-200" />
-             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Planos Oclusales</span>
-             <div className="h-[1px] flex-1 bg-gray-200" />
+              <div className={`h-[1px] flex-1 ${isDarkMode ? 'bg-slate-700' : 'bg-gray-200'}`} />
+             <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Planos Oclusales</span>
+             <div className={`h-[1px] flex-1 ${isDarkMode ? 'bg-slate-700' : 'bg-gray-200'}`} />
           </div>
 
           {/* Lower Arch */}
@@ -92,9 +92,9 @@ export const Odontogram: React.FC<OdontogramProps> = ({ isDarkMode, value = [], 
 
       {/* Control Panel Section */}
       <div className="flex-1 max-w-md">
-         <div className="h-full flex flex-col rounded-3xl border border-gray-100 bg-white overflow-hidden shadow-sm">
-            <div className="p-6 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Editor de Pieza</h3>
+         <div className={`h-full flex flex-col rounded-3xl border overflow-hidden shadow-sm ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-gray-100 bg-white'}`}>
+             <div className={`p-6 border-b flex items-center justify-between ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-gray-100 bg-gray-50'}`}>
+               <h3 className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Editor de Pieza</h3>
               {value.length > 0 && (
                 <button 
                   onClick={() => { if(confirm('¿Reiniciar odontograma?')) onChange?.([]) }}
@@ -105,16 +105,16 @@ export const Odontogram: React.FC<OdontogramProps> = ({ isDarkMode, value = [], 
               )}
             </div>
 
-            <div className="flex-1 p-6 space-y-8 overflow-y-auto bg-white flex flex-col justify-center">
+            <div className={`flex-1 p-6 space-y-8 overflow-y-auto flex flex-col justify-center ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`}>
                {selectedTooth ? (
                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
                     <div className="text-center mb-6">
-                       <h4 className="text-[32px] font-black text-slate-900">#{selectedTooth}</h4>
+                       <h4 className={`text-[32px] font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>#{selectedTooth}</h4>
                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">Pieza Seleccionada</p>
                     </div>
                     
                     <div className="space-y-3">
-                      <label className="text-[9px] font-black text-gray-400 uppercase mb-2 block tracking-widest">Estado Clínico</label>
+                      <label className={`text-[9px] font-black uppercase mb-2 block tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Estado Clínico</label>
                       <div className="grid grid-cols-2 gap-3">
                         {[
                           { id: 'healthy', label: 'Sano', styling: 'bg-gray-50 text-gray-700 hover:border-gray-300' },
@@ -134,7 +134,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({ isDarkMode, value = [], 
                       </div>
                     </div>
 
-                    <div className="pt-6 border-t border-gray-100">
+                    <div className={`pt-6 border-t ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
                       <button 
                         onClick={() => setSelectedTooth(null)}
                         className="w-full py-3 mt-2 text-[11px] bg-gray-50 text-gray-600 rounded-xl font-bold hover:bg-gray-100 transition-colors"
@@ -153,8 +153,8 @@ export const Odontogram: React.FC<OdontogramProps> = ({ isDarkMode, value = [], 
             </div>
 
             {/* Status Summary */}
-            <div className="p-4 bg-gray-50 border-t border-gray-100">
-               <h5 className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">Resumen Clínico ({value.length})</h5>
+            <div className={`p-4 border-t ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-gray-50 border-gray-100'}`}>
+                <h5 className={`text-[8px] font-black uppercase tracking-widest mb-3 px-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Resumen Clínico ({value.length})</h5>
                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
                   {value.map(t => (
                     <button 

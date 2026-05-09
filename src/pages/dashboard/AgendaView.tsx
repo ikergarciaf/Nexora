@@ -77,7 +77,7 @@ export default function AgendaView({ isDarkMode }: DashboardViewProps) {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 xl:px-12 max-w-[1440px] mx-auto pb-24 mt-8">
+    <div className="px-4 sm:px-6 lg:px-8 xl:px-12  pb-24 mt-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <h1 className={`text-[24px] font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Agenda de Citas</h1>
         <div className="flex items-center gap-3">

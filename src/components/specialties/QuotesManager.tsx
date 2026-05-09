@@ -109,9 +109,9 @@ export const QuotesManager: React.FC<QuotesManagerProps> = ({ isDarkMode, value 
   const selectedQuote = value.find(q => q.id === selectedQuoteId);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 p-0 min-h-[600px] bg-white">
+    <div className={`flex flex-col lg:flex-row gap-8 p-0 min-h-[600px] ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
       {/* Sidebar List */}
-      <div className="flex-[1] flex flex-col border-r border-gray-100 p-6 bg-gray-50/30">
+      <div className={`flex-[1] flex flex-col border-r p-6 ${isDarkMode ? 'bg-slate-800/30 border-slate-700' : 'bg-gray-50/30 border-gray-100'}`}>
          <div className="flex items-center justify-between mb-6">
             <h3 className="text-[12px] font-bold text-gray-400 uppercase tracking-widest">Presupuestos</h3>
             <button 
@@ -133,10 +133,10 @@ export const QuotesManager: React.FC<QuotesManagerProps> = ({ isDarkMode, value 
                 <button
                   key={quote.id}
                   onClick={() => setSelectedQuoteId(quote.id)}
-                  className={`w-full p-4 rounded-2xl flex flex-col gap-2 transition-all border ${selectedQuoteId === quote.id ? 'bg-white border-slate-900 shadow-sm' : 'bg-white border-gray-100 hover:border-slate-300'}`}
+                   className={`w-full p-4 rounded-2xl flex flex-col gap-2 transition-all border ${selectedQuoteId === quote.id ? `${isDarkMode ? 'bg-slate-800' : 'bg-white'} border-slate-900 shadow-sm` : `${isDarkMode ? 'bg-slate-800/50 border-slate-700 hover:border-slate-500' : 'bg-white border-gray-100 hover:border-slate-300'}`}`}
                 >
                   <div className="flex items-center justify-between w-full">
-                    <span className="text-[11px] font-black tracking-wider text-slate-800">#{quote.id.toUpperCase()}</span>
+                    <span className={`text-[11px] font-black tracking-wider ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>#{quote.id.toUpperCase()}</span>
                     <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded-md ${
                       quote.status === 'accepted' ? 'bg-green-100 text-green-700' :
                       quote.status === 'sent' ? 'bg-blue-100 text-blue-700' :
@@ -148,7 +148,7 @@ export const QuotesManager: React.FC<QuotesManagerProps> = ({ isDarkMode, value 
                   </div>
                   <div className="flex items-center justify-between w-full text-[11px] font-bold text-gray-500">
                     <span>{quote.date}</span>
-                    <span className="text-slate-900">{quote.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0).toFixed(2)}€</span>
+                    <span className={`${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{quote.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0).toFixed(2)}€</span>
                   </div>
                 </button>
               ))
@@ -157,12 +157,12 @@ export const QuotesManager: React.FC<QuotesManagerProps> = ({ isDarkMode, value 
       </div>
 
       {/* Editor Main Area */}
-      <div className="flex-[2] flex flex-col p-6">
-        {selectedQuote ? (
-          <div className="space-y-6">
-             <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                <div>
-                   <h2 className="text-[18px] font-black text-slate-900">Editar Presupuesto</h2>
+       <div className={`flex-[2] flex flex-col p-6 ${isDarkMode ? 'bg-slate-900' : ''}`}>
+         {selectedQuote ? (
+           <div className="space-y-6">
+              <div className={`flex items-center justify-between pb-4 border-b ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
+                 <div>
+                    <h2 className={`text-[18px] font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Editar Presupuesto</h2>
                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Ref: {selectedQuote.id.toUpperCase()}</p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -203,38 +203,38 @@ export const QuotesManager: React.FC<QuotesManagerProps> = ({ isDarkMode, value 
                   <div className="col-span-2">Total</div>
                </div>
                
-               {selectedQuote.items.map((item, index) => (
-                 <div key={item.id} className="grid grid-cols-12 gap-4 items-center bg-gray-50 p-2 rounded-2xl border border-gray-100">
-                    <div className="col-span-6">
-                      <input 
-                        type="text" 
-                        value={item.description}
-                        onChange={(e) => updateItem(selectedQuote.id, item.id, { description: e.target.value })}
-                        placeholder="Ej. Limpieza Dental"
-                        className="w-full bg-white px-4 py-2.5 rounded-xl border border-gray-200 text-[12px] font-bold outline-none focus:border-slate-900 transition-colors"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <input 
-                        type="number" 
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) => updateItem(selectedQuote.id, item.id, { quantity: parseInt(e.target.value) || 0 })}
-                        className="w-full bg-white px-4 py-2.5 rounded-xl border border-gray-200 text-[12px] font-bold outline-none focus:border-slate-900 transition-colors"
-                      />
-                    </div>
-                    <div className="col-span-2 relative">
-                      <input 
-                        type="number" 
-                        min="0"
-                        value={item.unitPrice}
-                        onChange={(e) => updateItem(selectedQuote.id, item.id, { unitPrice: parseFloat(e.target.value) || 0 })}
-                        className="w-full bg-white pl-4 pr-8 py-2.5 rounded-xl border border-gray-200 text-[12px] font-bold outline-none focus:border-slate-900 transition-colors"
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[12px] font-bold text-gray-400">€</span>
-                    </div>
-                    <div className="col-span-2 flex items-center justify-between px-2">
-                      <span className="text-[12px] font-black text-slate-900">{(item.quantity * item.unitPrice).toFixed(2)}€</span>
+                  {selectedQuote.items.map((item, index) => (
+                  <div key={item.id} className={`grid grid-cols-12 gap-4 items-center p-2 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-gray-50 border-gray-100'}`}>
+                     <div className="col-span-6">
+                       <input 
+                         type="text" 
+                         value={item.description}
+                         onChange={(e) => updateItem(selectedQuote.id, item.id, { description: e.target.value })}
+                         placeholder="Ej. Limpieza Dental"
+                         className={`w-full px-4 py-2.5 rounded-xl border text-[12px] font-bold outline-none focus:border-slate-900 transition-colors ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-gray-200'}`}
+                       />
+                     </div>
+                     <div className="col-span-2">
+                       <input 
+                         type="number" 
+                         min="1"
+                         value={item.quantity}
+                         onChange={(e) => updateItem(selectedQuote.id, item.id, { quantity: parseInt(e.target.value) || 0 })}
+                         className={`w-full px-4 py-2.5 rounded-xl border text-[12px] font-bold outline-none focus:border-slate-900 transition-colors ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-gray-200'}`}
+                       />
+                     </div>
+                     <div className="col-span-2 relative">
+                       <input 
+                         type="number" 
+                         min="0"
+                         value={item.unitPrice}
+                         onChange={(e) => updateItem(selectedQuote.id, item.id, { unitPrice: parseFloat(e.target.value) || 0 })}
+                         className={`w-full pl-4 pr-8 py-2.5 rounded-xl border text-[12px] font-bold outline-none focus:border-slate-900 transition-colors ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-gray-200'}`}
+                       />
+                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[12px] font-bold text-gray-400">€</span>
+                     </div>
+                     <div className="col-span-2 flex items-center justify-between px-2">
+                       <span className={`text-[12px] font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{(item.quantity * item.unitPrice).toFixed(2)}€</span>
                       <button 
                         onClick={() => removeItem(selectedQuote.id, item.id)}
                         className="w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
@@ -246,7 +246,7 @@ export const QuotesManager: React.FC<QuotesManagerProps> = ({ isDarkMode, value 
                ))}
              </div>
 
-             <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+              <div className={`flex justify-between items-center pt-4 border-t ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
                 <button 
                   onClick={() => addItem(selectedQuote.id)}
                   className="flex items-center gap-2 text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-xl"
@@ -264,11 +264,11 @@ export const QuotesManager: React.FC<QuotesManagerProps> = ({ isDarkMode, value 
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
              <FileText className="w-12 h-12 text-gray-400 mb-4" strokeWidth={1} />
-             <h4 className="text-[14px] font-bold mb-1 text-gray-500 uppercase tracking-wider">Ningún presupuesto</h4>
-             <p className="text-[12px] text-gray-400 max-w-[200px]">Selecciona o crea un nuevo presupuesto.</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
+              <h4 className={`text-[14px] font-bold mb-1 uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ningún presupuesto</h4>
+              <p className="text-[12px] text-gray-400 max-w-[200px]">Selecciona o crea un nuevo presupuesto.</p>
+           </div>
+         )}
+       </div>
+     </div>
+   );
+ };

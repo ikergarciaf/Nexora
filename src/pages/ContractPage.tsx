@@ -136,7 +136,7 @@ export default function ContractPage() {
                   ))}
                 </ul>
                 <button
-                  onClick={() => navigate(`/demo`)}
+                  onClick={() => navigate(`/demo?specialty=${specialty}`)}
                   className={`mt-8 w-full h-12 rounded-xl text-[15px] font-semibold transition-all ${
                     plan.popular
                       ? 'text-white shadow-sm hover:brightness-110'
@@ -163,7 +163,7 @@ export default function ContractPage() {
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <button
-                onClick={() => navigate('/demo')}
+                onClick={() => navigate(`/demo?specialty=${specialty}`)}
                 className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-900 text-[15px] font-medium hover:bg-slate-100 transition-colors"
               >
                 Solicitar demo <ArrowRight className="w-4 h-4" />

@@ -7,6 +7,7 @@ import { authRouter } from './auth.ts';
 import { billingRouter } from './billing.ts';
 import { dashboardRouter } from './dashboard.ts';
 import { staffRouter } from './staff.ts';
+import { aiRouter } from './ai.ts';
 import { whatsappRouter } from './whatsapp.ts';
 import { requireActiveSubscription } from '../middlewares/subscription.ts';
 
@@ -27,6 +28,7 @@ apiRouter.use('/patients', requireAuth, enforceBilling, patientRouter);
 apiRouter.use('/appointments', requireAuth, enforceBilling, appointmentRouter); 
 apiRouter.use('/staff', requireAuth, enforceBilling, staffRouter);
 apiRouter.use('/tenant', requireAuth, enforceBilling, tenantRouter);
+apiRouter.use('/ai', aiRouter);
 
 apiRouter.get('/health', (req, res) => {
   res.json({ 

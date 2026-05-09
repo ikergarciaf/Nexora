@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import logger from './logger.ts';
 
 let stripeClient: Stripe | null = null;
 
@@ -6,9 +7,9 @@ export function getStripe(): Stripe {
   if (!stripeClient) {
     const key = process.env.STRIPE_SECRET_KEY;
     if (!key) {
-      console.warn("⚠️ STRIPE_SECRET_KEY environment variable is missing.");
+      logger.warn('STRIPE_SECRET_KEY environment variable is missing.');
     }
-    stripeClient = new Stripe(key || 'mock_key', {
+    stripeClient = new Stripe(key || '', {
       // @ts-expect-error Types might mismatch depending on local stripe package version
       apiVersion: '2025-01-27.acacia',
     });

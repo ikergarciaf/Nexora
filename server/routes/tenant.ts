@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import prisma from '../db.ts';
+import logger from '../services/logger.ts';
 
 const router = Router();
 
@@ -32,6 +33,7 @@ router.get('/config', async (req, res) => {
       plan: tenant.subscriptionPlan
     });
   } catch (err) {
+    logger.error({ error: err }, 'Failed to fetch tenant config');
     res.status(500).json({ error: 'Internal error' });
   }
 });
@@ -64,6 +66,7 @@ router.post('/config', async (req, res) => {
 
     res.json({ success: true, tenant: updated });
   } catch (err) {
+    logger.error({ error: err }, 'Failed to update tenant config');
     res.status(500).json({ error: 'Failed to update configuration' });
   }
 });

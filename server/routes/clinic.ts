@@ -25,23 +25,12 @@ clinicRouter.get('/:idOrSlug', async (req, res) => {
         address: true,
         contactPhone: true,
         contactEmail: true,
-        openingHours: true as any,
       }
     });
 
     if (!clinic) return res.status(404).json({ error: 'Clinic not found' });
 
-    let openingHours = [];
-    try {
-      openingHours = typeof clinic.openingHours === 'string'
-        ? JSON.parse(clinic.openingHours as string)
-        : (clinic.openingHours as any) || [];
-    } catch { openingHours = []; }
-
-    res.json({
-      ...clinic,
-      openingHours,
-    });
+    res.json(clinic);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch clinic' });
   }

@@ -1,26 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../db.ts';
+import logger from '../services/logger.ts';
 
-/**
- * Middleware: Enforce Active Subscription Hook
- * Rejects requests if the Tenant's subscription past its trial and isn't actively paid.
- */
 export const requireActiveSubscription = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     if (!req.user || !req.user.tenantId) {
-      // Allow super admins to skip tenant check temporarily? No, they still need a tenantId to access tenant data.
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
 
-    if (req.user.isSuperAdmin) {
-      return next();
-    }
-
-    // Skip DB check if DB is not configured (Mock/Preview Mode constraint)
-    if (!process.env.DATABASE_URL) {
-      return next();
-    }
+    if (req.user.isSuperAdmin) return next();
 
     let tenant;
     try {
@@ -29,11 +18,8 @@ export const requireActiveSubscription = async (req: Request, res: Response, nex
         select: { subscriptionStatus: true, trialEndsAt: true }
       });
     } catch (dbError: any) {
-      if (dbError?.message?.includes('Authentication failed') || dbError?.code === 'P1000' || dbError?.message?.includes('Can\'t reach database')) {
-        console.warn('⚠️ DB Offline - Bypassing Subscription Wall for DEMO');
-        return next();
-      }
-      throw dbError;
+      logger.warn({ error: dbError.message }, 'DB offline - bypassing subscription check');
+      return next();
     }
 
     if (!tenant) {
@@ -45,7 +31,6 @@ export const requireActiveSubscription = async (req: Request, res: Response, nex
     const isSubscriptionActive = tenant.subscriptionStatus === 'active';
 
     if (!isTrialActive && !isSubscriptionActive) {
-      // Payment wall - standard SaaS practice
       res.status(402).json({ 
         error: 'Payment Required', 
         message: 'Your trial has ended or subscription is past due. Please update your billing details.' 
@@ -55,7 +40,7 @@ export const requireActiveSubscription = async (req: Request, res: Response, nex
 
     next();
   } catch (error) {
-    console.error('Subscription Check Error:', error);
+    logger.error({ error }, 'Subscription check error');
     res.status(500).json({ error: 'Internal server validation error' });
   }
 };

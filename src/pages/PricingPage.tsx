@@ -132,7 +132,7 @@ export default function PricingPage() {
                   <span className="text-[13px] text-slate-500">/mes</span>
                 </div>
                 <button
-                  onClick={() => navigate('/login')}
+                  onClick={() => navigate(plan.name === 'Enterprise' ? '/demo?type=quote' : '/demo')}
                   className={`mt-6 h-12 rounded-xl text-[14px] font-medium transition-all ${
                     plan.popular
                       ? 'bg-[#008477] text-white hover:bg-[#007066] shadow-lg shadow-[#008477]/20'
@@ -182,12 +182,12 @@ export default function PricingPage() {
               Reserva una demo personalizada. Te enseñamos Nexora adaptado a tu especialidad.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-              <button onClick={() => navigate('/login')} className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl bg-white text-slate-900 font-medium hover:bg-slate-100 transition-colors">
+              <button onClick={() => navigate('/demo')} className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl bg-white text-slate-900 font-medium hover:bg-slate-100 transition-colors">
                 Empezar gratis <ArrowRight className="w-4 h-4" />
               </button>
-              <a href="mailto:hola@nexora.co" className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl ring-1 ring-white/20 text-white font-medium hover:bg-white/5 transition-colors">
+              <button onClick={() => navigate('/demo?type=quote')} className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl ring-1 ring-white/20 text-white font-medium hover:bg-white/5 transition-colors">
                 Contactar
-              </a>
+              </button>
             </div>
           </div>
         </div>

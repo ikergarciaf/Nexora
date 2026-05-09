@@ -77,11 +77,11 @@ export const PainMap: React.FC<PainMapProps> = ({ isDarkMode, value = [], onChan
   const selectedPoint = value.find(p => p.id === selectedPointId);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 p-0 min-h-[600px] bg-white">
+    <div className={`flex flex-col lg:flex-row gap-8 p-0 min-h-[600px] ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
       {/* Body Canvas Section */}
-      <div className="flex-[1.5] flex flex-col items-center gap-6 justify-center bg-gray-50/30">
+      <div className={`flex-[1.5] flex flex-col items-center gap-6 justify-center ${isDarkMode ? 'bg-slate-800/30' : 'bg-gray-50/30'}`}>
         {/* Rotation Controls - Clean & Neutral */}
-        <div className="w-full flex p-1 bg-white rounded-2xl border border-gray-100 max-w-[280px] shadow-sm">
+        <div className={`w-full flex p-1 rounded-2xl border max-w-[280px] shadow-sm ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
            {( [0, 90, 180, 270] as ViewType[]).map(angle => (
              <button
                key={angle}
@@ -148,8 +148,8 @@ export const PainMap: React.FC<PainMapProps> = ({ isDarkMode, value = [], onChan
       {/* Control Panel Section - SaaS Style */}
       <div className="flex-1 max-w-md">
          <div className={`h-full flex flex-col rounded-3xl border bg-white dark:bg-slate-900 overflow-hidden ${isDarkMode ? 'border-slate-800 shadow-2xl' : 'border-gray-100 shadow-sm'}`}>
-            <div className="p-6 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Exploración</h3>
+            <div className={`p-6 border-b flex items-center justify-between ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-gray-100 bg-gray-50'}`}>
+               <h3 className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Exploración</h3>
               {value.length > 0 && (
                 <button 
                   onClick={() => { if(confirm('¿Reiniciar?')) onChange?.([]) }}
@@ -160,7 +160,7 @@ export const PainMap: React.FC<PainMapProps> = ({ isDarkMode, value = [], onChan
               )}
             </div>
 
-            <div className="flex-1 p-6 space-y-8 overflow-y-auto bg-white">
+             <div className={`flex-1 p-6 space-y-8 overflow-y-auto ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`}>
                {selectedPoint ? (
                  <motion.div 
                    initial={{ opacity: 0, y: 10 }}
@@ -218,8 +218,8 @@ export const PainMap: React.FC<PainMapProps> = ({ isDarkMode, value = [], onChan
             </div>
 
             {/* Minimal Summary List */}
-            <div className="p-4 bg-gray-50 border-t border-gray-100">
-               <h5 className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">Registros ({value.length})</h5>
+            <div className={`p-4 border-t ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-gray-50 border-gray-100'}`}>
+                <h5 className={`text-[8px] font-black uppercase tracking-widest mb-3 px-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Registros ({value.length})</h5>
                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
                   {value.map(p => (
                     <button 

@@ -1,20 +1,64 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Nexora — Software Clínico Inteligente
 
-# Run and deploy your AI Studio app
+Plataforma SaaS para clínicas y profesionales de la salud. Agenda, historia clínica, facturación, e IA en una sola herramienta.
 
-This contains everything you need to run your app locally.
+## Stack
 
-View your app in AI Studio: https://ai.studio/apps/8aa3491c-5ad3-4768-8097-04e3d2f9318a
+- **Frontend:** React 19 + TypeScript + Tailwind CSS v4 + Vite
+- **Backend:** Express + Prisma + PostgreSQL
+- **Autenticación:** JWT + Google OAuth
+- **IA:** Gemini API (Google AI)
+- **Pagos:** Stripe
+- **Email:** Nodemailer (SMTP)
+- **Infraestructura:** Docker, CI/CD via GitHub Actions
 
-## Run Locally
+## Requisitos
 
-**Prerequisites:**  Node.js
+- Node.js 20+
+- PostgreSQL 16+
+- Una API key de Gemini (para funciones IA)
 
+## Variables de Entorno
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Copiar `.env.example` a `.env` y configurar:
+
+| Variable | Descripción |
+|---|---|
+| `DATABASE_URL` | Conexión PostgreSQL |
+| `JWT_SECRET` | Secreto para firmar JWTs |
+| `GEMINI_API_KEY` | API key de Google Gemini |
+| `STRIPE_SECRET_KEY` | API key de Stripe |
+| `STRIPE_WEBHOOK_SECRET` | Webhook secret de Stripe |
+| `SMTP_HOST/USER/PASS` | Configuración SMTP para emails |
+| `VITE_GOOGLE_CLIENT_ID` | ID de cliente Google OAuth |
+
+## Desarrollo
+
+```bash
+npm install
+cp .env.example .env
+npm run db:push
+npm run dev
+```
+
+## Comandos
+
+| Comando | Descripción |
+|---|---|
+| `npm run dev` | Inicia servidor de desarrollo |
+| `npm run build` | Build de producción |
+| `npm run test` | Tests (vitest) |
+| `npm run lint` | TypeScript check |
+| `npm run db:migrate` | Ejecuta migraciones Prisma |
+| `npm run seed` | Datos de prueba iniciales |
+| `npm run start` | Inicia en producción |
+
+## Producción
+
+```bash
+docker compose up -d
+```
+
+## Licencia
+
+MIT — ver [LICENSE](LICENSE).

@@ -48,6 +48,7 @@ export default function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNexoraAiOpen, setIsNexoraAiOpen] = useState(false);
   const [isGlobalAddOpen, setIsGlobalAddOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const [clinicConfig, setClinicConfig] = useState({
     name: 'Tu Clínica',
@@ -93,6 +94,15 @@ export default function Dashboard() {
       return updated;
     });
   }, []);
+
+  const userInfo = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem('user_info') || '{}'); } catch { return {}; }
+  }, []);
+
+  const userInitials = useMemo(() => {
+    const name = userInfo?.name || clinicConfig.owner || 'U';
+    return name.split(' ').map((p: string) => p[0]).slice(0, 2).join('').toUpperCase();
+  }, [userInfo, clinicConfig.owner]);
 
   const SPECIALTY_MAP: Record<string, {
     productName: string;
@@ -218,6 +228,7 @@ export default function Dashboard() {
 
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const globalAddRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('clinic-theme');
@@ -244,6 +255,9 @@ export default function Dashboard() {
       }
       if (globalAddRef.current && !globalAddRef.current.contains(event.target as Node)) {
         setIsGlobalAddOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -566,7 +580,7 @@ export default function Dashboard() {
         </aside>
 
         {/* Main Content Area */}
-        <main className={`flex-1 overflow-y-auto shadow-[-4px_0_24px_rgba(0,0,0,0.02)] relative z-10 md:rounded-tl-2xl transition-colors ${isDarkMode ? 'bg-[#111827]' : 'bg-white'}`}>
+        <main className={`flex-1 overflow-y-auto shadow-[-4px_0_24px_rgba(0,0,0,0.02)] relative z-10 transition-colors ${isDarkMode ? 'bg-[#111827]' : 'bg-white'}`}>
           {/* Header Row */}
           <header className={`flex items-center justify-between px-4 md:px-8 py-4 border-b sticky top-0 z-30 transition-colors ${isDarkMode ? 'bg-[#111827] border-[#1f2937]' : 'bg-white border-[#e3e8ee] md:border-b-0'}`}>
             <div className="flex items-center gap-3 flex-1 md:flex-none">
@@ -621,8 +635,44 @@ export default function Dashboard() {
                 )}
               </div>
 
-              <div className="ml-2 w-8 h-8 rounded-full bg-[#1a1f36] text-white flex items-center justify-center text-[12px] font-bold shadow-sm cursor-pointer border border-[#e3e8ee]">
-                IK
+              <div ref={userMenuRef} className="relative">
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className={`ml-2 w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-bold shadow-sm cursor-pointer border-2 transition-all hover:scale-105 ${
+                    isDarkMode
+                      ? 'bg-[#334155] text-white border-[#475569] hover:border-blue-400'
+                      : 'bg-[#1a1f36] text-white border-[#e3e8ee] hover:border-[#5469d4]'
+                  }`}
+                >
+                  {userInitials}
+                </button>
+                {isUserMenuOpen && (
+                  <div className={`absolute top-full right-0 mt-2 w-56 rounded-xl shadow-xl border z-50 py-2 transition-all animate-in fade-in zoom-in-95 ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
+                    <div className={`px-4 py-3 border-b ${isDarkMode ? 'border-[#334155]' : 'border-[#e3e8ee]'}`}>
+                      <div className={`text-[14px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>{userInfo?.name || clinicConfig.owner}</div>
+                      <div className={`text-[12px] mt-0.5 ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>{userInfo?.email || clinicConfig.email}</div>
+                    </div>
+                    <div className="py-1">
+                      <button onClick={() => { navigate('/tenants'); setIsUserMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-[13px] font-medium flex items-center gap-3 transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-[#334155] hover:text-white' : 'text-[#4f566b] hover:bg-[#f6f9fc] hover:text-[#1a1f36]'}`}>
+                        <Grid className="w-4 h-4" /> Cambiar de clínica
+                      </button>
+                      <button onClick={() => { setActiveView('configuracion'); setIsUserMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-[13px] font-medium flex items-center gap-3 transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-[#334155] hover:text-white' : 'text-[#4f566b] hover:bg-[#f6f9fc] hover:text-[#1a1f36]'}`}>
+                        <Settings className="w-4 h-4" /> Configuración
+                      </button>
+                      <button onClick={() => { navigate('/pricing'); setIsUserMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-[13px] font-medium flex items-center gap-3 transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-[#334155] hover:text-white' : 'text-[#4f566b] hover:bg-[#f6f9fc] hover:text-[#1a1f36]'}`}>
+                        <Package className="w-4 h-4" /> Plan y facturación
+                      </button>
+                    </div>
+                    <div className={`py-1 border-t ${isDarkMode ? 'border-[#334155]' : 'border-[#e3e8ee]'}`}>
+                      <button
+                        onClick={() => { localStorage.clear(); navigate('/login'); }}
+                        className={`w-full text-left px-4 py-2.5 text-[13px] font-medium flex items-center gap-3 text-red-500 hover:bg-red-50 transition-colors`}
+                      >
+                        <LogOut className="w-4 h-4" /> Cerrar sesión
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </header>

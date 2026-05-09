@@ -318,7 +318,7 @@ export default function LandingPage() {
               className="mt-8 flex flex-col sm:flex-row gap-3"
             >
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/demo')}
                 className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-slate-900 text-white text-[15px] font-medium hover:bg-[#008477] transition-colors"
               >
                 Empezar gratis
@@ -637,7 +637,7 @@ export default function LandingPage() {
                   <span className="text-[13px] text-slate-500">/mes</span>
                 </div>
                 <button
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate('/demo')}
                   className={`mt-6 h-11 rounded-lg text-[14px] font-medium transition-colors ${
                     plan.highlighted
                       ? 'bg-slate-900 text-white hover:bg-[#008477]'
@@ -818,7 +818,7 @@ export default function LandingPage() {
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/demo')}
                 className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-900 text-[15px] font-medium hover:bg-slate-100 hover:scale-[1.02] transition-all"
               >
                 Empezar gratis <ArrowRight className="w-4 h-4" />
@@ -871,17 +871,18 @@ export default function LandingPage() {
                   onClick: () =>
                     document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' }),
                 },
-                { label: 'Iniciar sesión', onClick: () => navigate('/dashboard') },
-                { label: 'Empezar gratis', onClick: () => navigate('/dashboard') },
+                { label: 'Iniciar sesión', onClick: () => navigate('/login') },
+                { label: 'Empezar gratis', onClick: () => navigate('/demo') },
+
               ]}
             />
             <FooterColumn
               title="Legal"
               items={[
-                { label: 'Política de privacidad', onClick: () => null },
-                { label: 'Términos y condiciones', onClick: () => null },
-                { label: 'Política de cookies', onClick: () => null },
-                { label: 'Contacto', onClick: () => null },
+                { label: 'Política de privacidad', onClick: () => navigate('/privacidad') },
+                { label: 'Términos y condiciones', onClick: () => navigate('/terminos') },
+                { label: 'Política de cookies', onClick: () => navigate('/cookies') },
+                { label: 'Contacto', onClick: () => window.location.href = 'mailto:hola@nexora.co' },
               ]}
             />
           </div>

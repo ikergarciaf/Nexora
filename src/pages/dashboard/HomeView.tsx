@@ -66,7 +66,7 @@ export default function HomeView({ isDarkMode, onNavigate, clinicConfig, current
   const formatCurrency = (val: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 xl:px-12 max-w-[1440px] mx-auto pb-24">
+    <div className="px-4 sm:px-6 lg:px-8 xl:px-12 pb-24">
       {/* HOY Section */}
       <div className="mt-4 mb-10">
         <h1 className={`text-[28px] font-bold tracking-tight mb-6 transition-colors ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Hoy</h1>

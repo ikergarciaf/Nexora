@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { NexoraLogo } from '../components/NexoraLogo';

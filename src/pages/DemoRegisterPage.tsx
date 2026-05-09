@@ -16,6 +16,19 @@ export default function DemoRegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isQuote = searchParams.get('type') === 'quote';
+  const specialtyParam = searchParams.get('specialty');
+
+  const SLUG_TO_SPECIALTY: Record<string, string> = {
+    dental: 'Odontología',
+    nutricion: 'Nutrición',
+    fisioterapia: 'Fisioterapia',
+    psicologos: 'Psicología',
+    estetica: 'Estética',
+    general: 'Medicina General',
+  };
+
+  const defaultSpecialty = specialtyParam ? (SLUG_TO_SPECIALTY[specialtyParam] || 'Fisioterapia') : 'Fisioterapia';
+
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -23,7 +36,7 @@ export default function DemoRegisterPage() {
     name: '',
     email: '',
     phone: '',
-    clinicType: 'Fisioterapia',
+    clinicType: defaultSpecialty,
     clinicName: '',
     password: '',
   });

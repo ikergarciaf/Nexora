@@ -41,7 +41,7 @@ export default function TreatmentsView({ isDarkMode }: DashboardViewProps) {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 xl:px-12 max-w-[1440px] mx-auto pb-24 mt-8 transition-colors">
+    <div className="px-4 sm:px-6 lg:px-8 xl:px-12  pb-24 mt-8 transition-colors">
       <div className="flex items-center justify-between mb-8">
         <h1 className={`text-[24px] font-bold tracking-tight transition-colors ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Servicios / Tratamientos</h1>
         <button

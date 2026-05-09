@@ -25,7 +25,7 @@ const PREDEFINED_TESTS = [
   { name: 'Test a Medida', max: 100, categories: ['A', 'B', 'C'] },
 ];
 
-export const PsychometricTests: React.FC<PsychometricTestsProps> = ({ value = [], onChange }) => {
+export const PsychometricTests: React.FC<PsychometricTestsProps> = ({ isDarkMode, value = [], onChange }) => {
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
 
   const addTest = (templateIndex: number = 0) => {
@@ -56,9 +56,9 @@ export const PsychometricTests: React.FC<PsychometricTestsProps> = ({ value = []
   const selectedTest = value.find(t => t.id === selectedTestId);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 p-0 min-h-[600px] bg-white">
+    <div className={`flex flex-col lg:flex-row gap-8 p-0 min-h-[600px] ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
       {/* Sidebar List */}
-      <div className="flex-[1] flex flex-col border-r border-gray-100 p-6 bg-gray-50/30">
+      <div className={`flex-[1] flex flex-col border-r p-6 ${isDarkMode ? 'bg-slate-800/30 border-slate-700' : 'bg-gray-50/30 border-gray-100'}`}>
          <div className="flex flex-col gap-4 mb-6">
             <h3 className="text-[12px] font-bold text-gray-400 uppercase tracking-widest">Añadir Nuevo Test</h3>
             <div className="grid grid-cols-2 gap-2">
@@ -66,7 +66,7 @@ export const PsychometricTests: React.FC<PsychometricTestsProps> = ({ value = []
                  <button
                    key={t.name}
                    onClick={() => addTest(idx)}
-                   className="px-3 py-2 bg-white border border-gray-200 text-slate-700 rounded-xl text-[10px] font-bold shadow-sm transition-all hover:border-purple-500 hover:text-purple-600 truncate"
+                    className={`px-3 py-2 border rounded-xl text-[10px] font-bold shadow-sm transition-all hover:border-purple-500 hover:text-purple-600 truncate ${isDarkMode ? 'bg-slate-800 border-slate-700 text-gray-200' : 'bg-white border-gray-200 text-slate-700'}`}
                  >
                    + {t.name}
                  </button>
@@ -86,10 +86,10 @@ export const PsychometricTests: React.FC<PsychometricTestsProps> = ({ value = []
                 <button
                   key={t.id}
                   onClick={() => setSelectedTestId(t.id)}
-                  className={`w-full p-4 rounded-2xl flex flex-col gap-2 transition-all border text-left ${selectedTestId === t.id ? 'bg-white border-purple-600 shadow-sm ring-1 ring-purple-600' : 'bg-white border-gray-100 hover:border-purple-300'}`}
+                   className={`w-full p-4 rounded-2xl flex flex-col gap-2 transition-all border text-left ${selectedTestId === t.id ? `${isDarkMode ? 'bg-slate-800' : 'bg-white'} border-purple-600 shadow-sm ring-1 ring-purple-600` : `${isDarkMode ? 'bg-slate-800/50 border-slate-700 hover:border-purple-500' : 'bg-white border-gray-100 hover:border-purple-300'}`}`}
                 >
                   <div className="flex justify-between items-start">
-                     <span className="text-[13px] font-bold text-slate-800">{t.testName}</span>
+                      <span className={`text-[13px] font-bold ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>{t.testName}</span>
                      <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md">{t.score}/{t.maxScore}</span>
                   </div>
                   <div className="text-[11px] font-bold text-gray-400">{t.date}</div>
@@ -100,33 +100,33 @@ export const PsychometricTests: React.FC<PsychometricTestsProps> = ({ value = []
       </div>
 
       {/* Editor Main Area */}
-      <div className="flex-[2] flex flex-col p-8">
-        {selectedTest ? (
-          <div className="flex flex-col h-full gap-8">
-             <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                <div>
-                   <input 
-                     type="text"
-                     value={selectedTest.testName}
-                     onChange={(e) => updateTest(selectedTest.id, { testName: e.target.value })}
-                     className="text-[20px] font-black text-slate-900 bg-transparent outline-none focus:border-b-2 border-purple-600 block mb-1"
-                   />
-                   <input 
-                     type="date"
-                     value={selectedTest.date}
-                     onChange={(e) => updateTest(selectedTest.id, { date: e.target.value })}
-                     className="text-[12px] font-bold text-gray-500 bg-transparent outline-none cursor-pointer"
-                   />
+       <div className={`flex-[2] flex flex-col p-8 ${isDarkMode ? 'bg-slate-900' : ''}`}>
+         {selectedTest ? (
+           <div className="flex flex-col h-full gap-8">
+              <div className={`flex items-center justify-between pb-4 border-b ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
+                 <div>
+                    <input 
+                      type="text"
+                      value={selectedTest.testName}
+                      onChange={(e) => updateTest(selectedTest.id, { testName: e.target.value })}
+                      className={`text-[20px] font-black bg-transparent outline-none focus:border-b-2 border-purple-600 block mb-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}
+                    />
+                    <input 
+                      type="date"
+                      value={selectedTest.date}
+                      onChange={(e) => updateTest(selectedTest.id, { date: e.target.value })}
+                      className="text-[12px] font-bold text-gray-500 bg-transparent outline-none cursor-pointer"
+                    />
                 </div>
                 <div className="flex gap-2">
-                   <div className="flex items-center gap-2 px-4 py-2 bg-purple-50 rounded-xl border border-purple-100">
-                      <span className="text-[10px] font-bold text-purple-600 uppercase">Puntuación Total:</span>
-                      <input 
-                         type="number"
-                         value={selectedTest.score}
-                         onChange={(e) => updateTest(selectedTest.id, { score: parseInt(e.target.value) || 0 })}
-                         className="w-12 bg-transparent text-[16px] font-black text-slate-900 outline-none text-right"
-                      />
+                   <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${isDarkMode ? 'bg-purple-900/20 border-purple-800/30' : 'bg-purple-50 border-purple-100'}`}>
+                       <span className="text-[10px] font-bold text-purple-600 uppercase">Puntuación Total:</span>
+                       <input 
+                          type="number"
+                          value={selectedTest.score}
+                          onChange={(e) => updateTest(selectedTest.id, { score: parseInt(e.target.value) || 0 })}
+                          className={`w-12 bg-transparent text-[16px] font-black outline-none text-right ${isDarkMode ? 'text-white' : 'text-slate-900'}`}
+                       />
                       <span className="text-[14px] font-bold text-gray-400">/ {selectedTest.maxScore}</span>
                    </div>
                    <button 
@@ -142,14 +142,14 @@ export const PsychometricTests: React.FC<PsychometricTestsProps> = ({ value = []
              <div className="flex gap-8 flex-1">
                 <div className="flex-1 space-y-6">
                    <div>
-                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 block border-b border-gray-100 pb-2">Desglose por Categoría</label>
+                      <label className={`text-[10px] font-bold uppercase tracking-widest mb-3 block border-b pb-2 ${isDarkMode ? 'text-gray-500 border-slate-700' : 'text-gray-400 border-gray-100'}`}>Desglose por Categoría</label>
                      <div className="space-y-4">
                         {selectedTest.categoryScores?.map((cat, idx) => (
-                           <div key={idx} className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                              <div className="flex justify-between text-[11px] font-bold text-slate-700 mb-2">
-                                 <span>{cat.category}</span>
-                                 <span className="text-purple-600">{cat.score} / {Math.round(cat.max)}</span>
-                              </div>
+                            <div key={idx} className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-gray-50 border-gray-100'}`}>
+                               <div className={`flex justify-between text-[11px] font-bold mb-2 ${isDarkMode ? 'text-gray-200' : 'text-slate-700'}`}>
+                                  <span>{cat.category}</span>
+                                  <span className="text-purple-600">{cat.score} / {Math.round(cat.max)}</span>
+                               </div>
                               <input 
                                 type="range" 
                                 min="0" 
@@ -168,17 +168,17 @@ export const PsychometricTests: React.FC<PsychometricTestsProps> = ({ value = []
                    </div>
 
                    <div>
-                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block border-b border-gray-100 pb-2">Interpretación Clínica</label>
+                      <label className={`text-[10px] font-bold uppercase tracking-widest mb-2 block border-b pb-2 ${isDarkMode ? 'text-gray-500 border-slate-700' : 'text-gray-400 border-gray-100'}`}>Interpretación Clínica</label>
                      <textarea 
                        value={selectedTest.notes || ''}
                        onChange={(e) => updateTest(selectedTest.id, { notes: e.target.value })}
-                       className="w-full h-32 bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 text-[13px] outline-none focus:border-purple-500 focus:bg-white transition-colors resize-none leading-relaxed"
+                        className={`w-full h-32 px-4 py-3 rounded-xl border text-[13px] outline-none focus:border-purple-500 transition-colors resize-none leading-relaxed ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:bg-slate-800' : 'bg-gray-50 border-gray-200 focus:bg-white'}`}
                        placeholder="Diagnóstico, percentil o interpretación de los resultados..."
                      />
                    </div>
                 </div>
 
-                <div className="flex-1 flex flex-col items-center justify-center bg-gray-50/50 rounded-3xl border border-gray-100 p-4 min-h-[300px]">
+                 <div className={`flex-1 flex flex-col items-center justify-center rounded-3xl border p-4 min-h-[300px] ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-gray-50/50 border-gray-100'}`}>
                    {selectedTest.categoryScores && selectedTest.categoryScores.length > 2 ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={selectedTest.categoryScores.map(c => ({ subject: c.category, A: c.score, fullMark: c.max }))}>

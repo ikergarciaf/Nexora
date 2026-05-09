@@ -2,7 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../db.ts';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-dev-secret-do-not-use-in-prod';
+const JWT_SECRET = (() => {
+  if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
+  return process.env.JWT_SECRET;
+})();
 
 // Extend Express Request to include user context globally
 declare global {
@@ -31,10 +34,6 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     }
 
     const token = authHeader.split(' ')[1];
-    if (token === 'demo-token' || token === 'mock-jwt-token-db-not-configured') {
-      req.user = { id: 'demo-user-1', tenantId: 'demo-tenant-1', role: 'ADMIN', isSuperAdmin: true };
-      return next();
-    }
 
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string; isSuperAdmin: boolean };
     const requestedTenantId = req.headers['x-tenant-id'] as string;

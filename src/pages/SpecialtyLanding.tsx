@@ -359,7 +359,7 @@ export default function SpecialtyLanding() {
                 transition={{ duration: 0.5, delay: 0.15 }}
                 className="mt-8 flex flex-col sm:flex-row gap-3"
               >
-                {specialty === 'web-clinicas' ? (
+                {specialty === 'web-clinicas' && (
                   <>
                     <button
                       onClick={() => navigate('/demo?type=quote')}
@@ -368,14 +368,16 @@ export default function SpecialtyLanding() {
                       Solicitar presupuesto sin compromiso
                       <ArrowRight className="w-4 h-4" />
                     </button>
-                  )
-                }
-              </div>
+                  </>
+                )}
+              </motion.div>
             </div>
-          </section>
+          </div>
+        </div>
+      </section>
 
-          {/* Proceso */}
-          <section className="py-20 lg:py-24">
+      {/* Testimonial */}
+      <section className="py-20 lg:py-24">
           <div className="max-w-3xl mx-auto px-6">
             <div className="p-8 lg:p-10 rounded-2xl bg-white ring-1 ring-slate-200/70">
               <Quote className="w-6 h-6 text-[#008477] mb-4" />
@@ -400,7 +402,6 @@ export default function SpecialtyLanding() {
             </div>
           </div>
         </section>
-      )}
 
       {specialty === 'web-clinicas' && (
         <>
@@ -560,10 +561,10 @@ export default function SpecialtyLanding() {
               ) : (
                 <>
                   <button
-                    onClick={() => navigate(`/dashboard?specialty=${specialty}`)}
+                    onClick={() => navigate(`/contratar/${specialty}`)}
                     className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-900 text-[15px] font-medium hover:bg-slate-100 transition-colors"
                   >
-                    Probar gratis <ArrowRight className="w-4 h-4" />
+                    Ver planes y contratar <ArrowRight className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => navigate('/')}

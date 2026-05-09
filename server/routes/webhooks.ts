@@ -1,6 +1,7 @@
 import { Router, raw } from 'express';
 import { getStripe } from '../services/stripeService.ts';
 import prisma from '../db.ts';
+import logger from '../services/logger.ts';
 
 export const webhookRouter = Router();
 
@@ -10,17 +11,16 @@ webhookRouter.post('/stripe', raw({ type: 'application/json' }), async (req, res
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!sig || !webhookSecret) {
-    console.warn('⚠️ Webhook called but Stripe Webhook Signature is missing.');
+    logger.warn('Webhook called but Stripe Webhook Signature is missing.');
     return res.status(400).send('Webhook secret missing');
   }
 
   let event;
   try {
     const stripe = getStripe();
-    // Verify cryptographic signature
     event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err: any) {
-    console.error(`❌ Webhook signature verification failed:`, err.message);
+    logger.error({ error: err.message }, 'Webhook signature verification failed');
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -30,8 +30,7 @@ webhookRouter.post('/stripe', raw({ type: 'application/json' }), async (req, res
       case 'checkout.session.completed': {
         const session = event.data.object as any;
         if (session.mode === 'subscription') {
-          // You could run logic here, though we rely on customer.subscription.updated mainly
-          console.log(`Checkout Session Completed for Customer: ${session.customer}`);
+          logger.info({ customer: session.customer }, 'Checkout session completed');
         }
         break;
       }
@@ -75,7 +74,7 @@ webhookRouter.post('/stripe', raw({ type: 'application/json' }), async (req, res
     
     res.json({ received: true });
   } catch (dbError) {
-    console.error('Webhook DB Sync Error:', dbError);
+    logger.error({ error: dbError }, 'Webhook DB sync error');
     res.status(500).send('Internal synchronization error');
   }
 });

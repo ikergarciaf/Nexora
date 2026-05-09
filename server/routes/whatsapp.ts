@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import logger from '../services/logger.ts';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -63,7 +64,7 @@ router.post('/webhook', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('WhatsApp Context Error:', error);
+    logger.error({ error }, 'WhatsApp context error');
     res.status(500).json({ error: 'Failed' });
   }
 });
@@ -93,7 +94,7 @@ router.post('/book-from-chat', async (req, res) => {
 
     res.json({ success: true, appointment });
   } catch (error) {
-    console.error('Booking from chat error:', error);
+    logger.error({ error }, 'Booking from chat error');
     res.status(500).json({ error: 'Failed' });
   }
 });

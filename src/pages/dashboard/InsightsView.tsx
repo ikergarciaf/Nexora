@@ -6,7 +6,7 @@ interface InsightsViewProps {
 
 export default function InsightsView({ isDarkMode }: InsightsViewProps) {
   return (
-    <div className="px-4 sm:px-6 lg:px-8 xl:px-12 max-w-[1440px] mx-auto pb-24 mt-8 transition-colors">
+    <div className="px-4 sm:px-6 lg:px-8 xl:px-12  pb-24 mt-8 transition-colors">
       <div className="mb-8">
         <h1 className={`text-[24px] font-bold tracking-tight flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
           <span className={`w-8 h-8 rounded-[4px] flex items-center justify-center transition-colors ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-[#f0f4ff] text-[#5469d4]'}`}>

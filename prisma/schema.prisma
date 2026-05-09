@@ -40,15 +40,17 @@ model Tenant {
 }
 
 model User {
-  id           String        @id @default(uuid())
-  email        String        @unique
-  passwordHash String?
-  googleId     String?
-  name         String
-  isActive     Boolean       @default(true)
-  isSuperAdmin Boolean       @default(false)
-  memberships  TenantUser[]
-  shifts       Shift[]
+  id                  String        @id @default(uuid())
+  email               String        @unique
+  passwordHash        String?
+  googleId            String?
+  name                String
+  isActive            Boolean       @default(true)
+  isSuperAdmin        Boolean       @default(false)
+  resetToken          String?       @unique
+  resetTokenExpiresAt DateTime?
+  memberships         TenantUser[]
+  shifts              Shift[]
 }
 
 model TenantUser {
