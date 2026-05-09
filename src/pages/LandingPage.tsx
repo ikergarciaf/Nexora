@@ -119,20 +119,20 @@ const TESTIMONIALS = [
 const INTEGRATIONS = [
   { name: 'Stripe', tag: 'Cobros y suscripciones' },
   { name: 'WhatsApp', tag: 'Recordatorios al paciente' },
-  { name: 'Google Calendar', tag: 'Agenda sincronizada' },
-  { name: 'Verifactu', tag: 'Facturación electrónica' },
-  { name: 'Zoom', tag: 'Teleconsulta' },
-  { name: 'Outlook', tag: 'Email del equipo' },
+  { name: 'Email', tag: 'Notificaciones automáticas' },
+  { name: 'PDF', tag: 'Facturación y documentos' },
+  { name: 'Google', tag: 'Inicio de sesión' },
+  { name: 'Gemini AI', tag: 'Asistente inteligente' },
 ];
 
 const COMPARISON = [
   { feature: 'Específico por especialidad', nexora: true, excel: false, generico: false },
   { feature: 'Recordatorios automáticos', nexora: true, excel: false, generico: true },
-  { feature: 'Firma digital de consentimientos', nexora: true, excel: false, generico: false },
+  { feature: 'Facturación y cobros integrados', nexora: true, excel: false, generico: true },
   { feature: 'IA clínica integrada', nexora: true, excel: false, generico: false },
   { feature: 'Datos cifrados en la UE', nexora: true, excel: false, generico: true },
   { feature: 'Sin permanencia', nexora: true, excel: true, generico: false },
-  { feature: 'Migración asistida en 48h', nexora: true, excel: false, generico: false },
+  { feature: 'Importación de pacientes CSV', nexora: true, excel: false, generico: false },
 ];
 
 const CLIENT_LOGOS = [

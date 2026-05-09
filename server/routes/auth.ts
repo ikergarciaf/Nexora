@@ -8,6 +8,10 @@ import { sendEmail } from '../services/emailService.ts';
 import logger from '../services/logger.ts';
 import { OAuth2Client } from 'google-auth-library';
 
+function sanitize(str: string): string {
+  return str.replace(/[<>&"']/g, '');
+}
+
 export const authRouter = Router();
 const JWT_SECRET = (() => {
   if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
@@ -19,16 +23,17 @@ authRouter.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
     if (!name || !email || !password) return res.status(400).json({ error: 'Missing required elements' });
+    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await prisma.user.findUnique({ where: { email: sanitize(email).toLowerCase() } });
     if (existingUser) return res.status(400).json({ error: 'Email already exists' });
 
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await prisma.user.create({
-      data: { email, name, passwordHash }
+      data: { email: sanitize(email).toLowerCase(), name: sanitize(name), passwordHash }
     });
 
-    const token = jwt.sign({ id: user.id, isSuperAdmin: user.isSuperAdmin }, JWT_SECRET, { expiresIn: '12h' });
+    const token = jwt.sign({ id: user.id, isSuperAdmin: user.isSuperAdmin }, JWT_SECRET, { expiresIn: '7d' });
     res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name, isSuperAdmin: user.isSuperAdmin } });
   } catch (error) {
     res.status(500).json({ error: 'Internal Server Error' });
@@ -40,13 +45,13 @@ authRouter.post('/login', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Missing credentials' });
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email: sanitize(email).toLowerCase() } });
     if (!user || !user.isActive || !user.passwordHash) return res.status(401).json({ error: 'Invalid credentials' });
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) return res.status(401).json({ error: 'Invalid credentials' });
 
-    const token = jwt.sign({ id: user.id, isSuperAdmin: user.isSuperAdmin }, JWT_SECRET, { expiresIn: '12h' });
+    const token = jwt.sign({ id: user.id, isSuperAdmin: user.isSuperAdmin }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user.id, email: user.email, name: user.name, isSuperAdmin: user.isSuperAdmin } });
   } catch (error) {
     res.status(500).json({ error: 'Internal Server Error' });
@@ -62,7 +67,7 @@ authRouter.post('/google', async (req, res) => {
     if (credential === 'demo-google-token') {
       const user = await prisma.user.findFirst();
       if (!user) return res.status(403).json({ error: 'No demo users available' });
-      const token = jwt.sign({ id: user.id, isSuperAdmin: user.isSuperAdmin }, JWT_SECRET, { expiresIn: '12h' });
+      const token = jwt.sign({ id: user.id, isSuperAdmin: user.isSuperAdmin }, JWT_SECRET, { expiresIn: '7d' });
       return res.json({ token, user: { id: user.id, email: user.email, name: user.name, isSuperAdmin: user.isSuperAdmin } });
     }
 
@@ -90,7 +95,7 @@ authRouter.post('/google', async (req, res) => {
         });
       }
 
-      const token = jwt.sign({ id: user.id, isSuperAdmin: user.isSuperAdmin }, JWT_SECRET, { expiresIn: '12h' });
+      const token = jwt.sign({ id: user.id, isSuperAdmin: user.isSuperAdmin }, JWT_SECRET, { expiresIn: '7d' });
       res.json({ token, user: { id: user.id, email: user.email, name: user.name, isSuperAdmin: user.isSuperAdmin } });
     } catch (googleError) {
       logger.warn({ error: googleError }, 'Google OAuth verification failed');
@@ -235,7 +240,7 @@ authRouter.post('/demo-register', async (req, res) => {
       data: { userId: user.id, tenantId: tenant.id, role: 'OWNER' },
     });
 
-    const token = jwt.sign({ id: user.id, isSuperAdmin: user.isSuperAdmin }, JWT_SECRET, { expiresIn: '12h' });
+    const token = jwt.sign({ id: user.id, isSuperAdmin: user.isSuperAdmin }, JWT_SECRET, { expiresIn: '7d' });
 
     res.status(201).json({
       token,

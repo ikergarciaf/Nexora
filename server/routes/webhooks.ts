@@ -5,7 +5,6 @@ import logger from '../services/logger.ts';
 
 export const webhookRouter = Router();
 
-// Stripe requires the raw body signature, so we use `express.raw` here BEFORE `express.json` parses it elsewhere
 webhookRouter.post('/stripe', raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -25,22 +24,21 @@ webhookRouter.post('/stripe', raw({ type: 'application/json' }), async (req, res
   }
 
   try {
-    // Handle the event types
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as any;
         if (session.mode === 'subscription') {
-          logger.info({ customer: session.customer }, 'Checkout session completed');
+          logger.info({ customer: session.customer, id: session.id }, 'Checkout session completed');
         }
         break;
       }
-      
+
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const subscription = event.data.object as any;
         const tenantId = subscription.metadata?.tenantId;
         const planKey = subscription.metadata?.planKey;
-        
+
         if (tenantId) {
           await prisma.tenant.update({
             where: { id: tenantId },
@@ -49,9 +47,10 @@ webhookRouter.post('/stripe', raw({ type: 'application/json' }), async (req, res
               stripePriceId: subscription.items.data[0].price.id,
               subscriptionStatus: subscription.status,
               subscriptionPlan: planKey || undefined,
-              trialEndsAt: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null
-            }
+              trialEndsAt: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
+            },
           });
+          logger.info({ tenantId, status: subscription.status }, 'Subscription updated via webhook');
         }
         break;
       }
@@ -59,19 +58,68 @@ webhookRouter.post('/stripe', raw({ type: 'application/json' }), async (req, res
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as any;
         const tenantId = subscription.metadata?.tenantId;
-        
+
         if (tenantId) {
           await prisma.tenant.update({
             where: { id: tenantId },
-            data: {
-              subscriptionStatus: 'canceled'
-            }
+            data: { subscriptionStatus: 'canceled' },
           });
+          logger.info({ tenantId }, 'Subscription canceled via webhook');
+        }
+        break;
+      }
+
+      case 'invoice.paid': {
+        const invoice = event.data.object as any;
+        const tenantId = invoice.subscription_details?.metadata?.tenantId || invoice.metadata?.tenantId;
+        const customerId = invoice.customer;
+
+        if (tenantId) {
+          await prisma.invoice.upsert({
+            where: { id: invoice.id, tenantId },
+            create: {
+              id: invoice.id,
+              tenantId,
+              patientId: 'system',
+              number: invoice.number || `STRIPE-${invoice.id.slice(0, 8)}`,
+              amount: invoice.amount_paid / 100,
+              currency: invoice.currency.toUpperCase(),
+              status: 'PAID',
+              description: `Subscription ${invoice.lines?.data?.[0]?.description || ''}`,
+              issuedDate: new Date(invoice.created * 1000),
+              paidAt: new Date(),
+              stripeInvoiceId: invoice.id,
+            },
+            update: {
+              status: 'PAID',
+              paidAt: new Date(),
+            },
+          });
+          logger.info({ tenantId, invoiceId: invoice.id }, 'Invoice paid via webhook');
+        }
+        break;
+      }
+
+      case 'invoice.payment_failed': {
+        const failedInvoice = event.data.object as any;
+        const failedTenantId = failedInvoice.subscription_details?.metadata?.tenantId || failedInvoice.metadata?.tenantId;
+
+        if (failedTenantId) {
+          logger.warn({ tenantId: failedTenantId, invoiceId: failedInvoice.id }, 'Invoice payment failed');
+        }
+        break;
+      }
+
+      case 'customer.subscription.trial_will_end': {
+        const trialSub = event.data.object as any;
+        const trialTenantId = trialSub.metadata?.tenantId;
+        if (trialTenantId) {
+          logger.info({ tenantId: trialTenantId }, 'Trial will end soon');
         }
         break;
       }
     }
-    
+
     res.json({ received: true });
   } catch (dbError) {
     logger.error({ error: dbError }, 'Webhook DB sync error');

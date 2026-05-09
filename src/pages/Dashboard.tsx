@@ -21,6 +21,7 @@ const StaffView = lazy(() => import('./dashboard/StaffView'));
 const AutomationsView = lazy(() => import('./dashboard/AutomationsView'));
 const ConfigView = lazy(() => import('./dashboard/ConfigView'));
 const WhatsAppBotView = lazy(() => import('./dashboard/WhatsAppBotView'));
+const ConsentView = lazy(() => import('./dashboard/ConsentView'));
 
 function ViewLoader() {
   return (
@@ -361,6 +362,12 @@ export default function Dashboard() {
             <WhatsAppBotView isDarkMode={isDarkMode} clinicConfig={clinicConfig} />
           </Suspense>
         );
+      case 'consentimientos':
+        return (
+          <Suspense fallback={<ViewLoader />}>
+            <ConsentView isDarkMode={isDarkMode} onNavigate={handleNavigate} />
+          </Suspense>
+        );
       default:
         return (
           <Suspense fallback={<ViewLoader />}>
@@ -484,6 +491,7 @@ export default function Dashboard() {
               { id: 'pacientes', label: 'Clientes / Pacientes', icon: Users },
               { id: 'tratamientos', label: 'Servicios', icon: Package },
               { id: 'staff', label: 'Personal y Turnos', icon: User },
+              { id: 'consentimientos', label: 'Consentimientos', icon: FileText },
             ].map(item => (
               <button
                 key={item.id}

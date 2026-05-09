@@ -326,9 +326,21 @@ export default function HomeView({ isDarkMode, onNavigate, clinicConfig, current
               </div>
               <div className={`flex-1 flex flex-col items-center justify-center`}>
                 <div className="flex items-baseline gap-1">
-                  <span className={`text-[24px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
-                    {kpi.prefix}{Math.floor(Math.random() * 80) + 20}{kpi.suffix}
-                  </span>
+                    <span className={`text-[24px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
+                      {kpi.prefix}
+                      {kpi.key === 'treated' ? stats?.appointmentsThisWeek || 0
+                        : kpi.key === 'accepted' ? '75'
+                        : kpi.key === 'avgWeight' ? '3.2'
+                        : kpi.key === 'adherence' ? '82'
+                        : kpi.key === 'sessions' ? stats?.appointmentsThisWeek || 0
+                        : kpi.key === 'recovery' ? '60'
+                        : kpi.key === 'activeSessions' ? stats?.appointmentsThisWeek || 0
+                        : kpi.key === 'wellbeing' ? '7.5'
+                        : kpi.key === 'refill' ? '2'
+                        : kpi.key === 'glowScore' ? '92'
+                        : '-'}
+                      {kpi.suffix}
+                    </span>
                 </div>
                 <span className={`text-[12px] mt-1 font-medium ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Métrica {clinicConfig.specialty}</span>
               </div>

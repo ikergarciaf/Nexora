@@ -9,12 +9,31 @@ patientRouter.use(requireAuth);
 
 patientRouter.get('/', async (req, res) => {
   try {
-    const patients = await prisma.patient.findMany({ 
-      where: { tenantId: req.user!.tenantId },
-      take: 50,
-      orderBy: { fullName: 'asc' }
-    });
-    res.json(patients);
+    const tenantId = req.user!.tenantId;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const search = (req.query.search as string || '').trim();
+
+    const where: any = { tenantId };
+    if (search) {
+      where.OR = [
+        { fullName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      prisma.patient.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { fullName: 'asc' },
+      }),
+      prisma.patient.count({ where }),
+    ]);
+
+    res.json({ data, total, page, limit });
   } catch (error: any) {
     logger.error({ error }, 'Failed to fetch patients');
     res.status(500).json({ error: 'Failed to fetch patients' });

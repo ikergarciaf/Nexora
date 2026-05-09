@@ -31,12 +31,15 @@ model Tenant {
   contactEmail         String?
 
   createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
   appointments         Appointment[]
   invoices             Invoice[]
   patients             Patient[]
+  treatments           Treatment[]
   memberships          TenantUser[]
   rooms                Room[]
   shifts               Shift[]
+  consents             Consent[]
 }
 
 model User {
@@ -49,6 +52,8 @@ model User {
   isSuperAdmin        Boolean       @default(false)
   resetToken          String?       @unique
   resetTokenExpiresAt DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
   memberships         TenantUser[]
   shifts              Shift[]
 }
@@ -79,8 +84,11 @@ model Patient {
   lastVisit           DateTime?
   nutritionalPlan      String?       @default("{}")
   medicalRecord        String?       @default("{}")
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
   appointments        Appointment[]
   invoices            Invoice[]
+  consents            Consent[]
   tenant              Tenant        @relation(fields: [tenantId], references: [id])
 
   @@unique([id, tenantId])
@@ -93,28 +101,53 @@ model Appointment {
   doctorId        String?
   startTime       DateTime
   endTime         DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
   type            String?
   status          String   @default("SCHEDULED")
+  treatmentId     String?
   aiConflictScore Float?
   aiAlertReason   String?
   whatsappDraft   String?
   internalNotes   String?
-  patient         Patient  @relation(fields: [patientId], references: [id])
-  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  patient         Patient     @relation(fields: [patientId], references: [id])
+  treatment       Treatment?  @relation(fields: [treatmentId], references: [id])
+  tenant          Tenant      @relation(fields: [tenantId], references: [id])
   
   @@unique([id, tenantId])
 }
 
+model Treatment {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  description String?
+  category    String   @default("General")
+  duration    Int      @default(30)
+  price       Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  appointments Appointment[]
+
+  @@unique([id, tenantId])
+}
+
 model Invoice {
-  id         String   @id @default(uuid())
-  tenantId   String
-  patientId  String
-  amount     Float
-  currency   String   @default("USD")
-  status     String   @default("PENDING")
-  issuedDate DateTime @default(now())
-  patient    Patient  @relation(fields: [patientId], references: [id])
-  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  id          String        @id @default(uuid())
+  tenantId    String
+  patientId   String
+  number      String?
+  amount      Float
+  currency    String        @default("EUR")
+  status      String        @default("PENDING")
+  description String?
+  dueDate     DateTime?
+  issuedDate  DateTime      @default(now())
+  paidAt      DateTime?
+  stripeInvoiceId String?
+  patient     Patient       @relation(fields: [patientId], references: [id])
+  tenant      Tenant        @relation(fields: [tenantId], references: [id])
 
   @@unique([id, tenantId])
 }
@@ -141,6 +174,25 @@ model Shift {
   user      User     @relation(fields: [userId], references: [id])
   room      Room?    @relation(fields: [roomId], references: [id])
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([id, tenantId])
+}
+
+model Consent {
+  id              String    @id @default(uuid())
+  tenantId        String
+  patientId       String
+  title           String
+  content         String
+  signatureDataUrl String?
+  signedAt        DateTime?
+  status          String    @default("draft") // draft, signed, revoked
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  patient         Patient   @relation(fields: [patientId], references: [id])
+  tenant          Tenant    @relation(fields: [tenantId], references: [id])
 
   @@unique([id, tenantId])
 }

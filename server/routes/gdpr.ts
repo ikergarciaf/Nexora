@@ -53,6 +53,21 @@ gdprRouter.post('/delete', async (req, res) => {
     }
 
     await prisma.$transaction(async (tx) => {
+      const memberships = await tx.tenantUser.findMany({ where: { userId }, select: { tenantId: true } });
+      const tenantIds = memberships.map(m => m.tenantId);
+
+      for (const tenantId of tenantIds) {
+        const userPatients = await tx.patient.findMany({
+          where: { tenantId, appointments: { some: { doctorId: userId } } },
+          select: { id: true },
+        });
+        const patientIds = userPatients.map(p => p.id);
+
+        await tx.consent.deleteMany({ where: { patientId: { in: patientIds }, tenantId } });
+        await tx.invoice.deleteMany({ where: { patientId: { in: patientIds }, tenantId } });
+        await tx.appointment.deleteMany({ where: { doctorId: userId, tenantId } });
+      }
+
       await tx.shift.deleteMany({ where: { userId } });
       await tx.tenantUser.deleteMany({ where: { userId } });
       await tx.user.delete({ where: { id: userId } });

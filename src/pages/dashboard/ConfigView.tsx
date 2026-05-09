@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { User, Sun, Moon, Map, Save, Eye, Info, CheckCircle2, Mail, Phone, Clock, Brain, Rocket, Package, Upload, Trash2, Download, AlertTriangle } from 'lucide-react';
+import { User, Sun, Moon, Map, Save, Eye, Info, CheckCircle2, Mail, Phone, Clock, Brain, Rocket, Package, Upload, Trash2, Download, AlertTriangle, X, Loader2, Check } from 'lucide-react';
 import { updateTenantConfigApi } from '../../hooks/useDashboardData';
 import { DashboardViewWithConfigProps } from './types';
 
@@ -14,6 +14,37 @@ export default function ConfigView({ isDarkMode, clinicConfig, onUpdateConfig }:
   const [exporting, setExporting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [planLoading, setPlanLoading] = useState(false);
+
+  const PLANS = [
+    { key: 'STARTER', name: 'Starter', price: '29€', features: ['1 Profesional', 'Agenda básica', 'Recordatorios Email'], popular: false },
+    { key: 'PRO', name: 'Pro', price: '79€', features: ['3 Profesionales', 'IA Insights', 'WhatsApp Automation'], popular: true },
+    { key: 'PREMIUM', name: 'Premium', price: '149€', features: ['Profesionales ilimitados', 'Modelos IA personalizados', 'Soporte prioritario'], popular: false },
+  ];
+
+  const handleUpgradePlan = async (planKey: string) => {
+    setPlanLoading(true);
+    try {
+      const token = localStorage.getItem('clinic_token');
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ planKey }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert('Error al crear la sesión de pago. Intenta de nuevo.');
+      }
+    } catch (err) {
+      alert('Error de conexión al procesar el pago.');
+    } finally {
+      setPlanLoading(false);
+      setShowPlanModal(false);
+    }
+  };
 
   const updateClinicConfig = useCallback((newConfig: Partial<typeof clinicConfig>) => {
     onUpdateConfig({ ...clinicConfig, ...newConfig });
@@ -302,13 +333,58 @@ export default function ConfigView({ isDarkMode, clinicConfig, onUpdateConfig }:
               </div>
             </div>
             <button 
-              onClick={() => window.alert('Próximamente: Pasarela de cambio de plan.')}
+              onClick={() => setShowPlanModal(true)}
               className="px-4 py-2 bg-[#5469d4] text-white rounded-lg text-[13px] font-bold hover:opacity-90 transition-all"
             >
               Mejorar Plan
             </button>
           </div>
         </div>
+
+        {/* Plan Upgrade Modal */}
+        {showPlanModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => !planLoading && setShowPlanModal(false)}>
+            <div className={`relative w-full max-w-lg rounded-[16px] border shadow-2xl p-8 transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`} onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setShowPlanModal(false)} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+              <h3 className={`text-[20px] font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Cambiar de Plan</h3>
+              <p className="text-[13px] text-gray-400 mb-6">Elige el plan que mejor se adapte a tu clínica.</p>
+              <div className="space-y-3">
+                {PLANS.map((plan) => (
+                  <button
+                    key={plan.key}
+                    disabled={planLoading || plan.key === clinicConfig.plan}
+                    onClick={() => handleUpgradePlan(plan.key)}
+                    className={`w-full text-left p-4 rounded-[12px] border transition-all relative ${plan.key === clinicConfig.plan ? 'opacity-50 cursor-not-allowed border-gray-200 dark:border-gray-600' : plan.popular ? 'border-[#5469d4] bg-[#5469d4]/5 hover:bg-[#5469d4]/10' : 'border-gray-200 dark:border-gray-600 hover:border-[#5469d4] dark:hover:border-[#5469d4]'}`}
+                  >
+                    {plan.popular && <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 bg-[#5469d4] text-white text-[10px] font-bold rounded-full">MÁS POPULAR</span>}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className={`text-[15px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>{plan.name}</div>
+                        <div className="text-[12px] text-gray-400 mt-1">{plan.features.join(' · ')}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`text-[18px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>{plan.price}</div>
+                        <div className="text-[11px] text-gray-400">/mes</div>
+                      </div>
+                    </div>
+                    {plan.key === clinicConfig.plan && (
+                      <div className="mt-2 flex items-center gap-1 text-[12px] text-green-600 font-medium">
+                        <Check className="w-3.5 h-3.5" /> Plan actual
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+              {planLoading && (
+                <div className="flex items-center justify-center gap-2 mt-4 text-[13px] text-gray-400">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Redirigiendo a Stripe...
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* GDPR / Datos */}
         <div className={`rounded-[12px] border p-8 transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>

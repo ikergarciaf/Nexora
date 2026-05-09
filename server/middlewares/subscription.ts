@@ -11,16 +11,10 @@ export const requireActiveSubscription = async (req: Request, res: Response, nex
 
     if (req.user.isSuperAdmin) return next();
 
-    let tenant;
-    try {
-      tenant = await prisma.tenant.findUnique({
-        where: { id: req.user.tenantId },
-        select: { subscriptionStatus: true, trialEndsAt: true }
-      });
-    } catch (dbError: any) {
-      logger.warn({ error: dbError.message }, 'DB offline - bypassing subscription check');
-      return next();
-    }
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: req.user.tenantId },
+      select: { subscriptionStatus: true, trialEndsAt: true },
+    });
 
     if (!tenant) {
       res.status(404).json({ error: 'Tenant not found' });
@@ -28,12 +22,12 @@ export const requireActiveSubscription = async (req: Request, res: Response, nex
     }
 
     const isTrialActive = tenant.trialEndsAt && new Date() < tenant.trialEndsAt;
-    const isSubscriptionActive = tenant.subscriptionStatus === 'active';
+    const isSubscriptionActive = tenant.subscriptionStatus === 'active' || tenant.subscriptionStatus === 'trialing';
 
     if (!isTrialActive && !isSubscriptionActive) {
-      res.status(402).json({ 
-        error: 'Payment Required', 
-        message: 'Your trial has ended or subscription is past due. Please update your billing details.' 
+      res.status(402).json({
+        error: 'Payment Required',
+        message: 'Your trial has ended or subscription is past due. Please update your billing details.',
       });
       return;
     }

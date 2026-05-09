@@ -1,10 +1,23 @@
-import React, { useState } from 'react';
-import { Users, Plus, Search, Mail, Phone, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react';
-import { useDashboardData, createPatientApi, updatePatientApi, deletePatientApi } from '../../hooks/useDashboardData';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Users, Plus, Search, Mail, Phone, MoreHorizontal, Pencil, Trash2, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { createPatientApi, updatePatientApi, deletePatientApi } from '../../hooks/useDashboardData';
 import type { DashboardViewProps } from './types';
 
+interface PaginatedResponse {
+  data: any[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export default function PatientsView({ isDarkMode, onNavigate }: DashboardViewProps) {
-  const { patients, refreshData } = useDashboardData();
+  const [patients, setPatients] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(20);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
 
   const [isAddPatientModalOpen, setIsAddPatientModalOpen] = useState(false);
   const [newPatientForm, setNewPatientForm] = useState({ fullName: '', email: '', phone: '' });
@@ -12,18 +25,48 @@ export default function PatientsView({ isDarkMode, onNavigate }: DashboardViewPr
   const [isEditPatientModalOpen, setIsEditPatientModalOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<any>(null);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredPatients = patients.filter((p: any) =>
-    p.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const totalPages = Math.ceil(total / limit);
+
+  const fetchPatients = useCallback(async (p: number, s: string) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('clinic_token');
+      const params = new URLSearchParams({ page: String(p), limit: String(limit) });
+      if (s) params.set('search', s);
+      const res = await fetch(`/api/patients?${params}`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        const json: PaginatedResponse = await res.json();
+        setPatients(json.data);
+        setTotal(json.total);
+        setPage(json.page);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [limit]);
+
+  useEffect(() => {
+    fetchPatients(page, search);
+  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSearch = (val: string) => {
+    setSearch(val);
+    clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => {
+      setPage(1);
+      fetchPatients(1, val);
+    }, 300);
+  };
 
   const handleAddPatientSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPatientForm.fullName) return;
     setIsSubmittingPatient(true);
     await createPatientApi(newPatientForm);
-    await refreshData();
+    await fetchPatients(page, search);
     setNewPatientForm({ fullName: '', email: '', phone: '' });
     setIsAddPatientModalOpen(false);
     setIsSubmittingPatient(false);
@@ -38,7 +81,7 @@ export default function PatientsView({ isDarkMode, onNavigate }: DashboardViewPr
       email: editingPatient.email,
       phone: editingPatient.phone
     });
-    await refreshData();
+    await fetchPatients(page, search);
     setIsEditPatientModalOpen(false);
     setIsSubmittingPatient(false);
     setEditingPatient(null);
@@ -47,7 +90,7 @@ export default function PatientsView({ isDarkMode, onNavigate }: DashboardViewPr
   const handleDeletePatient = async (id: string) => {
     if (window.confirm('¿Seguro que quieres eliminar este cliente? Esta acción no se puede deshacer.')) {
       await deletePatientApi(id);
-      await refreshData();
+      await fetchPatients(page, search);
     }
   };
 
@@ -73,11 +116,12 @@ export default function PatientsView({ isDarkMode, onNavigate }: DashboardViewPr
           <Search className="w-4 h-4 text-[#8792a2]" />
           <input
             type="text"
-            placeholder="Filtrar clientes por nombre..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Filtrar clientes por nombre, email o teléfono..."
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
             className={`bg-transparent border-none outline-none w-full placeholder:text-[#8792a2] ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}
           />
+          {loading && <Loader2 className="w-4 h-4 animate-spin text-[#5469d4] ml-auto" />}
         </div>
 
         <div className="overflow-x-auto min-h-[400px]">
@@ -91,7 +135,13 @@ export default function PatientsView({ isDarkMode, onNavigate }: DashboardViewPr
               </tr>
             </thead>
             <tbody className={`divide-y transition-colors ${isDarkMode ? 'divide-[#334155]' : 'divide-[#e3e8ee]'}`}>
-              {filteredPatients.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-16 text-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#5469d4] mx-auto" />
+                  </td>
+                </tr>
+              ) : patients.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-4 py-16 text-center">
                     <div className="flex flex-col items-center justify-center">
@@ -108,7 +158,7 @@ export default function PatientsView({ isDarkMode, onNavigate }: DashboardViewPr
                   </td>
                 </tr>
               ) : (
-                filteredPatients.map((patient: any) => (
+                patients.map((patient: any) => (
                   <tr 
                     key={patient.id} 
                     onClick={() => handlePatientClick(patient.id)}
@@ -164,8 +214,25 @@ export default function PatientsView({ isDarkMode, onNavigate }: DashboardViewPr
           </table>
         </div>
 
-        <div className={`px-4 py-3 border-t transition-colors text-[12px] ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-gray-500' : 'bg-[#f6f9fc] border-[#e3e8ee] text-[#4f566b]'}`}>
-          <span>Mostrando {filteredPatients.length} resultados</span>
+        <div className={`px-4 py-3 border-t transition-colors text-[12px] flex items-center justify-between ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-gray-500' : 'bg-[#f6f9fc] border-[#e3e8ee] text-[#4f566b]'}`}>
+          <span>Mostrando {total} resultados (pág. {page} de {totalPages || 1})</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page <= 1 || loading}
+              className={`p-1.5 rounded transition-colors disabled:opacity-30 ${isDarkMode ? 'hover:bg-[#334155]' : 'hover:bg-[#e3e8ee]'}`}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="font-medium text-[13px]">{page}</span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages || loading}
+              className={`p-1.5 rounded transition-colors disabled:opacity-30 ${isDarkMode ? 'hover:bg-[#334155]' : 'hover:bg-[#e3e8ee]'}`}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
