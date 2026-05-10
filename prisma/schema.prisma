@@ -45,7 +45,6 @@ model Tenant {
   inventoryItems       InventoryItem[]
   campaigns            Campaign[]
   pushSubscriptions    PushSubscription[]
-  pushSubscriptions    PushSubscription[]
 }
 
 model User {
