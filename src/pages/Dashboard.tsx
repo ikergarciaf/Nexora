@@ -289,6 +289,7 @@ export default function Dashboard() {
             isDarkMode={isDarkMode}
             activeView={activeView}
             clinicConfig={clinicConfig}
+            onNavigate={handleNavigate}
           />
         </Suspense>
       );
@@ -316,19 +317,19 @@ export default function Dashboard() {
       case 'historial_clinico':
         return (
           <Suspense fallback={<ViewLoader />}>
-            <ClinicalHistoryView isDarkMode={isDarkMode} clinicConfig={clinicConfig} onBack={() => setActiveView('pacientes')} />
+            <ClinicalHistoryView isDarkMode={isDarkMode} clinicConfig={clinicConfig} onNavigate={handleNavigate} onBack={() => setActiveView('pacientes')} />
           </Suspense>
         );
       case 'tratamientos':
         return (
           <Suspense fallback={<ViewLoader />}>
-            <TreatmentsView isDarkMode={isDarkMode} />
+            <TreatmentsView isDarkMode={isDarkMode} onNavigate={handleNavigate} />
           </Suspense>
         );
       case 'facturación':
         return (
           <Suspense fallback={<ViewLoader />}>
-            <BillingView isDarkMode={isDarkMode} />
+            <BillingView isDarkMode={isDarkMode} onNavigate={handleNavigate} />
           </Suspense>
         );
       case 'análisis':
@@ -346,7 +347,7 @@ export default function Dashboard() {
       case 'staff':
         return (
           <Suspense fallback={<ViewLoader />}>
-            <StaffView isDarkMode={isDarkMode} />
+            <StaffView isDarkMode={isDarkMode} onNavigate={handleNavigate} />
           </Suspense>
         );
       case 'automatizaciones':
@@ -358,7 +359,7 @@ export default function Dashboard() {
       case 'configuracion':
         return (
           <Suspense fallback={<ViewLoader />}>
-            <ConfigView isDarkMode={isDarkMode} clinicConfig={clinicConfig} onUpdateConfig={updateClinicConfig} tenantConfig={tenantConfig} />
+            <ConfigView isDarkMode={isDarkMode} onNavigate={handleNavigate} clinicConfig={clinicConfig} onUpdateConfig={updateClinicConfig} tenantConfig={tenantConfig} />
           </Suspense>
         );
       case 'whatsapp_bot':
@@ -376,13 +377,13 @@ export default function Dashboard() {
       case 'inventario':
         return (
           <Suspense fallback={<ViewLoader />}>
-            <InventoryView isDarkMode={isDarkMode} />
+            <InventoryView isDarkMode={isDarkMode} onNavigate={handleNavigate} />
           </Suspense>
         );
       case 'campanas':
         return (
           <Suspense fallback={<ViewLoader />}>
-            <CampaignsView isDarkMode={isDarkMode} />
+            <CampaignsView isDarkMode={isDarkMode} onNavigate={handleNavigate} />
           </Suspense>
         );
       default:

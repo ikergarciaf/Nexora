@@ -114,7 +114,7 @@ export default function ContractPage() {
                 className={`relative p-6 lg:p-8 rounded-2xl bg-white transition-all hover:shadow-lg ${
                   plan.popular ? 'ring-2 scale-[1.02] shadow-md' : 'ring-1 ring-slate-200/70'
                 }`}
-                style={plan.popular ? { ringColor: data.color } : {}}
+                style={plan.popular ? { boxShadow: `0 0 0 2px ${data.color}` } : {}}
               >
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider text-white shadow-sm" style={{ backgroundColor: data.color }}>

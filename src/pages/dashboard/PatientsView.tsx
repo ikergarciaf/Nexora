@@ -17,7 +17,7 @@ export default function PatientsView({ isDarkMode, onNavigate }: DashboardViewPr
   const [limit] = useState(20);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const [isAddPatientModalOpen, setIsAddPatientModalOpen] = useState(false);
   const [newPatientForm, setNewPatientForm] = useState({ fullName: '', email: '', phone: '' });

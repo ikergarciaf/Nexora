@@ -161,7 +161,7 @@ export const VialStock: React.FC<VialStockProps> = ({ isDarkMode, value = [], on
                         </td>
                         <td className="py-3 px-6">
                            <span className={`font-bold ${isExpired ? 'text-red-500' : 'text-gray-500'}`}>{v.expiryDate}</span>
-                           {isExpired && <AlertCircle className="w-3 h-3 inline-block ml-1 text-red-500" title="Caducado" />}
+                           {isExpired && <AlertCircle className="w-3 h-3 inline-block ml-1 text-red-500" aria-label="Caducado" />}
                         </td>
                         <td className="py-3 px-6 text-center">
                            <div className="flex items-center justify-center gap-2">

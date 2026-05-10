@@ -122,7 +122,7 @@ export default function InventoryView({ isDarkMode }: DashboardViewProps) {
                 </td>
                 <td className="px-4 py-3 text-right text-sm">{item.price.toFixed(2)}€</td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => { setEditing(item); setForm({ ...item, expiresAt: item.expiresAt ? item.expiresAt.slice(0, 10) : '' }); setShowForm(true); }} className="p-1 text-gray-400 hover:text-[#008477]"><Edit3 className="w-4 h-4" /></button>
+                    <button onClick={() => { setEditing(item); setForm({ name: item.name, description: item.description ?? '', category: item.category, quantity: item.quantity, minStock: item.minStock, price: item.price, supplier: item.supplier ?? '', batch: item.batch ?? '', expiresAt: item.expiresAt ? item.expiresAt.slice(0, 10) : '' }); setShowForm(true); }} className="p-1 text-gray-400 hover:text-[#008477]"><Edit3 className="w-4 h-4" /></button>
                   <button onClick={() => handleDelete(item.id)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                 </td>
               </tr>
