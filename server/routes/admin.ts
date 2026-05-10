@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import bcrypt from 'bcryptjs';
 import prisma from '../db.ts';
 import { requireAuth } from '../middlewares/auth.ts';
 import logger from '../services/logger.ts';

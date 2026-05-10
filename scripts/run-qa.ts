@@ -76,18 +76,34 @@ async function runTests() {
     console.error("Stats failed", e);
   }
 
-  // 5. Test AI 
+  // 5. Test AI Summarize
   try {
-    const res = await fetch(`${baseUrl}/api/ai/inactive-campaign`, {
+    const res = await fetch(`${baseUrl}/api/ai/summarize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwtToken}` },
+      body: JSON.stringify({ notes: 'Paciente presenta dolor lumbar crónico. Se recomienda fisioterapia 2x semana.' })
+    });
+    if (res.status === 200) {
+      console.log("AI Summarize:", "PASS");
+    } else {
+      console.log("AI Summarize:", "FAIL", await res.text());
+    }
+  } catch(e) {
+    console.error("AI Summarize failed", e);
+  }
+
+  // 6. Test GDPR Export
+  try {
+    const res = await fetch(`${baseUrl}/api/gdpr/export`, {
       headers: { 'Authorization': `Bearer ${jwtToken}` }
     });
     if (res.status === 200) {
-      console.log("AI Reactivation Generation:", "PASS");
+      console.log("GDPR Export:", "PASS");
     } else {
-      console.log("AI Reactivation Generation:", "FAIL", await res.text());
+      console.log("GDPR Export:", "FAIL", await res.text());
     }
   } catch(e) {
-    console.error("AI Reactivation failed", e);
+    console.error("GDPR Export failed", e);
   }
 
   console.log("=== TESTS COMPLETE ===");

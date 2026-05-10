@@ -72,7 +72,6 @@ webhookRouter.post('/stripe', raw({ type: 'application/json' }), async (req, res
       case 'invoice.paid': {
         const invoice = event.data.object as any;
         const tenantId = invoice.subscription_details?.metadata?.tenantId || invoice.metadata?.tenantId;
-        const customerId = invoice.customer;
 
         if (tenantId) {
           await prisma.invoice.upsert({

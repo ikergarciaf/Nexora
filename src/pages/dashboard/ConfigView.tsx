@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { User, Sun, Moon, Map, Save, Eye, Info, CheckCircle2, Mail, Phone, Clock, Brain, Rocket, Package, Upload, Trash2, Download, AlertTriangle, X, Loader2, Check } from 'lucide-react';
+import { User, Save, Eye, Info, CheckCircle2, Phone, Clock, Brain, Rocket, Package, Upload, Trash2, Download, AlertTriangle, X, Loader2, Check } from 'lucide-react';
 import { updateTenantConfigApi } from '../../hooks/useDashboardData';
 import { DashboardViewWithConfigProps } from './types';
 
@@ -91,7 +91,9 @@ export default function ConfigView({ isDarkMode, clinicConfig, onUpdateConfig }:
       themeColor: clinicConfig.themeColor,
       logoUrl: clinicConfig.logoUrl,
       contactPhone: clinicConfig.contactPhone,
-      contactEmail: clinicConfig.contactEmail
+      contactEmail: clinicConfig.contactEmail,
+      publicBookingEnabled: clinicConfig.publicBookingEnabled,
+      locale: clinicConfig.locale
     });
     if (ok) {
       alert('Configuración guardada correctamente.');
@@ -215,6 +217,18 @@ export default function ConfigView({ isDarkMode, clinicConfig, onUpdateConfig }:
               </select>
               <p className="text-[11px] text-gray-500 mt-1">Este ajuste cambiará automáticamente el tipo de ficha médica que verás en cada paciente.</p>
             </div>
+            <div className="space-y-1.5">
+              <label className={`text-[13px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Idioma</label>
+              <select
+                value={clinicConfig.locale || 'es'}
+                onChange={(e) => updateClinicConfig({ locale: e.target.value })}
+                className={`w-full px-4 py-2 rounded-[6px] border text-[14px] outline-none transition-all ${isDarkMode ? 'bg-[#0f172a] border-[#334155] text-white focus:border-[#5469d4]' : 'bg-white border-[#e3e8ee] text-[#1a1f36] focus:border-[#5469d4]'}`}
+              >
+                <option value="es">Español</option>
+                <option value="en">English</option>
+                <option value="pt">Português</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -272,10 +286,23 @@ export default function ConfigView({ isDarkMode, clinicConfig, onUpdateConfig }:
         {/* Public Links */}
         <div className={`rounded-[12px] border p-8 transition-colors flex flex-col gap-4 ${isDarkMode ? 'bg-[#1e293b] border-[#334155]' : 'bg-white border-[#e3e8ee]'}`}>
           <h3 className={`text-[17px] font-bold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
-            <Rocket className="w-5 h-5 text-[#5469d4]" /> Demo de Asistente Virtual
+            <Rocket className="w-5 h-5 text-[#5469d4]" /> Conexiones Públicas
           </h3>
-          <p className={`text-[14px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Prueba las integraciones de tu clínica para validarlas.</p>
-          
+          <p className={`text-[14px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Enlaces y herramientas públicas para tus pacientes.</p>
+
+          <div className="flex items-center justify-between p-4 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+            <div>
+              <div className={`text-[14px] font-bold ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Reserva Online 24/7</div>
+              <div className="text-[12px] text-gray-400">Pacientes reservan sin cuenta. <span className="text-[#008477] font-medium">/book/{clinicConfig.slug || 'tu-slug'}</span></div>
+            </div>
+            <button 
+              onClick={() => updateClinicConfig({ publicBookingEnabled: !clinicConfig.publicBookingEnabled })}
+              className={`w-12 h-6 rounded-full transition-colors relative ${clinicConfig.publicBookingEnabled ? 'bg-[#008477]' : 'bg-gray-300'}`}
+            >
+              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${clinicConfig.publicBookingEnabled ? 'left-7' : 'left-1'}`} />
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <a href={window.location.origin + '/whatsapp-demo?slug=' + (clinicConfig.slug || localStorage.getItem('active_tenant_id') || '')} target="_blank" rel="noreferrer" className="p-4 border rounded-xl hover:border-[#25D366] transition-all flex flex-col gap-2 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
               <div className="font-bold text-[#25D366] flex items-center gap-2"><Phone className="w-4 h-4"/> Demo WhatsApp Bot</div>

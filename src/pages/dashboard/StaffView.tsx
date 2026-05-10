@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Clock, Grid, Pencil, Trash2, X } from 'lucide-react';
 import { DashboardViewProps } from './types';
-import { useStaffData, createShiftApi, deleteShiftApi, createRoomApi, updateRoomApi, deleteRoomApi } from '../../hooks/useStaffData';
+import { useStaffData, createShiftApi, createRoomApi, updateRoomApi, deleteRoomApi } from '../../hooks/useStaffData';
 
 export default function StaffView({ isDarkMode }: DashboardViewProps) {
   const { users, rooms, shifts, refreshStaffData } = useStaffData();

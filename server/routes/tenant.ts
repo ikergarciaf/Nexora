@@ -30,6 +30,8 @@ router.get('/config', async (req, res) => {
       contactEmail: tenant.contactEmail || '',
       aiEnabled: true,
       autoSummaries: false,
+      publicBookingEnabled: tenant.publicBookingEnabled,
+      locale: tenant.locale || 'es',
       plan: tenant.subscriptionPlan
     });
   } catch (err) {
@@ -45,7 +47,7 @@ router.post('/config', async (req, res) => {
     if (!tenantId) return res.status(401).json({ error: 'Missing tenant id' });
 
     const { 
-      name, slug, address, owner, specialty, description, themeColor, logoUrl, contactPhone, contactEmail 
+      name, slug, address, owner, specialty, description, themeColor, logoUrl, contactPhone, contactEmail, publicBookingEnabled, locale 
     } = req.body;
 
     const updated = await prisma.tenant.update({
@@ -60,7 +62,9 @@ router.post('/config', async (req, res) => {
         themeColor,
         logoUrl,
         contactPhone,
-        contactEmail
+        contactEmail,
+        publicBookingEnabled,
+        locale
       }
     });
 

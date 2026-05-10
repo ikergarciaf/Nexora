@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { aiService } from '../services/aiService';
-
 export interface Patient {
   id: string;
   fullName: string;
@@ -69,12 +67,7 @@ export function useDashboardData() {
     fetchData();
   }, [fetchData]);
 
-  // Expose an optimistic update method
-  const addPatientLocally = (newPatient: Patient) => {
-    setPatients(prev => [newPatient, ...prev]);
-  };
-
-  return { patients, appointments, stats, tenantConfig, isLoading, refreshData: fetchData, addPatientLocally };
+  return { patients, appointments, stats, tenantConfig, isLoading, refreshData: fetchData };
 }
 
 export async function createPatientApi(data: { fullName: string, email?: string, phone?: string }): Promise<Patient | null> {
@@ -260,18 +253,10 @@ export async function savePatientRecordApi(id: string, record: any): Promise<boo
 
 export async function generatePatientSummary(notes: string) {
   try {
+    const { aiService } = await import('../services/aiService');
     return await aiService.summarizePatientHistory(notes);
   } catch (error) {
     console.error('Failed to generate summary', error);
-    return null;
-  }
-}
-
-export async function generateWhatsAppDraft(patientName: string, appointmentType: string, time: string, goal: 'reminder' | 'follow_up' | 'reactivation' = 'reminder') {
-  try {
-    return await aiService.generateWhatsAppDraft(patientName, appointmentType, time, goal);
-  } catch (error) {
-    console.error('Failed to generate whatsapp draft', error);
     return null;
   }
 }

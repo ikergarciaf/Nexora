@@ -17,7 +17,9 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "seed": "tsx server/seed.ts",
-    "db:check": "tsx server/check.ts"
+    "db:check": "tsx server/check.ts",
+    "qa": "tsx scripts/run-qa.ts",
+    "reminders": "tsx -e \"import { sendAppointmentReminders } from './server/services/notificationWorker.ts'; sendAppointmentReminders().then(n => console.log('Sent', n, 'reminders')).catch(e => console.error(e))\""
   },
   "dependencies": {
     "@google/genai": "^1.50.1",
@@ -44,6 +46,7 @@
     "react-router-dom": "^7.14.1",
     "recharts": "^3.8.1",
     "stripe": "^22.0.2",
+    "twilio": "^6.0.2",
     "vite": "^6.2.0"
   },
   "devDependencies": {

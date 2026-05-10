@@ -2,6 +2,7 @@ import { Router } from 'express';
 import prisma from '../db.ts';
 import { requireAuth } from '../middlewares/auth.ts';
 import logger from '../services/logger.ts';
+import { sendEmail } from '../services/emailService.ts';
 
 export const appointmentRouter = Router();
 
@@ -47,6 +48,16 @@ appointmentRouter.post('/', async (req, res) => {
     const newAppointment = await prisma.appointment.create({
       data: { tenantId, patientId, doctorId: doctorId || "unassigned", startTime: start, endTime: end, status: "SCHEDULED" }
     });
+
+    const patient = await prisma.patient.findUnique({ where: { id: patientId, tenantId }, select: { fullName: true, email: true } });
+    if (patient?.email) {
+      sendEmail({
+        to: patient.email,
+        subject: 'Cita confirmada — Nexora',
+        text: `Hola ${patient.fullName},\n\nTu cita ha sido confirmada para el ${start.toLocaleDateString('es-ES')} a las ${start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.\n\n— Nexora`,
+        html: `<p>Hola <strong>${patient.fullName}</strong>,</p><p>Tu cita ha sido confirmada para el <strong>${start.toLocaleDateString('es-ES')}</strong> a las <strong>${start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</strong>.</p><p>— Nexora</p>`,
+      });
+    }
 
     res.status(201).json(newAppointment);
   } catch (error: any) {

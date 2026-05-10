@@ -7,6 +7,10 @@ export const patientRouter = Router();
 
 patientRouter.use(requireAuth);
 
+function isValidJSON(str: string): boolean {
+  try { JSON.parse(str); return true; } catch { return false; }
+}
+
 patientRouter.get('/', async (req, res) => {
   try {
     const tenantId = req.user!.tenantId;
@@ -42,12 +46,14 @@ patientRouter.get('/', async (req, res) => {
 
 patientRouter.post('/', async (req, res) => {
   try {
-    const { fullName, email, phone } = req.body;
+    const { fullName, email, phone, medicalRecord, nutritionalPlan } = req.body;
     const tenantId = req.user!.tenantId;
     if (!fullName) return res.status(400).json({ error: "Full Name is required" });
+    if (medicalRecord && !isValidJSON(medicalRecord)) return res.status(400).json({ error: 'medicalRecord must be valid JSON' });
+    if (nutritionalPlan && !isValidJSON(nutritionalPlan)) return res.status(400).json({ error: 'nutritionalPlan must be valid JSON' });
 
     const newPatient = await prisma.patient.create({
-      data: { tenantId, fullName, email, phone, tags: '["new"]' }
+      data: { tenantId, fullName, email, phone, tags: '["new"]', medicalRecord: medicalRecord || undefined, nutritionalPlan: nutritionalPlan || undefined }
     });
 
     res.status(201).json(newPatient);
@@ -75,6 +81,9 @@ patientRouter.put('/:id', requireRole(['OWNER', 'STAFF', 'ADMIN', 'SUPERADMIN'])
   try {
     const { id } = req.params;
     const { fullName, email, phone, medicalRecord, nutritionalPlan } = req.body;
+
+    if (medicalRecord && !isValidJSON(medicalRecord)) return res.status(400).json({ error: 'medicalRecord must be valid JSON' });
+    if (nutritionalPlan && !isValidJSON(nutritionalPlan)) return res.status(400).json({ error: 'nutritionalPlan must be valid JSON' });
 
     const updated = await prisma.patient.update({
       where: { id, tenantId: req.user!.tenantId! },

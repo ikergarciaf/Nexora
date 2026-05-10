@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Home, Wallet, ArrowRightLeft, Users, Package, CreditCard, FileText, BarChart, MoreHorizontal, Code, Search, Grid, HelpCircle, Bell, Settings, Plus, ChevronDown, CheckCircle2, Info, X, Map, User, LogOut, ArrowRight, Menu, Mail, Phone, Pencil, Trash2, Download, Sun, Moon, Brain, Rocket, Clock, Calendar, Sparkles, Stethoscope, Loader2 } from 'lucide-react';
+import { Users, Package, CreditCard, FileText, BarChart, Brain, Calendar, ChevronDown, Plus, Settings, Grid, Info, X, Loader2 } from 'lucide-react';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { DashboardViewProps } from './types';
 

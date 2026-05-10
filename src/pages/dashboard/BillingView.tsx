@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Plus, CheckCircle2, Search, MoreHorizontal, Trash2, X, Loader2 } from 'lucide-react';
+import { Download, CheckCircle2, Search, MoreHorizontal, Trash2, X, Loader2 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { DashboardViewProps } from './types';

@@ -54,17 +54,29 @@ dashboardRouter.get('/stats', async (req, res) => {
     } catch { logger.warn('Prisma query failed for noShowRate'); }
 
     let monthlyRevenue = 0;
+    let revenueGrowth = 0;
     try {
-      const invoices = await prisma.invoice.aggregate({
-        _sum: { amount: true },
-        where: { tenantId, status: 'PAID', issuedDate: { gte: thirtyDaysAgo } }
-      });
-      monthlyRevenue = invoices._sum.amount || 0;
+      const [currMonth, prevMonth] = await Promise.all([
+        prisma.invoice.aggregate({
+          _sum: { amount: true },
+          where: { tenantId, status: 'PAID', issuedDate: { gte: thirtyDaysAgo } }
+        }),
+        prisma.invoice.aggregate({
+          _sum: { amount: true },
+          where: {
+            tenantId, status: 'PAID',
+            issuedDate: { gte: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), lt: thirtyDaysAgo }
+          }
+        }),
+      ]);
+      monthlyRevenue = currMonth._sum.amount || 0;
+      const prev = prevMonth._sum.amount || 0;
+      revenueGrowth = prev > 0 ? ((monthlyRevenue - prev) / prev) * 100 : 0;
     } catch { logger.warn('Prisma query failed for monthlyRevenue'); }
     
     res.json({
       monthlyRevenue,
-      revenueGrowth: 0,
+      revenueGrowth: Number(revenueGrowth.toFixed(1)),
       appointmentsThisWeek,
       activePatients,
       noShowRate: Number(noShowRate.toFixed(1))

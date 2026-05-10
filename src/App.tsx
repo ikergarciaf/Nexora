@@ -15,6 +15,8 @@ const PricingPage = lazy(() => import('./pages/PricingPage'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const ClinicWebsite = lazy(() => import('./pages/ClinicWebsite'));
+const PublicBooking = lazy(() => import('./pages/PublicBooking'));
+const PatientPortal = lazy(() => import('./pages/PatientPortal'));
 const DemoRegisterPage = lazy(() => import('./pages/DemoRegisterPage'));
 const ContractPage = lazy(() => import('./pages/ContractPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
@@ -82,6 +84,8 @@ export default function App() {
           <Route path="/whatsapp-demo" element={<WhatsAppDemo />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/clinica/:slug" element={<ClinicWebsite />} />
+          <Route path="/book/:slug" element={<PublicBooking />} />
+          <Route path="/portal/:slug/:patientId" element={<PatientPortal />} />
           <Route path="/demo" element={<DemoRegisterPage />} />
           <Route path="/contratar/:specialty" element={<ContractPage />} />
           <Route path="/privacidad" element={<PrivacyPage />} />

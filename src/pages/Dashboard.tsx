@@ -1,12 +1,13 @@
 import React, { lazy, Suspense, useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  Home, Wallet, ArrowRightLeft, Users, Package, CreditCard, FileText, BarChart, MoreHorizontal,
-  Code, Search, Grid, HelpCircle, Bell, Settings, Plus, ChevronDown, CheckCircle2, Info, X, Map, User, LogOut, ArrowRight, Menu, Mail, Phone, Pencil, Trash2, Download, Sun, Moon, Brain, Rocket, Clock, Calendar, Sparkles, Stethoscope, Loader2,
-  Globe } from 'lucide-react';
+  Home, Users, Package, CreditCard, FileText, BarChart,
+  Code, Search, Grid, HelpCircle, Bell, Settings, Plus, ChevronDown, CheckCircle2, Info, X, Map, User, LogOut, ArrowRight, Menu, Phone, Sun, Moon, Brain, Clock, Sparkles, Stethoscope, Loader2,
+  Globe,    Send } from 'lucide-react';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useStaffData } from '../hooks/useStaffData';
 import { NexoraLogo } from '../components/NexoraLogo';
+import OnboardingTour from '../components/OnboardingTour';
 
 const HomeView = lazy(() => import('./dashboard/HomeView'));
 const AgendaView = lazy(() => import('./dashboard/AgendaView'));
@@ -22,6 +23,8 @@ const AutomationsView = lazy(() => import('./dashboard/AutomationsView'));
 const ConfigView = lazy(() => import('./dashboard/ConfigView'));
 const WhatsAppBotView = lazy(() => import('./dashboard/WhatsAppBotView'));
 const ConsentView = lazy(() => import('./dashboard/ConsentView'));
+const InventoryView = lazy(() => import('./dashboard/InventoryView'));
+const CampaignsView = lazy(() => import('./dashboard/CampaignsView'));
 
 function ViewLoader() {
   return (
@@ -67,6 +70,8 @@ export default function Dashboard() {
     contactEmail: '',
     aiEnabled: true,
     autoSummaries: false,
+    publicBookingEnabled: false,
+    locale: 'es',
     appointmentInterval: 30,
     openingHours: JSON.parse(localStorage.getItem('clinic-hours') || JSON.stringify([
       { day: 'Lunes', open: '09:00', close: '20:00', closed: false },
@@ -225,7 +230,7 @@ export default function Dashboard() {
         updateClinicConfig({ specialty: mappedSpecialty });
       }
     }
-  }, [location.search, updateClinicConfig, navigate]);
+  }, [location.search, updateClinicConfig]);
 
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const globalAddRef = useRef<HTMLDivElement>(null);
@@ -366,6 +371,18 @@ export default function Dashboard() {
         return (
           <Suspense fallback={<ViewLoader />}>
             <ConsentView isDarkMode={isDarkMode} onNavigate={handleNavigate} />
+          </Suspense>
+        );
+      case 'inventario':
+        return (
+          <Suspense fallback={<ViewLoader />}>
+            <InventoryView isDarkMode={isDarkMode} />
+          </Suspense>
+        );
+      case 'campanas':
+        return (
+          <Suspense fallback={<ViewLoader />}>
+            <CampaignsView isDarkMode={isDarkMode} />
           </Suspense>
         );
       default:
@@ -524,7 +541,9 @@ export default function Dashboard() {
 
             <div className={`mt-8 mb-2 px-3 text-[11px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-[#8792a2]'}`}>Plataforma</div>
             {[
-              { id: 'whatsapp_bot', label: 'Gestión WhatsApp Bot', icon: Phone },
+              { id: 'whatsapp_bot', label: 'WhatsApp Bot', icon: Phone },
+              { id: 'inventario', label: 'Inventario', icon: Package },
+              { id: 'campanas', label: 'Email Marketing', icon: Send },
             ].map(item => (
               <button
                 key={item.id}
@@ -601,7 +620,7 @@ export default function Dashboard() {
 
               <div className={`hidden md:flex items-center gap-3 border rounded-[4px] px-3 py-1.5 w-80 text-[13px] font-medium transition-colors focus-within:ring-1 ${isDarkMode ? 'bg-[#1f2937] border-[#374151] text-white focus-within:border-blue-500 focus-within:ring-blue-500' : 'bg-[#f6f9fc] border-[#e3e8ee] focus-within:border-[#5469d4] focus-within:ring-[#5469d4]'}`}>
                 <Search className={`w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-[#8792a2]'}`} />
-                <input type="text" placeholder="Buscar clientes o citas..." className={`bg-transparent border-none outline-none w-full placeholder:text-[#8792a2] ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`} />
+                <input type="text" placeholder="Buscar clientes o citas..." onFocus={() => handleMenuClick('pacientes')} className={`bg-transparent border-none outline-none w-full placeholder:text-[#8792a2] ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`} />
               </div>
             </div>
 
@@ -689,6 +708,8 @@ export default function Dashboard() {
 
         </main>
       </div>
+
+      <OnboardingTour />
 
       {/* Toast Notification */}
       {toast && (

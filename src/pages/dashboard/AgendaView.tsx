@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Grid, Plus, Search, CheckCircle2, MoreHorizontal, Pencil, Trash2, X, Loader2 } from 'lucide-react';
+import { Grid, Plus, Search, CheckCircle2, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react';
 import { useDashboardData, createAppointmentApi, updateAppointmentApi, deleteAppointmentApi } from '../../hooks/useDashboardData';
 import { DashboardViewProps } from './types';
 

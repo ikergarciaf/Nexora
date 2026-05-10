@@ -33,6 +33,13 @@ authRouter.post('/register', async (req, res) => {
       data: { email: sanitize(email).toLowerCase(), name: sanitize(name), passwordHash }
     });
 
+    sendEmail({
+      to: user.email,
+      subject: 'Bienvenido a Nexora',
+      text: `Hola ${user.name},\n\nGracias por registrarte en Nexora. Tu cuenta ha sido creada correctamente.\n\nYa puedes iniciar sesión y configurar tu clínica.\n\n— Nexora`,
+      html: `<p>Hola <strong>${user.name}</strong>,</p><p>Gracias por registrarte en <strong>Nexora</strong>.</p><p>Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión y configurar tu clínica.</p><p>— Nexora</p>`,
+    });
+
     const token = jwt.sign({ id: user.id, isSuperAdmin: user.isSuperAdmin }, JWT_SECRET, { expiresIn: '7d' });
     res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name, isSuperAdmin: user.isSuperAdmin } });
   } catch (error) {
@@ -225,9 +232,11 @@ authRouter.post('/demo-register', async (req, res) => {
       data: { email, name, passwordHash, isActive: true },
     });
 
+    const slug = clinicName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + crypto.randomUUID().slice(0, 6);
+
     const tenant = await prisma.tenant.create({
       data: {
-        name: clinicName,
+        name: clinicName, slug,
         specialty: clinicType || 'Fisioterapia',
         contactPhone: phone || '',
         trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
@@ -238,6 +247,13 @@ authRouter.post('/demo-register', async (req, res) => {
 
     await prisma.tenantUser.create({
       data: { userId: user.id, tenantId: tenant.id, role: 'OWNER' },
+    });
+
+    sendEmail({
+      to: user.email,
+      subject: 'Bienvenido a Nexora — Tu clínica está lista',
+      text: `Hola ${user.name},\n\nTu clínica "${clinicName}" ha sido creada en Nexora.\n\nYa puedes gestionar tus pacientes, citas y facturación.\n\n— Nexora`,
+      html: `<p>Hola <strong>${user.name}</strong>,</p><p>Tu clínica <strong>${clinicName}</strong> ha sido creada en Nexora.</p><p>Ya puedes gestionar tus pacientes, citas y facturación.</p><p>— Nexora</p>`,
     });
 
     const token = jwt.sign({ id: user.id, isSuperAdmin: user.isSuperAdmin }, JWT_SECRET, { expiresIn: '7d' });
@@ -257,11 +273,13 @@ authRouter.post('/tenants', requireAuth, async (req, res) => {
     const { name, specialty } = req.body;
     if (!name) return res.status(400).json({ error: 'Missing clinic name' });
 
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + crypto.randomUUID().slice(0, 6);
+
     const tenant = await prisma.tenant.create({
       data: { 
-        name,
+        name, slug,
         specialty: specialty || 'Fisioterapia',
-        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14 days trial
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
       }
     });
 

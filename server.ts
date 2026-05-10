@@ -8,6 +8,7 @@ import { apiRouter } from "./server/routes/api.ts";
 import { webhookRouter } from "./server/routes/webhooks.ts";
 import { gdprRouter } from "./server/routes/gdpr.ts";
 import { uploadRouter } from "./server/routes/upload.ts";
+import { publicRouter } from "./server/routes/public.ts";
 import rateLimit from "express-rate-limit";
 import logger from "./server/services/logger.ts";
 import "dotenv/config";
@@ -70,6 +71,9 @@ async function startServer() {
 
   // --- UPLOAD ROUTES ---
   app.use("/api/upload", uploadRouter);
+
+  // --- PUBLIC ROUTES (no auth required) ---
+  app.use("/api/public", publicRouter);
 
   // --- STATIC UPLOADS ---
   app.use('/uploads', express.static(path.resolve(__dirname, 'public', 'uploads')));

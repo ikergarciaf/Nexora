@@ -14,6 +14,10 @@ import { invoiceRouter } from './invoices.ts';
 import { adminRouter } from './admin.ts';
 import { importRouter } from './import.ts';
 import { consentRouter } from './consents.ts';
+import { inventoryRouter } from './inventory.ts';
+import { campaignRouter } from './campaigns.ts';
+import { integrationRouter } from './integrations.ts';
+import { aiReceptionistRouter } from './aiReceptionist.ts';
 import { requireActiveSubscription } from '../middlewares/subscription.ts';
 
 import { requireAuth } from '../middlewares/auth.ts';
@@ -38,6 +42,10 @@ apiRouter.use('/ai', aiRouter);
 apiRouter.use('/admin', requireAuth, adminRouter);
 apiRouter.use('/import', requireAuth, enforceBilling, importRouter);
 apiRouter.use('/consents', requireAuth, enforceBilling, consentRouter);
+apiRouter.use('/inventory', requireAuth, enforceBilling, inventoryRouter);
+apiRouter.use('/campaigns', requireAuth, enforceBilling, campaignRouter);
+apiRouter.use('/integrations', requireAuth, integrationRouter);
+apiRouter.use('/ai-receptionist', aiReceptionistRouter);
 
 apiRouter.get('/health', (req, res) => {
   res.json({

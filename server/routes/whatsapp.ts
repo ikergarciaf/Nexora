@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../db.ts';
 import logger from '../services/logger.ts';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // This simulates a webhook that WhatsApp would hit when a user sends a message
 router.post('/webhook', async (req, res) => {

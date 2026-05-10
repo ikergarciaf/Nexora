@@ -1,5 +1,7 @@
-﻿import { Download } from 'lucide-react';
+﻿import { Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { ResponsiveContainer, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface AnalyticsViewProps {
   isDarkMode: boolean;
@@ -9,7 +11,7 @@ const revenueData = [
   { name: 'Ene', ingresos: 4200, gastos: 2800 },
   { name: 'Feb', ingresos: 4800, gastos: 2900 },
   { name: 'Mar', ingresos: 5100, gastos: 3100 },
-  { name: 'Abr', ingresos: 0, gastos: 3200 },
+  { name: 'Abr', ingresos: 5800, gastos: 3200 },
 ];
 
 const serviceData = [
@@ -18,6 +20,32 @@ const serviceData = [
   { name: 'Ortodoncia', value: 20 },
   { name: 'Otros', value: 10 },
 ];
+
+function exportPDF() {
+  const doc = new jsPDF();
+  doc.setFontSize(22);
+  doc.text('Informe de Análisis - Nexora', 14, 22);
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text(`Generado: ${new Date().toLocaleDateString('es-ES')}`, 14, 32);
+  autoTable(doc, {
+    startY: 40,
+    head: [['Mes', 'Ingresos', 'Gastos']],
+    body: revenueData.map(r => [r.name, `${r.ingresos}€`, `${r.gastos}€`]),
+    theme: 'grid',
+    headStyles: { fillColor: [0, 132, 119] },
+  });
+  doc.save('informe-nexora.pdf');
+}
+
+function exportCSV() {
+  const headers = 'Mes,Ingresos,Gastos\n';
+  const rows = revenueData.map(r => `${r.name},${r.ingresos},${r.gastos}`).join('\n');
+  const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'informe-nexora.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function AnalyticsView({ isDarkMode }: AnalyticsViewProps) {
   return (
@@ -28,8 +56,11 @@ export default function AnalyticsView({ isDarkMode }: AnalyticsViewProps) {
           <p className={`text-[14px] mt-1 ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`}>Rendimiento financiero y operativo de tu clínica.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-[4px] font-semibold text-[13px] transition-colors shadow-sm ${isDarkMode ? 'bg-[#1e293b] border-[#334155] text-white hover:bg-[#334155]' : 'bg-white border-[#e3e8ee] text-[#1a1f36] hover:bg-[#f6f9fc]'}`}>
-            <Download className={`w-4 h-4 ${isDarkMode ? 'text-gray-400' : 'text-[#4f566b]'}`} /> Informe Mensual
+          <button onClick={exportPDF} className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-[4px] font-semibold text-[13px] transition-colors shadow-sm ${isDarkMode ? 'bg-[#1e293b] border-[#334155] text-white hover:bg-[#334155]' : 'bg-white border-[#e3e8ee] text-[#1a1f36] hover:bg-[#f6f9fc]'}`}>
+            <FileText className="w-4 h-4" /> PDF
+          </button>
+          <button onClick={exportCSV} className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-[4px] font-semibold text-[13px] transition-colors shadow-sm ${isDarkMode ? 'bg-[#1e293b] border-[#334155] text-white hover:bg-[#334155]' : 'bg-white border-[#e3e8ee] text-[#1a1f36] hover:bg-[#f6f9fc]'}`}>
+            <FileSpreadsheet className="w-4 h-4" /> CSV
           </button>
         </div>
       </div>
@@ -43,16 +74,7 @@ export default function AnalyticsView({ isDarkMode }: AnalyticsViewProps) {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDarkMode ? '#334155' : '#f0f0f0'} />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#8792a2'}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#8792a2'}} />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: '8px',
-                    border: isDarkMode ? '1px solid #334155' : '1px solid #e3e8ee',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    backgroundColor: isDarkMode ? '#1e293b' : '#fff',
-                    color: isDarkMode ? '#fff' : '#1a1f36'
-                  }}
-                  itemStyle={{ fontSize: '13px' }}
-                />
+                <Tooltip contentStyle={{ borderRadius: '8px', border: isDarkMode ? '1px solid #334155' : '1px solid #e3e8ee', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', backgroundColor: isDarkMode ? '#1e293b' : '#fff', color: isDarkMode ? '#fff' : '#1a1f36' }} itemStyle={{ fontSize: '13px' }} />
                 <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '12px', color: '#8792a2' }} />
                 <Bar dataKey="ingresos" fill="#5469d4" radius={[4, 4, 0, 0]} barSize={24} />
                 <Bar dataKey="gastos" fill="#80e9ff" radius={[4, 4, 0, 0]} barSize={24} />
@@ -60,35 +82,17 @@ export default function AnalyticsView({ isDarkMode }: AnalyticsViewProps) {
             </ResponsiveContainer>
           </div>
         </div>
-
         <div className={`rounded-[8px] p-6 border transition-colors ${isDarkMode ? 'bg-[#1e293b] border-[#334155] shadow-lg shadow-black/20' : 'bg-white border-[#e3e8ee] shadow-sm'}`}>
           <h3 className={`text-[15px] font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>Distribución por Servicio</h3>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie
-                  data={serviceData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
+                <Pie data={serviceData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
                   {serviceData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={['#5469d4', '#80e9ff', '#7a32fc', isDarkMode ? '#334155' : '#e3e8ee'][index % 4]} />
                   ))}
                 </Pie>
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: '8px',
-                    border: isDarkMode ? '1px solid #334155' : '1px solid #e3e8ee',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    backgroundColor: isDarkMode ? '#1e293b' : '#fff',
-                    color: isDarkMode ? '#fff' : '#1a1f36'
-                  }}
-                  itemStyle={{ fontSize: '13px' }}
-                />
+                <Tooltip contentStyle={{ borderRadius: '8px', border: isDarkMode ? '1px solid #334155' : '1px solid #e3e8ee', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', backgroundColor: isDarkMode ? '#1e293b' : '#fff', color: isDarkMode ? '#fff' : '#1a1f36' }} itemStyle={{ fontSize: '13px' }} />
                 <Legend layout="vertical" verticalAlign="middle" align="right" iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
               </PieChart>
             </ResponsiveContainer>

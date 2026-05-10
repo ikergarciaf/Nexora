@@ -2,6 +2,7 @@ import { Router } from 'express';
 import prisma from '../db.ts';
 import { requireAuth } from '../middlewares/auth.ts';
 import logger from '../services/logger.ts';
+import { sendEmail } from '../services/emailService.ts';
 
 export const invoiceRouter = Router();
 
@@ -76,7 +77,17 @@ invoiceRouter.put('/:id/status', async (req, res) => {
     const updated = await prisma.invoice.update({
       where: { id, tenantId: req.user!.tenantId! },
       data,
+      include: { patient: { select: { fullName: true, email: true } } },
     });
+
+    if (status === 'PAID' && updated.patient?.email) {
+      sendEmail({
+        to: updated.patient.email,
+        subject: 'Factura pagada — Nexora',
+        text: `Hola ${updated.patient.fullName},\n\nTu factura ${updated.number || ''} por ${updated.amount}€ ha sido pagada correctamente.\n\nGracias por tu confianza.\n— Nexora`,
+        html: `<p>Hola <strong>${updated.patient.fullName}</strong>,</p><p>Tu factura <strong>${updated.number || ''}</strong> por <strong>${updated.amount}€</strong> ha sido pagada correctamente.</p><p>Gracias por tu confianza.</p><p>— Nexora</p>`,
+      });
+    }
 
     res.json(updated);
   } catch (error) {
