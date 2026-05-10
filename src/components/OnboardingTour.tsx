@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
 
 const STEPS = [

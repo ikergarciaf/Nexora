@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, CheckCircle2, Search, MoreHorizontal, Trash2, X, Loader2 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { DashboardViewProps } from './types';
+import { apiHeaders } from '../../services/api';
 
 interface InvoiceItem {
   id: string;
@@ -16,15 +17,6 @@ interface InvoiceItem {
 }
 
 const formatCurrency = (val: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
-
-function apiHeaders() {
-  const token = localStorage.getItem('clinic_token');
-  return {
-    'Content-Type': 'application/json',
-    'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-    'Authorization': `Bearer ${token}`,
-  };
-}
 
 export default function BillingView({ isDarkMode }: DashboardViewProps) {
   const [invoices, setInvoices] = useState<InvoiceItem[]>([]);

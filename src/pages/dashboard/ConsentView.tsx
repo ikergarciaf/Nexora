@@ -1,12 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FileText, Plus, Search, Eye, X, Loader2, CheckCircle2, AlertTriangle, Undo2 } from 'lucide-react';
 import SignaturePad from '../../components/SignaturePad';
 import type { DashboardViewProps } from './types';
-
-const apiHeaders = () => {
-  const token = localStorage.getItem('clinic_token');
-  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
-};
+import { apiHeaders } from '../../services/api';
 
 export default function ConsentView({ isDarkMode, onNavigate }: DashboardViewProps) {
   const [consents, setConsents] = useState<any[]>([]);

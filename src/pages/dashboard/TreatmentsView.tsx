@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Package, MoreHorizontal, Pencil, Trash2, X, Loader2 } from 'lucide-react';
 import { DashboardViewProps } from './types';
+import { apiHeaders } from '../../services/api';
 
 interface ServiceItem {
   id: string;
@@ -12,15 +13,6 @@ interface ServiceItem {
 }
 
 const formatCurrency = (val: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
-
-function apiHeaders() {
-  const token = localStorage.getItem('clinic_token');
-  return {
-    'Content-Type': 'application/json',
-    'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-    'Authorization': `Bearer ${token}`,
-  };
-}
 
 export default function TreatmentsView({ isDarkMode }: DashboardViewProps) {
   const [services, setServices] = useState<ServiceItem[]>([]);

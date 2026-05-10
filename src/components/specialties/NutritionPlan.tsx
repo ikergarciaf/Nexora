@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Apple, Plus, Trash2, Target } from 'lucide-react';
 
 interface MealEntry {

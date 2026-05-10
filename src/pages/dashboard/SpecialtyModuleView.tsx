@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 import { Odontogram } from '../../components/specialties/Odontogram';
 import { PainMap } from '../../components/specialties/PainMap';

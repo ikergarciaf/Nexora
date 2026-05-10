@@ -12,12 +12,15 @@ export default defineConfig(({mode}) => {
       },
     },
     build: {
+      sourcemap: false,
       rollupOptions: {
         output: {
           manualChunks: {
+            vendor: ['react', 'react-dom', 'react-router-dom'],
             recharts: ['recharts'],
             jspdf: ['jspdf', 'jspdf-autotable'],
             motion: ['motion'],
+            icons: ['lucide-react'],
           },
         },
       },

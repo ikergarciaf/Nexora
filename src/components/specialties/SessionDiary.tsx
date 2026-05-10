@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Brain, Plus, Calendar, Clock, Trash2, FileText } from 'lucide-react';
 
 interface Session {

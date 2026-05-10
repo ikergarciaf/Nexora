@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Users, Building2, CreditCard, BarChart, Activity, Settings, LogOut, Search, ChevronDown, MoreHorizontal, CheckCircle2, XCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { NexoraLogo } from '../components/NexoraLogo';
+import { apiHeaders } from '../services/api';
 
 const SIDEBAR_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: BarChart },
@@ -11,11 +12,6 @@ const SIDEBAR_ITEMS = [
   { id: 'pagos', label: 'Pagos', icon: Activity },
   { id: 'config', label: 'Configuración', icon: Settings },
 ];
-
-function apiHeaders() {
-  const token = localStorage.getItem('clinic_token');
-  return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-}
 
 export default function AdminPanel() {
   const navigate = useNavigate();

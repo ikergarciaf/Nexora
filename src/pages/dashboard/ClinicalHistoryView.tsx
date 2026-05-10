@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowRight, CheckCircle2, User, Calendar, Wallet, FileText, Plus } from 'lucide-react';
 import { useDashboardData, fetchPatientRecordApi, savePatientRecordApi } from '../../hooks/useDashboardData';
 import { Odontogram } from '../../components/specialties/Odontogram';
@@ -77,7 +77,7 @@ export default function ClinicalHistoryView({ isDarkMode, clinicConfig, onBack }
     setIsSavingRecord(true);
     const success = await savePatientRecordApi(selectedPatientId, patientRecord);
     if (success) {
-      console.log('Registro clínico guardado con éxito.');
+  
     } else {
       console.error('Error al guardar el registro clínico.');
     }

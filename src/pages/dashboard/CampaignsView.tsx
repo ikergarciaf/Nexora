@@ -1,11 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Send, Plus, Loader2, X, Megaphone } from 'lucide-react';
 import { DashboardViewProps } from './types';
-
-function apiHeaders() {
-  const token = localStorage.getItem('clinic_token');
-  return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
-}
+import { apiHeaders } from '../../services/api';
 
 export default function CampaignsView({ isDarkMode }: DashboardViewProps) {
   const [campaigns, setCampaigns] = useState<any[]>([]);

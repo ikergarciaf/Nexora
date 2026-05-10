@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Users, Package, CreditCard, FileText, BarChart, Brain, Calendar, ChevronDown, Plus, Settings, Grid, Info, X, Loader2 } from 'lucide-react';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { DashboardViewProps } from './types';

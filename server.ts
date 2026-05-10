@@ -1,6 +1,7 @@
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
+import compression from "compression";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -23,8 +24,11 @@ async function startServer() {
   // --- SECURITY HEADERS ---
   app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
-    contentSecurityPolicy: false, // Vite uses inline scripts in dev
+    contentSecurityPolicy: false,
   }));
+
+  // --- COMPRESSION ---
+  app.use(compression());
 
   // --- CORS ---
   app.use(cors({
@@ -38,11 +42,10 @@ async function startServer() {
   app.use('/api/webhooks', webhookRouter);
 
   // --- BODY PARSER ---
-  app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // --- RATE LIMITING ---
-  // General API rate limiter: 100 requests per 15 minutes
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
@@ -52,7 +55,6 @@ async function startServer() {
   });
   app.use("/api", apiLimiter);
 
-  // Stricter limiter for auth routes (login/register)
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 10,
@@ -94,9 +96,27 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  // --- GLOBAL ERROR HANDLER ---
+  app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    logger.error({ error: err.message, stack: err.stack }, 'Unhandled error');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  });
+
+  const server = app.listen(PORT, "0.0.0.0", () => {
     logger.info({ port: PORT }, `Server running at http://localhost:${PORT}`);
   });
+
+  // --- GRACEFUL SHUTDOWN ---
+  const shutdown = async () => {
+    logger.info('Shutting down gracefully...');
+    server.close(async () => {
+      const prisma = (await import('./server/db.ts')).default;
+      await prisma.$disconnect();
+      process.exit(0);
+    });
+  };
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 }
 
 startServer();

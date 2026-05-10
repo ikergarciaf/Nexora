@@ -1,14 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Package, Plus, AlertTriangle, Search, Loader2, Trash2, Edit3, X } from 'lucide-react';
 import { DashboardViewProps } from './types';
+import { apiHeaders } from '../../services/api';
 
 interface InventoryItem {
   id: string; name: string; description?: string; category: string; quantity: number; minStock: number; price: number; supplier?: string; batch?: string; expiresAt?: string;
-}
-
-function apiHeaders() {
-  const token = localStorage.getItem('clinic_token');
-  return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 }
 
 export default function InventoryView({ isDarkMode }: DashboardViewProps) {

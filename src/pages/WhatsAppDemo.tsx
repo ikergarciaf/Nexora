@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Phone, Check, CheckCheck, Send, ArrowLeft, MoreVertical, Paperclip, Smile } from 'lucide-react';
 
 export default function WhatsAppDemo() {
   const [searchParams] = useSearchParams();
   const slug = searchParams.get('slug') || '';
-  const navigate = useNavigate();
 
   const [clinic, setClinic] = useState<any>(null);
   const [messages, setMessages] = useState<{id: string, text: string, isMe: boolean, time: string}[]>([]);

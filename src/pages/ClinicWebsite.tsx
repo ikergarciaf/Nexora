@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Calendar, MapPin, Phone, Mail, Clock, ArrowRight, CheckCircle2, Stethoscope, Shield, Star } from 'lucide-react';
 
 interface ClinicData {
@@ -17,7 +17,6 @@ interface ClinicData {
 
 export default function ClinicWebsite() {
   const { slug } = useParams();
-  const navigate = useNavigate();
   const [clinic, setClinic] = useState<ClinicData | null>(null);
   const [loading, setLoading] = useState(true);
 
