@@ -79,6 +79,12 @@ export default function ContractForm({ initialData = {} }: ContractFormProps) {
     );
   }
 
+  const planToKey = (name: string): string => {
+    if (name === 'Pro') return 'PRO';
+    if (name === 'Web Pro' || name === 'Premium') return 'PREMIUM';
+    return 'STARTER';
+  };
+
   return (
     <div className="p-6">
       <div className="text-center mb-6">
@@ -125,7 +131,7 @@ export default function ContractForm({ initialData = {} }: ContractFormProps) {
               ))}
             </ul>
             <button
-              onClick={() => openModal('demo', { type: 'quote', specialty })}
+              onClick={() => openModal('demo', { plan: planToKey(plan.name), specialty })}
               className={`w-full h-10 rounded-lg text-[13px] font-semibold transition-all ${
                 plan.popular
                   ? 'text-white shadow-sm hover:brightness-110'

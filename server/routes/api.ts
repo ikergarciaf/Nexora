@@ -26,7 +26,6 @@ export const apiRouter = Router();
 
 apiRouter.use('/auth', authRouter);
 apiRouter.use('/billing', billingRouter);
-apiRouter.use('/whatsapp', whatsappRouter);
 apiRouter.use('/clinic', clinicRouter);
 
 const enforceBilling = process.env.NODE_ENV === 'production' ? requireActiveSubscription : (_req: any, _res: any, next: any) => next();
@@ -38,19 +37,12 @@ apiRouter.use('/staff', requireAuth, enforceBilling, staffRouter);
 apiRouter.use('/tenant', requireAuth, enforceBilling, tenantRouter);
 apiRouter.use('/treatments', requireAuth, enforceBilling, treatmentRouter);
 apiRouter.use('/invoices', requireAuth, enforceBilling, invoiceRouter);
-apiRouter.use('/ai', aiRouter);
+apiRouter.use('/ai', requireAuth, enforceBilling, aiRouter);
 apiRouter.use('/admin', requireAuth, adminRouter);
 apiRouter.use('/import', requireAuth, enforceBilling, importRouter);
 apiRouter.use('/consents', requireAuth, enforceBilling, consentRouter);
 apiRouter.use('/inventory', requireAuth, enforceBilling, inventoryRouter);
 apiRouter.use('/campaigns', requireAuth, enforceBilling, campaignRouter);
 apiRouter.use('/integrations', requireAuth, integrationRouter);
-apiRouter.use('/ai-receptionist', aiReceptionistRouter);
-
-apiRouter.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    version: '1.0.0',
-    message: 'ClinicSaaS Platform API is online'
-  });
-});
+apiRouter.use('/whatsapp', requireAuth, enforceBilling, whatsappRouter);
+apiRouter.use('/ai-receptionist', requireAuth, enforceBilling, aiReceptionistRouter);

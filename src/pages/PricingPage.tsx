@@ -90,12 +90,14 @@ export default function PricingPage() {
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
+  const PLAN_KEY: Record<string, string> = {
+    Starter: 'STARTER',
+    Pro: 'PRO',
+    'Web Pro': 'PREMIUM',
+  };
+
   const handleBuy = (planName: string) => {
-    if (planName === 'Web Pro') {
-      openModal('demo', { type: 'quote' });
-    } else {
-      openModal('demo');
-    }
+    openModal('demo', { plan: PLAN_KEY[planName] || 'STARTER' });
   };
 
   return (
@@ -151,10 +153,16 @@ export default function PricingPage() {
                     <span className="text-4xl font-semibold tracking-tight text-slate-900">{billing === 'monthly' ? plan.monthly : plan.yearly}€</span>
                     <span className="text-[13px] text-slate-500">/mes</span>
                   </div>
-                  <button onClick={() => handleBuy(plan.name)}
-                    className={`mt-6 h-12 rounded-xl text-[14px] font-medium transition-all ${plan.popular ? 'bg-[#008477] text-white hover:bg-[#007066] shadow-lg shadow-[#008477]/20' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
-                    {plan.cta}
-                  </button>
+                  <div className="mt-6 flex flex-col gap-2">
+                    <button onClick={() => handleBuy(plan.name)}
+                      className="w-full h-12 rounded-xl text-[14px] font-medium transition-all bg-slate-900 text-white hover:bg-[#008477]">
+                      Comprar
+                    </button>
+                    <button onClick={() => openModal('demo')}
+                      className="w-full h-12 rounded-xl text-[13px] font-medium transition-all ring-1 ring-slate-300 text-slate-500 hover:text-slate-700 hover:bg-slate-50">
+                      Probar 14 días gratis
+                    </button>
+                  </div>
                   <ul className="mt-7 space-y-3 flex-1">
                     {plan.features.map((f) => (
                       <li key={f.text} className={`flex items-start gap-2.5 text-[14px] ${f.included ? 'text-slate-600' : 'text-slate-400'}`}>

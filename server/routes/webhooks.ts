@@ -40,6 +40,15 @@ webhookRouter.post('/stripe', raw({ type: 'application/json' }), async (req, res
         const planKey = subscription.metadata?.planKey;
 
         if (tenantId) {
+          const existing = await prisma.tenant.findUnique({
+            where: { id: tenantId },
+            select: { trialEndsAt: true },
+          });
+          const stripeTrialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000) : null;
+          const trialEndsAt = existing?.trialEndsAt && stripeTrialEnd && existing.trialEndsAt > stripeTrialEnd
+            ? existing.trialEndsAt
+            : stripeTrialEnd;
+
           await prisma.tenant.update({
             where: { id: tenantId },
             data: {
@@ -47,7 +56,7 @@ webhookRouter.post('/stripe', raw({ type: 'application/json' }), async (req, res
               stripePriceId: subscription.items.data[0].price.id,
               subscriptionStatus: subscription.status,
               subscriptionPlan: planKey || undefined,
-              trialEndsAt: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
+              trialEndsAt,
             },
           });
           logger.info({ tenantId, status: subscription.status }, 'Subscription updated via webhook');
@@ -79,7 +88,7 @@ webhookRouter.post('/stripe', raw({ type: 'application/json' }), async (req, res
             create: {
               id: invoice.id,
               tenantId,
-              patientId: 'system',
+              patientId: undefined,
               number: invoice.number || `STRIPE-${invoice.id.slice(0, 8)}`,
               amount: invoice.amount_paid / 100,
               currency: invoice.currency.toUpperCase(),

@@ -22,12 +22,12 @@ export const requireActiveSubscription = async (req: Request, res: Response, nex
     }
 
     const isTrialActive = tenant.trialEndsAt && new Date() < tenant.trialEndsAt;
-    const isSubscriptionActive = tenant.subscriptionStatus === 'active' || tenant.subscriptionStatus === 'trialing';
+    const isSubscriptionActive = tenant.subscriptionStatus === 'active';
 
     if (!isTrialActive && !isSubscriptionActive) {
       res.status(402).json({
-        error: 'Payment Required',
-        message: 'Your trial has ended or subscription is past due. Please update your billing details.',
+        error: 'subscription_required',
+        message: 'Tu prueba gratuita ha terminado. Selecciona un plan para continuar usando Nexora.',
       });
       return;
     }

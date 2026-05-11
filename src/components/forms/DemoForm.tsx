@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { Loader2, CheckCircle, CreditCard } from 'lucide-react';
 
 const CLINIC_TYPES = [
   { value: 'Fisioterapia', label: 'Fisioterapia', desc: 'Nexora Fisioterapia' },
@@ -16,11 +16,20 @@ interface DemoFormProps {
   initialData?: Record<string, string>;
 }
 
+const PLAN_LABELS: Record<string, string> = {
+  STARTER: 'Starter — 29€/mes',
+  PRO: 'Pro — 59€/mes',
+  PREMIUM: 'Web Pro — 89€/mes',
+};
+
 export default function DemoForm({ onSuccess, initialData = {} }: DemoFormProps) {
   const navigate = useNavigate();
   const isQuote = initialData.type === 'quote';
+  const plan = initialData.plan || '';
+  const planLabel = PLAN_LABELS[plan] || '';
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [loading, setLoading] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -33,6 +42,26 @@ export default function DemoForm({ onSuccess, initialData = {} }: DemoFormProps)
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const goToCheckout = async (token: string) => {
+    setPurchasing(true);
+    try {
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ planKey: plan }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al iniciar pago');
+      if (data.url) window.location.href = data.url;
+    } catch (err: any) {
+      setError(err.message);
+      setPurchasing(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -59,6 +88,11 @@ export default function DemoForm({ onSuccess, initialData = {} }: DemoFormProps)
       localStorage.setItem('user_info', JSON.stringify(data.user));
       localStorage.setItem('active_tenant_id', data.tenant.id);
       localStorage.setItem('clinic-name', data.tenant.name);
+
+      if (plan) {
+        await goToCheckout(data.token);
+        return;
+      }
 
       setStep('success');
     } catch (err: any) {
@@ -99,11 +133,17 @@ export default function DemoForm({ onSuccess, initialData = {} }: DemoFormProps)
     <div className="p-8">
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">
-          {isQuote ? 'Solicita tu presupuesto' : 'Prueba Nexora gratis 14 días'}
+          {isQuote ? 'Solicita tu presupuesto' : (plan ? 'Contratar ' + planLabel : 'Prueba Nexora gratis 14 días')}
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          {isQuote ? 'Te contactaremos en menos de 24h.' : 'Sin compromiso. Sin tarjeta.'}
+          {isQuote ? 'Te contactaremos en menos de 24h.' : (plan ? 'Crea tu cuenta y pasa a pagar. Sin permanencia.' : 'Sin compromiso. Sin tarjeta.')}
         </p>
+        {plan && (
+          <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#008477]/10 text-[#008477] text-sm font-medium">
+            <CreditCard className="w-4 h-4" />
+            {planLabel}
+          </div>
+        )}
       </div>
 
       {error && (
@@ -151,7 +191,7 @@ export default function DemoForm({ onSuccess, initialData = {} }: DemoFormProps)
         )}
         <button type="submit" disabled={loading}
           className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-black text-white bg-[#008477] hover:bg-[#007066] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#008477] disabled:opacity-70 transition-colors">
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isQuote ? 'Enviar solicitud' : 'Empezar prueba gratis')}
+          {loading || purchasing ? <Loader2 className="w-5 h-5 animate-spin" /> : (isQuote ? 'Enviar solicitud' : (plan ? 'Pagar' : 'Empezar prueba gratis'))}
         </button>
         <p className="text-center text-xs text-gray-400">
           Al registrarte aceptas nuestros{' '}

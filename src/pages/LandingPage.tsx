@@ -647,16 +647,20 @@ export default function LandingPage() {
                   </span>
                   <span className="text-[13px] text-slate-500">/mes</span>
                 </div>
-                <button
-                  onClick={() => openModal('demo')}
-                  className={`mt-6 h-11 rounded-lg text-[14px] font-medium transition-colors ${
-                    plan.highlighted
-                      ? 'bg-slate-900 text-white hover:bg-[#008477]'
-                      : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
-                  }`}
-                >
-                  {plan.cta}
-                </button>
+                <div className="mt-6 flex flex-col gap-2">
+                  <button
+                    onClick={() => openModal('demo', { plan: plan.name === 'Web Pro' ? 'PREMIUM' : plan.name === 'Pro' ? 'PRO' : 'STARTER' })}
+                    className="w-full h-11 rounded-lg text-[14px] font-medium transition-colors bg-slate-900 text-white hover:bg-[#008477]"
+                  >
+                    Comprar
+                  </button>
+                  <button
+                    onClick={() => openModal('demo')}
+                    className="w-full h-11 rounded-lg text-[13px] font-medium transition-colors ring-1 ring-slate-300 text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                  >
+                    Probar 14 días gratis
+                  </button>
+                </div>
                 <ul className="mt-7 space-y-3 border-t border-slate-100 pt-6">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-start gap-2.5 text-[14px] text-slate-700">

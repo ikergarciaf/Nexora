@@ -230,6 +230,10 @@ export default function Dashboard() {
         updateClinicConfig({ specialty: mappedSpecialty });
       }
     }
+    if (params.get('purchase') === 'success') {
+      showToast('Pago completado con éxito. ¡Bienvenido a Nexora!', 'success');
+      window.history.replaceState({}, '', '/dashboard');
+    }
   }, [location.search, updateClinicConfig]);
 
   const accountMenuRef = useRef<HTMLDivElement>(null);

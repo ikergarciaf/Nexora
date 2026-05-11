@@ -104,6 +104,7 @@ export default function App() {
               <Route path="/tenants" element={<TenantSelector />} />
               <Route path="/dashboard/*" element={<Dashboard />} />
               <Route path="/admin/*" element={<AdminPanel />} />
+              <Route path="/billing" element={<Navigate to="/dashboard" replace />} />
             </Route>
 
             <Route path="*" element={

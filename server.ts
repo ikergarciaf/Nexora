@@ -45,6 +45,11 @@ async function startServer() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+  // --- HEALTH (before rate limiter) ---
+  app.get('/api/health', (_req, res) => {
+    res.json({ status: 'ok', version: '1.0.0', message: 'Nexora API is online' });
+  });
+
   // --- RATE LIMITING ---
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -64,6 +69,9 @@ async function startServer() {
   });
   app.use("/api/auth/login", authLimiter);
   app.use("/api/auth/register", authLimiter);
+  app.use("/api/auth/demo-register", authLimiter);
+  app.use("/api/auth/forgot-password", authLimiter);
+  app.use("/api/auth/reset-password", authLimiter);
 
   // --- API ROUTES ---
   app.use("/api", apiRouter);
