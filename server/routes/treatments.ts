@@ -12,6 +12,7 @@ treatmentRouter.get('/', async (req, res) => {
     const treatments = await prisma.treatment.findMany({
       where: { tenantId: req.user!.tenantId },
       orderBy: { name: 'asc' },
+      select: { id: true, name: true, description: true, category: true, duration: true, price: true, tenantId: true },
     });
     res.json(treatments);
   } catch (error: any) {

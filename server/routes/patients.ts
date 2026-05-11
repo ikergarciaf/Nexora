@@ -33,6 +33,7 @@ patientRouter.get('/', async (req, res) => {
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { fullName: 'asc' },
+        select: { id: true, fullName: true, email: true, phone: true, dob: true, tags: true, lastVisit: true, createdAt: true, tenantId: true },
       }),
       prisma.patient.count({ where }),
     ]);

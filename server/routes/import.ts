@@ -16,41 +16,29 @@ importRouter.post('/patients', async (req, res) => {
       return res.status(400).json({ error: 'Must provide an array of patients' });
     }
 
-    let created = 0;
-    let skipped = 0;
+    const valid = patients.filter(p => p.fullName);
+    const skipped = patients.length - valid.length;
     const errors: string[] = [];
+    if (skipped > 0) errors.push(`${skipped} pacientes sin nombre omitidos`);
 
-    for (const p of patients) {
-      if (!p.fullName) {
-        errors.push(`Skipped: missing fullName`);
-        skipped++;
-        continue;
-      }
+    const result = await prisma.patient.createMany({
+      data: valid.map(p => ({
+        tenantId,
+        fullName: p.fullName,
+        email: p.email || null,
+        phone: p.phone || null,
+        dob: p.dob ? new Date(p.dob) : null,
+        medicalHistoryNotes: p.notes || null,
+        tags: p.tags ? JSON.stringify(p.tags) : '["imported"]',
+      })),
+      skipDuplicates: true,
+    });
 
-      try {
-        await prisma.patient.create({
-          data: {
-            tenantId,
-            fullName: p.fullName,
-            email: p.email || null,
-            phone: p.phone || null,
-            dob: p.dob ? new Date(p.dob) : null,
-            medicalHistoryNotes: p.notes || null,
-            tags: p.tags ? JSON.stringify(p.tags) : '["imported"]',
-          },
-        });
-        created++;
-      } catch (err: any) {
-        errors.push(`${p.fullName}: ${err.message}`);
-        skipped++;
-      }
-    }
-
-    logger.info({ tenantId, created, skipped }, 'CSV import completed');
+    logger.info({ tenantId, created: result.count, skipped }, 'CSV import completed');
 
     res.json({
       success: true,
-      created,
+      created: result.count,
       skipped,
       total: patients.length,
       errors: errors.slice(0, 10),

@@ -36,13 +36,12 @@ campaignRouter.post('/:id/send', async (req, res) => {
     const patients = await prisma.patient.findMany({
       where: { tenantId: req.user!.tenantId, email: { not: null }, ...(campaign.segment !== 'ALL' ? { tags: { contains: campaign.segment } } : {}) },
     });
-    let sent = 0;
-    for (const p of patients) {
-      if (p.email) {
-        await sendEmail({ to: p.email, subject: campaign.subject, text: campaign.body, html: campaign.body.replace(/\n/g, '<br/>') });
-        sent++;
-      }
-    }
+    const results = await Promise.allSettled(
+      patients.filter(p => p.email).map(p =>
+        sendEmail({ to: p.email!, subject: campaign.subject, text: campaign.body, html: campaign.body.replace(/\n/g, '<br/>') })
+      )
+    );
+    const sent = results.filter(r => r.status === 'fulfilled' && r.value).length;
     await prisma.campaign.update({ where: { id: campaign.id }, data: { status: 'SENT', sentAt: new Date() } });
     res.json({ success: true, sent });
   } catch (error) {

@@ -96,9 +96,15 @@ invoiceRouter.put('/:id/status', async (req, res) => {
   }
 });
 
+const invoiceStatsCache = new Map<string, { data: any; expiry: number }>();
+const INVOICE_CACHE_TTL = 30_000;
+
 invoiceRouter.get('/stats', async (req, res) => {
   try {
     const tenantId = req.user!.tenantId;
+    const cached = invoiceStatsCache.get(tenantId);
+    if (cached && cached.expiry > Date.now()) return res.json(cached.data);
+
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -111,11 +117,9 @@ invoiceRouter.get('/stats', async (req, res) => {
       prisma.invoice.count({ where: { tenantId, status: 'PAID', issuedDate: { gte: thirtyDaysAgo } } }),
     ]);
 
-    res.json({
-      monthlyRevenue: monthlyInvoices._sum.amount || 0,
-      pendingCount,
-      paidCount,
-    });
+    const data = { monthlyRevenue: monthlyInvoices._sum.amount || 0, pendingCount, paidCount };
+    invoiceStatsCache.set(tenantId, { data, expiry: Date.now() + INVOICE_CACHE_TTL });
+    res.json(data);
   } catch (error) {
     logger.error({ error }, 'Failed to fetch invoice stats');
     res.status(500).json({ error: 'Failed to fetch stats' });

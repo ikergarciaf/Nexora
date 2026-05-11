@@ -6,7 +6,7 @@ export const inventoryRouter = Router();
 
 inventoryRouter.get('/', async (req, res) => {
   try {
-    const items = await prisma.inventoryItem.findMany({ where: { tenantId: req.user!.tenantId }, orderBy: { name: 'asc' } });
+    const items = await prisma.inventoryItem.findMany({ where: { tenantId: req.user!.tenantId }, orderBy: { name: 'asc' }, select: { id: true, name: true, description: true, category: true, quantity: true, minStock: true, price: true, supplier: true, batch: true, expiresAt: true, tenantId: true, createdAt: true } });
     res.json(items);
   } catch (error) {
     logger.error({ error }, 'Inventory list error');

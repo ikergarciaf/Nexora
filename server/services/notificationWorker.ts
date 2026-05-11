@@ -18,34 +18,33 @@ export async function sendAppointmentReminders(): Promise<number> {
     },
   });
 
+  const BATCH_SIZE = 5;
   let sent = 0;
-  for (const apt of appointments) {
-    const email = apt.patient.email;
-    const phone = apt.patient.phone;
 
-    const startStr = apt.startTime.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-    const timeStr = apt.startTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  for (let i = 0; i < appointments.length; i += BATCH_SIZE) {
+    const batch = appointments.slice(i, i + BATCH_SIZE);
+    const results = await Promise.allSettled(batch.map(async (apt) => {
+      let count = 0;
+      const startStr = apt.startTime.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+      const timeStr = apt.startTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
-    if (email) {
-      try {
-        await sendEmail({
-          to: email,
+      if (apt.patient.email) {
+        const ok = await sendEmail({
+          to: apt.patient.email,
           subject: `Recordatorio: tienes una cita en ${apt.tenant.name}`,
           text: `Hola ${apt.patient.fullName},\n\nTe recordamos que tienes una cita el ${startStr} a las ${timeStr}.\n\nSi necesitas cancelar o reprogramar, contacta con la clínica.\n\n— ${apt.tenant.name}`,
           html: `<p>Hola <strong>${apt.patient.fullName}</strong>,</p><p>Te recordamos que tienes una cita el <strong>${startStr}</strong> a las <strong>${timeStr}</strong>.</p><p>Si necesitas cancelar o reprogramar, contacta con la clínica.</p><p>— ${apt.tenant.name}</p>`,
         });
-        sent++;
-        logger.info({ appointmentId: apt.id, email }, 'Appointment reminder sent');
-      } catch (err) {
-        logger.error({ error: err, appointmentId: apt.id }, 'Failed to send email reminder');
+        if (ok) count++;
       }
-    }
-
-    if (phone) {
-      const message = `Hola ${apt.patient.fullName}, te recordamos tu cita en ${apt.tenant.name} el ${startStr} a las ${timeStr}. Si necesitas cancelar, contacta con la clínica.`;
-      const whatsappSent = await sendWhatsAppReminder(phone, message);
-      if (whatsappSent) sent++;
-    }
+      if (apt.patient.phone) {
+        const message = `Hola ${apt.patient.fullName}, te recordamos tu cita en ${apt.tenant.name} el ${startStr} a las ${timeStr}. Si necesitas cancelar, contacta con la clínica.`;
+        const whatsappOk = await sendWhatsAppReminder(apt.patient.phone, message);
+        if (whatsappOk) count++;
+      }
+      return count;
+    }));
+    sent += results.reduce((sum, r) => sum + (r.status === 'fulfilled' ? r.value : 0), 0);
   }
 
   return sent;

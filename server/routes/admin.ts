@@ -79,9 +79,10 @@ adminRouter.get('/tenants', async (_req, res) => {
 adminRouter.get('/users', async (_req, res) => {
   try {
     const users = await prisma.user.findMany({
-      include: {
+      select: {
+        id: true, name: true, email: true, isActive: true, isSuperAdmin: true, googleId: true, createdAt: true,
         memberships: {
-          include: { tenant: { select: { id: true, name: true } } },
+          select: { role: true, tenant: { select: { id: true, name: true } } },
         },
       },
       orderBy: { createdAt: 'desc' },
