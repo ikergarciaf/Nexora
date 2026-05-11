@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import { NexoraLogo } from './NexoraLogo';
+import { useModal } from './ModalContext';
 
 const SPECIALTIES = [
   { label: 'Clínicas dentales', slug: 'dental' },
@@ -17,6 +18,7 @@ const SPECIALTIES = [
 export const FrontendNavbar = ({ brandName }: { brandName?: string }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { openModal } = useModal();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(false);
@@ -119,13 +121,13 @@ export const FrontendNavbar = ({ brandName }: { brandName?: string }) => {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/login')}
             className="hidden md:inline-flex h-10 px-3 items-center text-[14px] font-medium text-slate-600 hover:text-slate-900 transition-colors"
           >
             Iniciar sesión
           </button>
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => openModal('demo')}
             className="hidden md:inline-flex h-10 px-4 items-center rounded-lg bg-slate-900 text-white text-[14px] font-medium hover:bg-[#008477] transition-colors"
           >
             Empezar gratis
@@ -180,7 +182,7 @@ export const FrontendNavbar = ({ brandName }: { brandName?: string }) => {
                   Preguntas frecuentes
                 </button>
                 <button
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate('/login')}
                   className="text-left py-2 text-[15px] text-slate-700"
                 >
                   Iniciar sesión
@@ -188,7 +190,7 @@ export const FrontendNavbar = ({ brandName }: { brandName?: string }) => {
               </div>
 
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => { openModal('demo'); setMobileOpen(false); }}
                 className="w-full h-12 rounded-lg bg-slate-900 text-white font-medium"
               >
                 Empezar gratis

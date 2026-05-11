@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useModal } from '../components/ModalContext';
 import {
   ArrowRight,
   Brain,
@@ -296,6 +297,7 @@ const specialties: Record<string, SpecialtyData> = {
 export default function SpecialtyLanding() {
   const { specialty } = useParams();
   const navigate = useNavigate();
+  const { openModal } = useModal();
   const data = specialties[specialty || 'general'];
 
   useEffect(() => {
@@ -362,7 +364,7 @@ export default function SpecialtyLanding() {
                 {specialty === 'web-clinicas' && (
                   <>
                     <button
-                      onClick={() => navigate('/demo?type=quote')}
+                      onClick={() => openModal('demo', { type: 'quote', specialty: specialty || '' })}
                       className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-slate-900 text-white text-[15px] font-medium hover:bg-[#008477] transition-colors"
                     >
                       Solicitar presupuesto sin compromiso
@@ -483,12 +485,8 @@ export default function SpecialtyLanding() {
                       ))}
                     </ul>
                     <button
-                      onClick={() => navigate('/demo?type=quote')}
-                      className={`mt-6 w-full h-11 rounded-lg text-[14px] font-medium transition-colors ${
-                        (plan as any).featured
-                          ? 'bg-[#008477] text-white hover:bg-[#006b61]'
-                          : 'bg-slate-900 text-white hover:bg-slate-800'
-                      }`}
+                      onClick={() => openModal('demo', { type: 'quote', specialty: specialty || 'fisioterapia' })}
+                      className={`mt-6 w-full h-11 rounded-lg text-[14px] font-medium transition-colors ${(plan as any).featured ? 'bg-[#008477] text-white hover:bg-[#006b61]' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
                     >
                       Solicitar presupuesto
                     </button>
@@ -546,7 +544,7 @@ export default function SpecialtyLanding() {
               {specialty === 'web-clinicas' ? (
                 <>
                     <button
-                      onClick={() => navigate('/demo?type=quote')}
+                      onClick={() => openModal('demo', { type: 'quote', specialty: specialty })}
                       className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-900 text-[15px] font-medium hover:bg-slate-100 transition-colors"
                     >
                       Solicitar consultoría <ArrowRight className="w-4 h-4" />
@@ -561,7 +559,7 @@ export default function SpecialtyLanding() {
               ) : (
                 <>
                   <button
-                    onClick={() => navigate(`/contratar/${specialty}`)}
+                    onClick={() => openModal('contract', { specialty: specialty || 'fisioterapia' })}
                     className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-900 text-[15px] font-medium hover:bg-slate-100 transition-colors"
                   >
                     Ver planes y contratar <ArrowRight className="w-4 h-4" />

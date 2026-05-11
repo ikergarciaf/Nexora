@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { useModal } from '../components/ModalContext';
 import {
   Globe,
   ArrowRight,
@@ -222,12 +223,14 @@ const PLANS = [
     monthly: 29,
     yearly: 24,
     features: [
-      'Citas ilimitadas',
-      'Agenda y ficha clínica básica',
-      'Recordatorios por email',
-      'Soporte estándar',
+      'Gestión de pacientes ilimitada',
+      'Agenda inteligente con IA',
+      'Historial clínico digital',
+      'Recordatorios automáticos',
+      'Facturación básica',
+      '1 profesional',
     ],
-    cta: 'Empezar gratis',
+    cta: 'Comprar',
     highlighted: false,
   },
   {
@@ -238,11 +241,15 @@ const PLANS = [
     features: [
       'Todo lo de Starter',
       'Hasta 5 profesionales',
-      'IA generativa incluida',
-      'Presupuestos y facturación',
+      'IA generativa (resúmenes clínicos)',
+      'Asistente IA en WhatsApp',
+      'Firma digital de consentimientos',
+      'Facturación avanzada + Stripe',
+      'Campañas de email marketing',
+      'Gestión de inventario',
       'Soporte prioritario',
     ],
-    cta: 'Probar 14 días',
+    cta: 'Comprar',
     highlighted: true,
   },
   {
@@ -252,18 +259,22 @@ const PLANS = [
     yearly: 75,
     features: [
       'Todo el plan Pro',
-      'Diseño web personalizado',
-      'Dominio y hosting gratis',
-      'SEO para aparecer en Google',
-      'Blog y gestión de contenidos',
+      'Profesionales ilimitados',
+      'Web médica personalizada',
+      'Reserva online pública',
+      'SEO local premium',
+      'Portal del paciente',
+      'Panel de análisis e insights',
+      'Soporte dedicado 24/7',
     ],
-    cta: 'Saber más',
+    cta: 'Comprar',
     highlighted: false,
   },
 ];
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { openModal } = useModal();
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [testimonialIndex, setTestimonialIndex] = useState(0);
@@ -318,7 +329,7 @@ export default function LandingPage() {
               className="mt-8 flex flex-col sm:flex-row gap-3"
             >
               <button
-                onClick={() => navigate('/demo')}
+                onClick={() => openModal('demo')}
                 className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-slate-900 text-white text-[15px] font-medium hover:bg-[#008477] transition-colors"
               >
                 Empezar gratis
@@ -637,7 +648,7 @@ export default function LandingPage() {
                   <span className="text-[13px] text-slate-500">/mes</span>
                 </div>
                 <button
-                  onClick={() => navigate('/demo')}
+                  onClick={() => openModal('demo')}
                   className={`mt-6 h-11 rounded-lg text-[14px] font-medium transition-colors ${
                     plan.highlighted
                       ? 'bg-slate-900 text-white hover:bg-[#008477]'
@@ -784,10 +795,7 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-2 lg:shrink-0">
               <button
-                onClick={(e) => {
-                  const subject = encodeURIComponent('Demo personalizada Nexora');
-                  window.location.href = `mailto:hola@nexora.co?subject=${subject}`;
-                }}
+                onClick={() => openModal('demo', { type: 'quote' })}
                 className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-slate-900 text-white text-[14px] font-medium hover:bg-[#008477] transition-colors"
               >
                 Reservar demo <ArrowRight className="w-4 h-4" />
@@ -818,7 +826,7 @@ export default function LandingPage() {
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <button
-                onClick={() => navigate('/demo')}
+                onClick={() => openModal('demo')}
                 className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-white text-slate-900 text-[15px] font-medium hover:bg-slate-100 hover:scale-[1.02] transition-all"
               >
                 Empezar gratis <ArrowRight className="w-4 h-4" />
@@ -872,7 +880,7 @@ export default function LandingPage() {
                     document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' }),
                 },
                 { label: 'Iniciar sesión', onClick: () => navigate('/login') },
-                { label: 'Empezar gratis', onClick: () => navigate('/demo') },
+                { label: 'Empezar gratis', onClick: () => openModal('demo') },
 
               ]}
             />

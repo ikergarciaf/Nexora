@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useGoogleLogin, GoogleLogin } from '@react-oauth/google';
 import { Loader2, ArrowRight } from 'lucide-react';
 import { NexoraLogo } from '../components/NexoraLogo';
+import { useModal } from '../components/ModalContext';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { openModal } = useModal();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -48,32 +49,6 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
-
-  const handleGoogleSuccess = async (credentialResponse: any) => {
-    try {
-      setLoading(true);
-      const res = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential: credentialResponse.credential })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error con Google');
-      
-      localStorage.setItem('clinic_token', data.token);
-      localStorage.setItem('user_info', JSON.stringify(data.user));
-      navigate('/tenants');
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const googleLogin = useGoogleLogin({
-    onSuccess: handleGoogleSuccess,
-    onError: () => setError('Error al conectar con Google')
-  });
 
   const handleMockGoogleLogin = async () => {
     try {
@@ -155,6 +130,15 @@ export default function LoginPage() {
                   className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#008477] focus:border-[#008477] sm:text-sm font-medium"
                 />
               </div>
+              {isLogin && (
+                <button
+                  type="button"
+                  onClick={() => openModal('forgot-password')}
+                  className="mt-1 text-xs font-medium text-[#008477] hover:text-[#007066]"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              )}
             </div>
 
             <div>
@@ -179,14 +163,6 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-6 flex flex-col gap-3 items-center">
-              <GoogleLogin 
-                onSuccess={handleGoogleSuccess}
-                onError={() => setError('Error al conectar con Google')}
-                useOneTap
-                theme="outline"
-                width="100%"
-              />
-              
               <button
                 type="button"
                 onClick={handleMockGoogleLogin}

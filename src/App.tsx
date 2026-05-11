@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Loader2 } from 'lucide-react';
 import CookieConsent from './components/CookieConsent';
+import { ModalProvider } from './components/ModalContext';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
@@ -75,55 +76,62 @@ class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryStat
 }
 
 export default function App() {
-  const content = (
+  const routerContent = (
     <BrowserRouter>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/soluciones/:specialty" element={<SpecialtyLanding />} />
-          <Route path="/whatsapp-demo" element={<WhatsAppDemo />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/clinica/:slug" element={<ClinicWebsite />} />
-          <Route path="/book/:slug" element={<PublicBooking />} />
-          <Route path="/portal/:slug/:patientId" element={<PatientPortal />} />
-          <Route path="/demo" element={<DemoRegisterPage />} />
-          <Route path="/contratar/:specialty" element={<ContractPage />} />
-          <Route path="/privacidad" element={<PrivacyPage />} />
-          <Route path="/terminos" element={<TermsPage />} />
-          <Route path="/cookies" element={<CookiesPage />} />
+      <ModalProvider>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/soluciones/:specialty" element={<SpecialtyLanding />} />
+            <Route path="/whatsapp-demo" element={<WhatsAppDemo />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/clinica/:slug" element={<ClinicWebsite />} />
+            <Route path="/book/:slug" element={<PublicBooking />} />
+            <Route path="/portal/:slug/:patientId" element={<PatientPortal />} />
+            <Route path="/demo" element={<DemoRegisterPage />} />
+            <Route path="/contratar/:specialty" element={<ContractPage />} />
+            <Route path="/privacidad" element={<PrivacyPage />} />
+            <Route path="/terminos" element={<TermsPage />} />
+            <Route path="/cookies" element={<CookiesPage />} />
 
-          <Route element={<GuestGuard />}>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-          </Route>
+            <Route element={<GuestGuard />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+            </Route>
 
-          <Route element={<AuthGuard />}>
-            <Route path="/tenants" element={<TenantSelector />} />
-            <Route path="/dashboard/*" element={<Dashboard />} />
-            <Route path="/admin/*" element={<AdminPanel />} />
-          </Route>
+            <Route element={<AuthGuard />}>
+              <Route path="/tenants" element={<TenantSelector />} />
+              <Route path="/dashboard/*" element={<Dashboard />} />
+              <Route path="/admin/*" element={<AdminPanel />} />
+            </Route>
 
-          <Route path="*" element={
-            <div className="min-h-screen flex items-center justify-center bg-white">
-              <div className="text-center">
-                <h1 className="text-6xl font-bold text-slate-200 mb-4">404</h1>
-                <p className="text-slate-500 mb-6">Página no encontrada</p>
-                <a href="/" className="text-[#008477] font-medium hover:underline">Volver al inicio</a>
+            <Route path="*" element={
+              <div className="min-h-screen flex items-center justify-center bg-white">
+                <div className="text-center">
+                  <h1 className="text-6xl font-bold text-slate-200 mb-4">404</h1>
+                  <p className="text-slate-500 mb-6">Página no encontrada</p>
+                  <a href="/" className="text-[#008477] font-medium hover:underline">Volver al inicio</a>
+                </div>
               </div>
-            </div>
-          } />
-        </Routes>
-      </Suspense>
+            } />
+          </Routes>
+        </Suspense>
+        <CookieConsent />
+      </ModalProvider>
     </BrowserRouter>
   );
 
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const content = googleClientId ? (
+    <GoogleOAuthProvider clientId={googleClientId}>
+      {routerContent}
+    </GoogleOAuthProvider>
+  ) : routerContent;
+
   return (
     <ErrorBoundary>
-      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy-client-id'}>
-        {content}
-        <CookieConsent />
-      </GoogleOAuthProvider>
+      {content}
     </ErrorBoundary>
   );
 }
