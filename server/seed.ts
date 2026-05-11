@@ -21,8 +21,13 @@ async function main() {
     process.exit(1);
   }
 
-  const email = process.env.SEED_ADMIN_EMAIL || 'admin@nexora.com';
-  const password = process.env.SEED_ADMIN_PASSWORD || 'Admin123!';
+  const email = process.env.SEED_ADMIN_EMAIL;
+  const password = process.env.SEED_ADMIN_PASSWORD;
+
+  if (!email || !password) {
+    console.error('SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD must be set in .env');
+    process.exit(1);
+  }
 
   let user = await prisma.user.findUnique({ where: { email } });
 
