@@ -1,0 +1,52 @@
+services:
+  - type: web
+    name: nexora
+    env: node
+    region: frankfurt
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npx prisma migrate deploy && npx tsx server.ts
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_URL
+        value: https://nexora-9gyt.onrender.com
+      - key: CORS_ORIGIN
+        value: https://nexora-9gyt.onrender.com
+      - key: PORT
+        value: "3000"
+      - key: STRIPE_PRICE_STARTER
+        value: price_1TVYVv7pCyLGxps7eGGDg6cz
+      - key: STRIPE_PRICE_PRO
+        value: price_1TVYWR7pCyLGxps7DS0kYMMv
+      - key: STRIPE_PRICE_PREMIUM
+        value: price_1TVYWt7pCyLGxps77zB5n9IQ
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_FROM
+        value: noreply@nexora.com
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_DIRECT
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GOOGLE_GENAI_API_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: CRON_API_KEY
+        sync: false
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false

@@ -29,8 +29,12 @@ async function startServer() {
 
   app.use(compression());
 
+  const corsOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
+    : '*';
+
   app.use(cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: corsOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
     credentials: true,
