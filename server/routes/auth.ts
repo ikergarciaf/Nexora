@@ -28,6 +28,17 @@ authRouter.get('/debug', async (req, res) => {
   }
 });
 
+authRouter.post('/debug', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    res.json({ found: !!user });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message, code: e.code });
+  }
+});
+
 authRouter.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
