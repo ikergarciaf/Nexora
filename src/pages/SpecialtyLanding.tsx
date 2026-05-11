@@ -49,8 +49,7 @@ const specialties: Record<string, SpecialtyData> = {
     subtitle: 'Odontograma digital y presupuestos por fases',
     description:
       'Plataforma diseñada para odontología, con herramientas específicas y datos aislados de otras especialidades.',
-    image:
-      'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&q=80&w=1600',
+    image: '/images/specialties/dental.jpg',
     testimonial: {
       quote:
         'Pasamos de Excel a Nexora en una semana. Las cancelaciones se cubren solas y mi equipo recupera horas cada día.',
@@ -85,8 +84,7 @@ const specialties: Record<string, SpecialtyData> = {
     subtitle: 'Planes de dieta y seguimiento antropométrico',
     description:
       'Un entorno enfocado en métricas corporales y planes nutricionales, sin funciones que no usarás.',
-    image:
-      'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=1600',
+    image: '/images/specialties/nutricion.jpg',
     testimonial: {
       quote:
         'El portal de recetas y la báscula sincronizada hacen que el paciente vea su evolución y se enganche al plan.',
@@ -118,8 +116,7 @@ const specialties: Record<string, SpecialtyData> = {
     subtitle: 'Mapa de dolor y pautas de rehabilitación',
     description:
       'Plataforma dedicada a la rehabilitación: tu equipo trabaja sin distracciones de otras especialidades.',
-    image:
-      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&q=80&w=1600',
+    image: '/images/specialties/fisioterapia.jpg',
     testimonial: {
       quote:
         'El mapa de dolor es brutal. Los pacientes ven la evolución sesión a sesión y la adherencia sube muchísimo.',
@@ -151,8 +148,7 @@ const specialties: Record<string, SpecialtyData> = {
     subtitle: 'Confidencialidad absoluta y notas dinámicas',
     description:
       'Entorno blindado y aislado para que tus notas terapéuticas vivan en una instancia separada.',
-    image:
-      'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=1600',
+    image: '/images/specialties/psicologos.jpg',
     testimonial: {
       quote:
         'Las notas cifradas y el doble factor me dan tranquilidad absoluta con datos tan sensibles como los que manejo.',
@@ -184,8 +180,7 @@ const specialties: Record<string, SpecialtyData> = {
     subtitle: 'Control de tratamientos y galería fotográfica',
     description:
       'Plataforma para flujos de estética, con base de datos propia para fotos evolutivas e inventario.',
-    image:
-      'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=1600',
+    image: '/images/specialties/estetica.jpg',
     testimonial: {
       quote:
         'El antes/después alineado y el control de viales son justo lo que pedíamos. Profesional y bonito.',
@@ -217,8 +212,7 @@ const specialties: Record<string, SpecialtyData> = {
     subtitle: 'Un sistema universal para múltiples especialidades',
     description:
       'Plataforma multi-especialidad modular para centros que combinan varias ramas clínicas.',
-    image:
-      'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1600',
+    image: '/images/specialties/general.jpg',
     testimonial: {
       quote:
         'Tenemos pediatría, ginecología y medicina interna en el mismo centro. Nexora se adapta a cada uno sin pelearse.',
@@ -250,8 +244,7 @@ const specialties: Record<string, SpecialtyData> = {
     subtitle: 'Sitio profesional + reserva online 24/7',
     description:
       'Creamos páginas web profesionales para clínicas y centros de salud. Diseño moderno, velocidad extrema y sincronización total con tu agenda Nexora para que conviertas más visitas en pacientes sin esfuerzo.',
-    image:
-      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1600',
+    image: '/images/specialties/web-clinicas.jpg',
     testimonial: {
       quote:
         'Desde que lanzamos la nueva web con reserva online integrada, las citas de nuevos pacientes han subido un 40% y recepción ha dejado de atender llamadas repetitivas. Se paga sola cada mes.',
@@ -374,6 +367,21 @@ export default function SpecialtyLanding() {
                 )}
               </motion.div>
             </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+              className="relative"
+            >
+              <div className="relative overflow-hidden rounded-2xl bg-slate-100">
+                <img
+                  src={data.image}
+                  alt={data.title}
+                  className="w-full h-[300px] lg:h-[420px] object-cover"
+                />
+                <div className="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-2xl" />
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>

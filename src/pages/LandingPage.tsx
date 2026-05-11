@@ -40,56 +40,49 @@ const SPECIALTIES: SpecialtyCard[] = [
     name: 'Clínicas dentales',
     description: 'Odontograma digital, presupuestos por fases y firma online.',
     icon: <Smile className="w-5 h-5" />,
-    image:
-      'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&q=80&w=1200',
+    image: '/images/specialties/dental.jpg',
   },
   {
     slug: 'fisioterapia',
     name: 'Fisioterapia',
     description: 'Mapa de dolor, bonos de sesiones y planes de ejercicio.',
     icon: <Heart className="w-5 h-5" />,
-    image:
-      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&q=80&w=1200',
+    image: '/images/specialties/fisioterapia.jpg',
   },
   {
     slug: 'psicologos',
     name: 'Psicología',
     description: 'Notas cifradas, escalas DSM-V y teleconsulta segura.',
     icon: <Brain className="w-5 h-5" />,
-    image:
-      'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=1200',
+    image: '/images/specialties/psicologos.jpg',
   },
   {
     slug: 'nutricion',
     name: 'Nutrición',
     description: 'Diseñador de dietas IA, antropometría y portal de recetas.',
     icon: <Apple className="w-5 h-5" />,
-    image:
-      'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=1200',
+    image: '/images/specialties/nutricion.jpg',
   },
   {
     slug: 'estetica',
     name: 'Medicina estética',
     description: 'Antes y después fotográfico, lotes y CRM de fidelización.',
     icon: <Camera className="w-5 h-5" />,
-    image:
-      'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=1200',
+    image: '/images/specialties/estetica.jpg',
   },
   {
     slug: 'general',
     name: 'Policlínica general',
     description: 'Historia clínica universal, receta electrónica y CIE-10.',
     icon: <Stethoscope className="w-5 h-5" />,
-    image:
-      'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200',
+    image: '/images/specialties/general.jpg',
   },
   {
     slug: 'web-clinicas',
     name: 'Desarrollo Web & SEO',
     description: 'Web médica profesional conectada a tu agenda con reserva online.',
     icon: <Globe className="w-5 h-5" />,
-    image:
-      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1200',
+    image: '/images/specialties/web-clinicas.jpg',
   },
 ];
 
