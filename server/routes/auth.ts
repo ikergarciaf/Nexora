@@ -19,6 +19,15 @@ const JWT_SECRET = (() => {
 })();
 const googleClient = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID || 'dummy');
 
+authRouter.get('/debug', async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({ take: 1 });
+    res.json({ db: 'ok', users: users.length });
+  } catch (e: any) {
+    res.status(500).json({ db: 'error', message: e.message, code: e.code });
+  }
+});
+
 authRouter.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
