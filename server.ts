@@ -50,6 +50,11 @@ async function startServer() {
     res.json({ status: 'ok', version: '1.0.0', message: 'Nexora API is online' });
   });
 
+  // Debug: POST test before any rate limiter
+  app.post('/api/test-before', (req, res) => {
+    res.json({ ok: true, body: req.body ? 'parsed' : 'none' });
+  });
+
   // --- RATE LIMITING ---
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
