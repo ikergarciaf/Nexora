@@ -10,12 +10,24 @@ invoiceRouter.use(requireAuth);
 
 invoiceRouter.get('/', async (req, res) => {
   try {
-    const invoices = await prisma.invoice.findMany({
-      where: { tenantId: req.user!.tenantId },
-      include: { patient: { select: { fullName: true } } },
-      orderBy: { issuedDate: 'desc' },
-      take: 100,
-    });
+    const tenantId = req.user!.tenantId;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+    const status = req.query.status as string | undefined;
+
+    const where: any = { tenantId };
+    if (status) where.status = status;
+
+    const [invoices, total] = await Promise.all([
+      prisma.invoice.findMany({
+        where,
+        include: { patient: { select: { fullName: true } } },
+        orderBy: { issuedDate: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.invoice.count({ where }),
+    ]);
 
     const mapped = invoices.map(inv => ({
       id: inv.id,
@@ -28,7 +40,7 @@ invoiceRouter.get('/', async (req, res) => {
       description: inv.description || '',
     }));
 
-    res.json(mapped);
+    res.json({ data: mapped, total, page, limit });
   } catch (error) {
     logger.error({ error }, 'Failed to fetch invoices');
     res.status(500).json({ error: 'Failed to fetch invoices' });

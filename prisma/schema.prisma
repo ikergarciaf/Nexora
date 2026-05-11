@@ -20,8 +20,7 @@ model Tenant {
   subscriptionStatus   String        @default("trialing")
   subscriptionPlan     String        @default("STARTER")
   trialEndsAt          DateTime?
-  
-  // Customization fields
+
   logoUrl              String?
   address              String?
   ownerName            String?
@@ -71,13 +70,14 @@ model TenantUser {
   id       String @id @default(uuid())
   userId   String
   tenantId String
-  role     String @default("OWNER") // OWNER, STAFF
-  
+  role     String @default("OWNER")
+
   user     User   @relation(fields: [userId], references: [id])
   tenant   Tenant @relation(fields: [tenantId], references: [id])
 
   @@unique([userId, tenantId])
   @@index([tenantId])
+  @@index([userId])
 }
 
 model Patient {
@@ -104,8 +104,10 @@ model Patient {
   tenant              Tenant        @relation(fields: [tenantId], references: [id])
 
   @@unique([id, tenantId])
-  @@index([email])
   @@index([tenantId])
+  @@index([tenantId, email])
+  @@index([tenantId, fullName])
+  @@index([email])
 }
 
 model Appointment {
@@ -127,12 +129,15 @@ model Appointment {
   patient         Patient     @relation(fields: [patientId], references: [id])
   treatment       Treatment?  @relation(fields: [treatmentId], references: [id])
   tenant          Tenant      @relation(fields: [tenantId], references: [id])
-  
+
   @@unique([id, tenantId])
+  @@index([tenantId])
+  @@index([tenantId, startTime])
+  @@index([tenantId, status])
+  @@index([tenantId, startTime, status])
   @@index([startTime])
   @@index([status])
   @@index([patientId])
-  @@index([tenantId])
 }
 
 model Treatment {
@@ -174,9 +179,11 @@ model Invoice {
   tenant      Tenant        @relation(fields: [tenantId], references: [id])
 
   @@unique([id, tenantId])
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, issuedDate])
   @@index([status])
   @@index([issuedDate])
-  @@index([tenantId])
 }
 
 model Room {
@@ -197,7 +204,7 @@ model Shift {
   roomId    String?
   startTime DateTime
   endTime   DateTime
-  type      String   @default("WORK") // WORK, VACATION, SICK_LEAVE
+  type      String   @default("WORK")
   notes     String?
   user      User     @relation(fields: [userId], references: [id])
   room      Room?    @relation(fields: [roomId], references: [id])
@@ -205,6 +212,7 @@ model Shift {
 
   @@unique([id, tenantId])
   @@index([tenantId])
+  @@index([tenantId, startTime])
 }
 
 model Consent {
@@ -215,7 +223,7 @@ model Consent {
   content         String
   signatureDataUrl String?
   signedAt        DateTime?
-  status          String    @default("draft") // draft, signed, revoked
+  status          String    @default("draft")
   expiresAt       DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -225,6 +233,7 @@ model Consent {
 
   @@unique([id, tenantId])
   @@index([tenantId])
+  @@index([tenantId, status])
 }
 
 model InventoryItem {
@@ -244,9 +253,9 @@ model InventoryItem {
   tenant        Tenant   @relation(fields: [tenantId], references: [id])
 
   @@unique([id, tenantId])
-  @@index([category])
-  @@index([expiresAt])
   @@index([tenantId])
+  @@index([tenantId, category])
+  @@index([expiresAt])
 }
 
 model Campaign {

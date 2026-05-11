@@ -12,6 +12,7 @@ import { uploadRouter } from "./server/routes/upload.ts";
 import { publicRouter } from "./server/routes/public.ts";
 import rateLimit from "express-rate-limit";
 import logger from "./server/services/logger.ts";
+import prisma from "./server/db.ts";
 import "dotenv/config";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -21,16 +22,13 @@ async function startServer() {
   const app = express();
   const PORT = parseInt(process.env.PORT || '3000', 10);
 
-  // --- SECURITY HEADERS ---
   app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
     contentSecurityPolicy: false,
   }));
 
-  // --- COMPRESSION ---
   app.use(compression());
 
-  // --- CORS ---
   app.use(cors({
     origin: process.env.CORS_ORIGIN || '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -38,24 +36,15 @@ async function startServer() {
     credentials: true,
   }));
 
-  // --- STRIPE WEBHOOKS (must be before express.json to get raw body) ---
   app.use('/api/webhooks', webhookRouter);
 
-  // --- BODY PARSER ---
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-  // --- HEALTH (before rate limiter) ---
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', version: '1.0.0', message: 'Nexora API is online' });
   });
 
-  // Debug: POST test before any rate limiter
-  app.post('/api/test-before', (req, res) => {
-    res.json({ ok: true, body: req.body ? 'parsed' : 'none' });
-  });
-
-  // --- RATE LIMITING ---
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
@@ -78,22 +67,12 @@ async function startServer() {
   app.use("/api/auth/forgot-password", authLimiter);
   app.use("/api/auth/reset-password", authLimiter);
 
-  // --- API ROUTES ---
   app.use("/api", apiRouter);
-
-  // --- GDPR ROUTES ---
   app.use("/api/gdpr", gdprRouter);
-
-  // --- UPLOAD ROUTES ---
   app.use("/api/upload", uploadRouter);
-
-  // --- PUBLIC ROUTES (no auth required) ---
   app.use("/api/public", publicRouter);
 
-  // --- STATIC UPLOADS ---
   app.use('/uploads', express.static(path.resolve(__dirname, 'public', 'uploads')));
-
-  // --- VITE MIDDLEWARE ---
 
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -103,13 +82,12 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.resolve(__dirname, "dist");
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
+    app.use(express.static(distPath, { maxAge: '1y', immutable: true }));
+    app.get("*", (_req, res) => {
       res.sendFile(path.resolve(distPath, "index.html"));
     });
   }
 
-  // --- GLOBAL ERROR HANDLER ---
   app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     logger.error({ error: err.message, stack: err.stack }, 'Unhandled error');
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -119,11 +97,9 @@ async function startServer() {
     logger.info({ port: PORT }, `Server running at http://localhost:${PORT}`);
   });
 
-  // --- GRACEFUL SHUTDOWN ---
   const shutdown = async () => {
     logger.info('Shutting down gracefully...');
     server.close(async () => {
-      const prisma = (await import('./server/db.ts')).default;
       await prisma.$disconnect();
       process.exit(0);
     });

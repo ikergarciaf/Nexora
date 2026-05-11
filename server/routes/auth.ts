@@ -19,19 +19,6 @@ const JWT_SECRET = (() => {
 })();
 const googleClient = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID || 'dummy');
 
-authRouter.get('/debug', async (req, res) => {
-  try {
-    const users = await prisma.user.findMany({ take: 1 });
-    res.json({ db: 'ok', users: users.length });
-  } catch (e: any) {
-    res.status(500).json({ db: 'error', message: e.message, code: e.code });
-  }
-});
-
-authRouter.post('/debug', async (req, res) => {
-  res.json({ ok: true, hasBody: !!req.body, keys: req.body ? Object.keys(req.body) : [] });
-});
-
 authRouter.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -82,8 +69,7 @@ authRouter.post('/google', async (req, res) => {
   try {
     const { credential } = req.body;
     if (!credential) return res.status(400).json({ error: 'Missing google credential' });
-    
-    // Check demo credentials (if running locally without real setup)
+
     if (credential === 'demo-google-token') {
       const user = await prisma.user.findFirst();
       if (!user) return res.status(403).json({ error: 'No demo users available' });
@@ -96,9 +82,9 @@ authRouter.post('/google', async (req, res) => {
         idToken: credential
       });
       const payload = ticket.getPayload();
-      
+
       if (!payload || !payload.email) return res.status(400).json({ error: 'Invalid google token payload' });
-      
+
       let user = await prisma.user.findUnique({ where: { email: payload.email } });
       if (!user) {
         user = await prisma.user.create({
@@ -126,26 +112,6 @@ authRouter.post('/google', async (req, res) => {
   }
 });
 
-authRouter.get('/diagnostic', async (_req, res) => {
-  try {
-    await prisma.$connect();
-    const userCount = await prisma.user.count();
-    const admin = await prisma.user.findUnique({ where: { email: 'admin@nexora.com' } });
-    const tenantCount = await prisma.tenant.count();
-    res.json({
-      dbConnected: true,
-      userCount,
-      adminExists: !!admin,
-      adminActive: admin?.isActive ?? null,
-      adminSuperAdmin: admin?.isSuperAdmin ?? null,
-      adminHasPassword: !!admin?.passwordHash,
-      tenantCount,
-    });
-  } catch (e: any) {
-    res.json({ dbConnected: false, error: e.message });
-  }
-});
-
 authRouter.get('/me', requireAuth, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
@@ -162,11 +128,10 @@ authRouter.post('/forgot-password', async (req, res) => {
     if (!email) return res.status(400).json({ error: 'Email is required' });
 
     const user = await prisma.user.findUnique({ where: { email } });
-    // Always return success to prevent email enumeration
     if (!user) return res.json({ success: true });
 
     const resetToken = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
     await prisma.user.update({
       where: { id: user.id },
@@ -289,7 +254,7 @@ authRouter.post('/tenants', requireAuth, async (req, res) => {
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + crypto.randomUUID().slice(0, 6);
 
     const tenant = await prisma.tenant.create({
-      data: { 
+      data: {
         name, slug,
         specialty: specialty || 'Fisioterapia',
         trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)

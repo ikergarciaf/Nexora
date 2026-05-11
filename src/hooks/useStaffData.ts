@@ -1,5 +1,5 @@
-// src/hooks/useStaffData.ts
 import { useState, useCallback } from 'react';
+import { api } from '../services/httpClient';
 
 export function useStaffData() {
   const [users, setUsers] = useState<any[]>([]);
@@ -10,24 +10,14 @@ export function useStaffData() {
   const fetchStaffData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('clinic_token');
-      const headers = { 
-        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}`,
-        'Content-Type': 'application/json'
-      };
-
-      const [usersRes, roomsRes, shiftsRes] = await Promise.all([
-        fetch('/api/staff/users', { headers }),
-        fetch('/api/staff/rooms', { headers }),
-        fetch('/api/staff/shifts', { headers })
+      const [usersData, roomsData, shiftsData] = await Promise.all([
+        api.get<any[]>('/api/staff/users'),
+        api.get<any[]>('/api/staff/rooms'),
+        api.get<any[]>('/api/staff/shifts'),
       ]);
-
-      if (usersRes.ok && roomsRes.ok && shiftsRes.ok) {
-        setUsers(await usersRes.json());
-        setRooms(await roomsRes.json());
-        setShifts(await shiftsRes.json());
-      }
+      if (usersData) setUsers(Array.isArray(usersData) ? usersData : []);
+      if (roomsData) setRooms(Array.isArray(roomsData) ? roomsData : []);
+      if (shiftsData) setShifts(Array.isArray(shiftsData) ? shiftsData : []);
     } catch (error) {
       console.error('Failed to load staff data:', error);
     } finally {
@@ -38,73 +28,44 @@ export function useStaffData() {
   return { users, rooms, shifts, isLoading, refreshStaffData: fetchStaffData };
 }
 
+async function apiPost(path: string, body: any) {
+  return api.post(path, body);
+}
+
+async function apiDelete(path: string) {
+  return api.delete(path);
+}
+
+async function apiPut(path: string, body: any) {
+  return api.put(path, body);
+}
+
 export async function createShiftApi(data: any) {
-  const token = localStorage.getItem('clinic_token');
-  const response = await fetch('/api/staff/shifts', {
-    method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}` 
-    },
-    body: JSON.stringify(data)
-  });
-  if (!response.ok) throw new Error('Failed to create shift');
-  return response.json();
+  const res = await apiPost('/api/staff/shifts', data);
+  if (!res) throw new Error('Failed to create shift');
+  return res;
 }
 
 export async function deleteShiftApi(id: string) {
-  const token = localStorage.getItem('clinic_token');
-  const response = await fetch(`/api/staff/shifts/${id}`, {
-    method: 'DELETE',
-    headers: {
-      'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}`
-    }
-  });
-  if (!response.ok) throw new Error('Failed to delete shift');
-  return response.json();
+  const res = await apiDelete(`/api/staff/shifts/${id}`);
+  if (!res) throw new Error('Failed to delete shift');
+  return res;
 }
 
 export async function createRoomApi(data: any) {
-  const token = localStorage.getItem('clinic_token');
-  const response = await fetch('/api/staff/rooms', {
-    method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}` 
-    },
-    body: JSON.stringify(data)
-  });
-  if (!response.ok) throw new Error('Failed to create room');
-  return response.json();
+  const res = await apiPost('/api/staff/rooms', data);
+  if (!res) throw new Error('Failed to create room');
+  return res;
 }
 
 export async function updateRoomApi(id: string, data: any) {
-  const token = localStorage.getItem('clinic_token');
-  const response = await fetch(`/api/staff/rooms/${id}`, {
-    method: 'PUT',
-    headers: { 
-      'Content-Type': 'application/json',
-      'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}` 
-    },
-    body: JSON.stringify(data)
-  });
-  if (!response.ok) throw new Error('Failed to update room');
-  return response.json();
+  const res = await apiPut(`/api/staff/rooms/${id}`, data);
+  if (!res) throw new Error('Failed to update room');
+  return res;
 }
 
 export async function deleteRoomApi(id: string) {
-  const token = localStorage.getItem('clinic_token');
-  const response = await fetch(`/api/staff/rooms/${id}`, {
-    method: 'DELETE',
-    headers: {
-      'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token || 'demo-token'}`
-    }
-  });
-  if (!response.ok) throw new Error('Failed to delete room');
-  return response.json();
+  const res = await apiDelete(`/api/staff/rooms/${id}`);
+  if (!res) throw new Error('Failed to delete room');
+  return res;
 }

@@ -10,12 +10,31 @@ appointmentRouter.use(requireAuth);
 
 appointmentRouter.get('/', async (req, res) => {
   try {
-    const appointments = await prisma.appointment.findMany({ 
-      where: { tenantId: req.user!.tenantId },
-      include: { patient: { select: { fullName: true } } },
-      orderBy: { startTime: 'desc' },
-      take: 50 
-    });
+    const tenantId = req.user!.tenantId;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+    const status = req.query.status as string | undefined;
+    const from = req.query.from as string | undefined;
+    const to = req.query.to as string | undefined;
+
+    const where: any = { tenantId };
+    if (status) where.status = status;
+    if (from || to) {
+      where.startTime = {};
+      if (from) where.startTime.gte = new Date(from);
+      if (to) where.startTime.lte = new Date(to);
+    }
+
+    const [appointments, total] = await Promise.all([
+      prisma.appointment.findMany({
+        where,
+        include: { patient: { select: { fullName: true } } },
+        orderBy: { startTime: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.appointment.count({ where }),
+    ]);
 
     const mapped = appointments.map(apt => ({
       id: apt.id,
@@ -29,7 +48,7 @@ appointmentRouter.get('/', async (req, res) => {
       aiScore: apt.aiConflictScore
     }));
 
-    res.json(mapped);
+    res.json({ data: mapped, total, page, limit });
   } catch (error) {
     logger.error({ error }, 'Failed to fetch appointments');
     res.status(500).json({ error: 'Failed to fetch appointments' });

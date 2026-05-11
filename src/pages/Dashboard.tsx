@@ -3,11 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Home, Users, Package, CreditCard, FileText, BarChart,
   Code, Search, Grid, HelpCircle, Bell, Settings, Plus, ChevronDown, CheckCircle2, Info, X, Map, User, LogOut, ArrowRight, Menu, Phone, Sun, Moon, Brain, Clock, Sparkles, Stethoscope, Loader2,
-  Globe,    Send } from 'lucide-react';
+  Globe, Send
+} from 'lucide-react';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useStaffData } from '../hooks/useStaffData';
 import { NexoraLogo } from '../components/NexoraLogo';
 import OnboardingTour from '../components/OnboardingTour';
+import { SPECIALTY_MAP } from '../constants/specialtyMap';
 
 const HomeView = lazy(() => import('./dashboard/HomeView'));
 const AgendaView = lazy(() => import('./dashboard/AgendaView'));
@@ -34,107 +36,6 @@ function ViewLoader() {
   );
 }
 
-const SPECIALTY_MAP: Record<string, {
-  productName: string;
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
-  icon: React.ReactNode;
-  specializedItems: { id: string, label: string, icon: React.ReactNode }[];
-  kpis: { label: string, key: string, prefix?: string, suffix?: string }[];
-  patientModule: string;
-}> = {
-  'Odontología': {
-    productName: 'Nexora Dental',
-    primaryColor: '#008477',
-    secondaryColor: 'bg-[#008477]',
-    accentColor: 'text-[#008477]',
-    icon: <CheckCircle2 className="w-5 h-5" />,
-    specializedItems: [
-      { id: 'odontograma', label: 'Odontograma', icon: <Grid className="w-4 h-4" /> },
-      { id: 'presupuestos', label: 'Presupuestos', icon: <FileText className="w-4 h-4" /> }
-    ],
-    kpis: [
-      { label: 'Dientes Tratados', key: 'treated', suffix: '' },
-      { label: 'Presupuestos Aceptados', key: 'accepted', suffix: '%' }
-    ],
-    patientModule: 'Odontogram'
-  },
-  'Nutrición': {
-    productName: 'Nexora Nutrición',
-    primaryColor: '#059669',
-    secondaryColor: 'bg-[#059669]',
-    accentColor: 'text-[#059669]',
-    icon: <Sun className="w-5 h-5" />,
-    specializedItems: [
-      { id: 'dietas', label: 'Plan de Dietas', icon: <FileText className="w-4 h-4" /> },
-      { id: 'evolucion', label: 'Evolución Peso', icon: <BarChart className="w-4 h-4" /> }
-    ],
-    kpis: [
-      { label: 'Bajada Peso Media', key: 'avgWeight', suffix: 'kg' },
-      { label: 'Adherencia Plan', key: 'adherence', suffix: '%' }
-    ],
-    patientModule: 'NutritionPlan'
-  },
-  'Fisioterapia': {
-    productName: 'Nexora Fisioterapia',
-    primaryColor: '#0f172a',
-    secondaryColor: 'bg-slate-900',
-    accentColor: 'text-slate-900',
-    icon: <Map className="w-5 h-5" />,
-    specializedItems: [
-      { id: 'mapa_dolor', label: 'Mapa de Dolor', icon: <Settings className="w-4 h-4" /> }
-    ],
-    kpis: [
-      { label: 'Sesiones Restantes', key: 'sessions', suffix: '' },
-      { label: 'Mejoría Dolor', key: 'recovery', suffix: '%' }
-    ],
-    patientModule: 'PainMap'
-  },
-  'Psicología': {
-    productName: 'Nexora Psicología',
-    primaryColor: '#7c3aed',
-    secondaryColor: 'bg-[#7c3aed]',
-    accentColor: 'text-[#7c3aed]',
-    icon: <Brain className="w-5 h-5" />,
-    specializedItems: [
-      { id: 'sesiones', label: 'Diario de Sesiones', icon: <Clock className="w-4 h-4" /> },
-      { id: 'test', label: 'Tests Psicométricos', icon: <FileText className="w-4 h-4" /> }
-    ],
-    kpis: [
-      { label: 'Sesiones Activas', key: 'activeSessions', suffix: '' },
-      { label: 'Nivel Bienestar', key: 'wellbeing', suffix: '/10' }
-    ],
-    patientModule: 'SessionDiary'
-  },
-  'Estética': {
-    productName: 'Nexora Estética',
-    primaryColor: '#db2777',
-    secondaryColor: 'bg-[#db2777]',
-    accentColor: 'text-[#db2777]',
-    icon: <Sparkles className="w-5 h-5" />,
-    specializedItems: [
-      { id: 'galeria', label: 'Galería Antes/Desc', icon: <Grid className="w-4 h-4" /> },
-      { id: 'stock_estetica', label: 'Control VIALES', icon: <Package className="w-4 h-4" /> }
-    ],
-    kpis: [
-      { label: 'Retoques Pendientes', key: 'refill', suffix: '' },
-      { label: 'Satisfacción Glow', key: 'glowScore', suffix: '%' }
-    ],
-    patientModule: 'AestheticGal'
-  },
-  'Medicina General': {
-    productName: 'Nexora Clinical',
-    primaryColor: '#5469d4',
-    secondaryColor: 'bg-[#5469d4]',
-    accentColor: 'text-[#5469d4]',
-    icon: <Stethoscope className="w-5 h-5" />,
-    specializedItems: [],
-    kpis: [],
-    patientModule: 'Standard'
-  }
-};
-
 export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -155,7 +56,17 @@ export default function Dashboard() {
   const [isGlobalAddOpen, setIsGlobalAddOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  const [clinicConfig, setClinicConfig] = useState({
+  const defaultOpeningHours = [
+    { day: 'Lunes', open: '09:00', close: '20:00', closed: false },
+    { day: 'Martes', open: '09:00', close: '20:00', closed: false },
+    { day: 'Miércoles', open: '09:00', close: '20:00', closed: false },
+    { day: 'Jueves', open: '09:00', close: '20:00', closed: false },
+    { day: 'Viernes', open: '09:00', close: '20:00', closed: false },
+    { day: 'Sábado', open: '10:00', close: '14:00', closed: false },
+    { day: 'Domingo', open: '00:00', close: '00:00', closed: true },
+  ];
+
+  const [clinicConfig, setClinicConfig] = useState(() => ({
     name: 'Tu Clínica',
     slug: '',
     plan: 'Pro',
@@ -174,16 +85,11 @@ export default function Dashboard() {
     publicBookingEnabled: false,
     locale: 'es',
     appointmentInterval: 30,
-    openingHours: JSON.parse(localStorage.getItem('clinic-hours') || JSON.stringify([
-      { day: 'Lunes', open: '09:00', close: '20:00', closed: false },
-      { day: 'Martes', open: '09:00', close: '20:00', closed: false },
-      { day: 'Miércoles', open: '09:00', close: '20:00', closed: false },
-      { day: 'Jueves', open: '09:00', close: '20:00', closed: false },
-      { day: 'Viernes', open: '09:00', close: '20:00', closed: false },
-      { day: 'Sábado', open: '10:00', close: '14:00', closed: false },
-      { day: 'Domingo', open: '00:00', close: '00:00', closed: true },
-    ]))
-  });
+    openingHours: (() => {
+      try { return JSON.parse(localStorage.getItem('clinic-hours') || 'null') || defaultOpeningHours; }
+      catch { return defaultOpeningHours; }
+    })(),
+  }));
 
   useEffect(() => {
     if (tenantConfig) {
@@ -219,13 +125,15 @@ export default function Dashboard() {
     const params = new URLSearchParams(location.search);
     const specialtyParam = params.get('specialty');
     if (specialtyParam) {
-      let mappedSpecialty = '';
-      if (specialtyParam === 'dental') mappedSpecialty = 'Odontología';
-      else if (specialtyParam === 'nutricion') mappedSpecialty = 'Nutrición';
-      else if (specialtyParam === 'fisioterapia') mappedSpecialty = 'Fisioterapia';
-      else if (specialtyParam === 'psicologos') mappedSpecialty = 'Psicología';
-      else if (specialtyParam === 'estetica') mappedSpecialty = 'Estética';
-      else if (specialtyParam === 'general') mappedSpecialty = 'Medicina General';
+      const specialtyMap: Record<string, string> = {
+        dental: 'Odontología',
+        nutricion: 'Nutrición',
+        fisioterapia: 'Fisioterapia',
+        psicologos: 'Psicología',
+        estetica: 'Estética',
+        general: 'Medicina General',
+      };
+      const mappedSpecialty = specialtyMap[specialtyParam];
       if (mappedSpecialty) {
         updateClinicConfig({ specialty: mappedSpecialty });
       }
@@ -247,11 +155,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     localStorage.setItem('clinic-theme', isDarkMode ? 'dark' : 'light');
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.toggle('dark', isDarkMode);
   }, [isDarkMode]);
 
   useEffect(() => {
@@ -274,15 +178,15 @@ export default function Dashboard() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleMenuClick = (view: string) => {
+  const handleMenuClick = useCallback((view: string) => {
     setActiveView(view);
     setIsSidebarOpen(false);
     setIsGlobalAddOpen(false);
-  };
+  }, []);
 
-  const handleNavigate = (view: string) => {
+  const handleNavigate = useCallback((view: string) => {
     setActiveView(view);
-  };
+  }, []);
 
   const renderView = () => {
     const specializedView = currentSpecialtyConfig.specializedItems.find((item: any) => item.id === activeView);
@@ -402,14 +306,11 @@ export default function Dashboard() {
   return (
     <div className={`flex flex-col h-screen w-full font-sans overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-[#0f172a] text-[#f8fafc] dark' : 'bg-[#f6f9fc] text-[#425466]'}`}>
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Mobile Sidebar Overlay */}
         {isSidebarOpen && (
-          <div className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity" onClick={() => setIsSidebarOpen(false)}></div>
+          <div className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity" onClick={() => setIsSidebarOpen(false)} />
         )}
 
-        {/* Sidebar */}
         <aside className={`fixed md:static inset-y-0 left-0 w-64 border-r flex flex-col shrink-0 z-[60] transform transition-transform duration-200 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 ${isDarkMode ? 'bg-[#0f172a] border-[#1f2937]' : 'bg-[#f6f9fc] border-[#e3e8ee]'}`}>
-          {/* Account Selector */}
           <div ref={accountMenuRef} className={`p-4 pt-5 relative z-20 transition-colors ${isDarkMode ? 'bg-[#0f172a]' : 'bg-[#f6f9fc]'}`}>
             <button
               onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
@@ -436,7 +337,7 @@ export default function Dashboard() {
                   <div className={`text-[15px] font-bold text-center w-full truncate ${isDarkMode ? 'text-white' : 'text-[#1a1f36]'}`}>
                     {currentSpecialtyConfig.productName}
                   </div>
-                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded mt-2 mb-4 bg-gray-500/10 text-gray-500`}>
+                  <div className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded mt-2 mb-4 bg-gray-500/10 text-gray-500">
                     Modo {clinicConfig.specialty}
                   </div>
                 </div>
@@ -479,7 +380,6 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Navigation Links */}
           <nav className="flex-1 px-3 space-y-0.5 mt-2 overflow-y-auto pb-4">
             <button
               onClick={() => handleMenuClick('inicio')}
@@ -611,9 +511,7 @@ export default function Dashboard() {
           </div>
         </aside>
 
-        {/* Main Content Area */}
         <main className={`flex-1 overflow-y-auto shadow-[-4px_0_24px_rgba(0,0,0,0.02)] relative z-10 transition-colors ${isDarkMode ? 'bg-[#111827]' : 'bg-white'}`}>
-          {/* Header Row */}
           <header className={`flex items-center justify-between px-4 md:px-8 py-4 border-b sticky top-0 z-30 transition-colors ${isDarkMode ? 'bg-[#111827] border-[#1f2937]' : 'bg-white border-[#e3e8ee] md:border-b-0'}`}>
             <div className="flex items-center gap-3 flex-1 md:flex-none">
               <button
@@ -716,7 +614,6 @@ export default function Dashboard() {
 
       <OnboardingTour />
 
-      {/* Toast Notification */}
       {toast && (
         <div className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-[1000] px-6 py-3 rounded-lg shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300 ${toast.type === 'success' ? 'bg-[#1b4d3e] text-white' : 'bg-red-600 text-white'}`}>
           {toast.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-green-400" /> : <X className="w-5 h-5 text-white" />}

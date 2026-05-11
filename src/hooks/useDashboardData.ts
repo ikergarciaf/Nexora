@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { api } from '../services/httpClient';
 
 export interface Patient {
   id: string;
@@ -25,6 +26,7 @@ export interface DashboardStats {
   appointmentsThisWeek: number;
   activePatients: number;
   noShowRate: number;
+  todayAppointments: number;
 }
 
 export function useDashboardData() {
@@ -39,23 +41,18 @@ export function useDashboardData() {
     try {
       const token = localStorage.getItem('clinic_token');
       if (!token) return;
-      const headers = { 
-        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
 
       const [patientsRes, appointmentsRes, statsRes, configRes] = await Promise.all([
-        fetch('/api/patients', { headers }),
-        fetch('/api/appointments', { headers }),
-        fetch('/api/dashboard/stats', { headers }),
-        fetch('/api/tenant/config', { headers })
+        api.get<any>('/api/patients'),
+        api.get<any>('/api/appointments?limit=50'),
+        api.get<any>('/api/dashboard/stats'),
+        api.get<any>('/api/tenant/config'),
       ]);
 
-      if (patientsRes.ok) setPatients(await patientsRes.json());
-      if (appointmentsRes.ok) setAppointments(await appointmentsRes.json());
-      if (statsRes.ok) setStats(await statsRes.json());
-      if (configRes.ok) setTenantConfig(await configRes.json());
+      if (patientsRes) setPatients(Array.isArray(patientsRes) ? patientsRes : patientsRes.data || []);
+      if (appointmentsRes) setAppointments(Array.isArray(appointmentsRes) ? appointmentsRes : appointmentsRes.data || []);
+      if (statsRes) setStats(statsRes);
+      if (configRes) setTenantConfig(configRes);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
@@ -71,192 +68,55 @@ export function useDashboardData() {
 }
 
 export async function createPatientApi(data: { fullName: string, email?: string, phone?: string }): Promise<Patient | null> {
-  try {
-    const token = localStorage.getItem('clinic_token');
-    if (!token) return null;
-    const response = await fetch('/api/patients', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token}` 
-      },
-      body: JSON.stringify(data),
-    });
-    
-    if (!response.ok) throw new Error("Failed to create");
-    return await response.json();
-  } catch (error) {
-    console.error('Patient API error:', error);
-    return null;
-  }
+  return api.post<Patient>('/api/patients', data);
 }
 
-export async function updatePatientApi(id: string, data: any) {
-  try {
-    const token = localStorage.getItem('clinic_token');
-    if (!token) return false;
-    const response = await fetch(`/api/patients/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(data),
-    });
-    return response.ok;
-  } catch (error) {
-    console.error('Failed to update patient:', error);
-    return false;
-  }
+export async function updatePatientApi(id: string, data: any): Promise<boolean> {
+  const res = await api.put(`/api/patients/${id}`, data);
+  return res !== null;
 }
 
-export async function deletePatientApi(id: string) {
-  try {
-    const token = localStorage.getItem('clinic_token');
-    if (!token) return false;
-    const response = await fetch(`/api/patients/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    return response.ok;
-  } catch (error) {
-    console.error('Failed to delete patient:', error);
-    return false;
-  }
+export async function deletePatientApi(id: string): Promise<boolean> {
+  const res = await api.delete(`/api/patients/${id}`);
+  return res !== null;
 }
 
 export async function updateTenantConfigApi(data: any): Promise<boolean> {
-  try {
-    const token = localStorage.getItem('clinic_token');
-    if (!token) return false;
-    const response = await fetch('/api/tenant/config', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(data),
-    });
-    return response.ok;
-  } catch (error) {
-    console.error('Failed to update config:', error);
-    return false;
-  }
+  const res = await api.post('/api/tenant/config', data);
+  return res !== null;
 }
 
 export async function createAppointmentApi(data: { patientId: string, doctorId?: string, startTime: string, durationMinutes: number }): Promise<Appointment | null> {
-  try {
-    const token = localStorage.getItem('clinic_token');
-    if (!token) return null;
-    const response = await fetch('/api/appointments', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token}` 
-      },
-      body: JSON.stringify(data),
-    });
-    
-    if (!response.ok) throw new Error("Failed to create appointment");
-    return await response.json();
-  } catch (error) {
-    console.error('Appointment API error:', error);
-    return null;
-  }
+  return api.post<Appointment>('/api/appointments', data);
 }
 
-export async function updateAppointmentApi(id: string, data: any) {
-  try {
-    const token = localStorage.getItem('clinic_token');
-    if (!token) return false;
-    const response = await fetch(`/api/appointments/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(data),
-    });
-    return response.ok;
-  } catch (error) {
-    console.error('Failed to update appointment:', error);
-    return false;
-  }
+export async function updateAppointmentApi(id: string, data: any): Promise<boolean> {
+  const res = await api.put(`/api/appointments/${id}`, data);
+  return res !== null;
 }
 
-export async function deleteAppointmentApi(id: string) {
-  try {
-    const token = localStorage.getItem('clinic_token');
-    if (!token) return false;
-    const response = await fetch(`/api/appointments/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    return response.ok;
-  } catch (error) {
-    console.error('Failed to delete appointment:', error);
-    return false;
-  }
+export async function deleteAppointmentApi(id: string): Promise<boolean> {
+  const res = await api.delete(`/api/appointments/${id}`);
+  return res !== null;
 }
 
 export async function fetchPatientRecordApi(id: string): Promise<any | null> {
-  try {
-    const token = localStorage.getItem('clinic_token');
-    if (!token) return null;
-    const response = await fetch(`/api/patients/${id}`, {
-      headers: {
-        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    if (!response.ok) return null;
-    return await response.json();
-  } catch (err) {
-    console.error('Failed to fetch patient record', err);
-    return null;
-  }
+  return api.get(`/api/patients/${id}`);
 }
 
 export async function savePatientRecordApi(id: string, record: any): Promise<boolean> {
-  try {
-    const token = localStorage.getItem('clinic_token');
-    if (!token) return false;
-    const response = await fetch(`/api/patients/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-tenant-id': localStorage.getItem('active_tenant_id') || '',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ 
-        medicalRecord: record,
-        nutritionalPlan: record.nutritionPlan // Mapping from UI state name to DB field name
-      })
-    });
-    return response.ok;
-  } catch (err) {
-    console.error('Failed to save record', err);
-    return false;
-  }
+  const res = await api.put(`/api/patients/${id}`, {
+    medicalRecord: record,
+    nutritionalPlan: record.nutritionPlan,
+  });
+  return res !== null;
 }
 
 export async function generatePatientSummary(notes: string) {
   try {
     const { aiService } = await import('../services/aiService');
     return await aiService.summarizePatientHistory(notes);
-  } catch (error) {
-    console.error('Failed to generate summary', error);
+  } catch {
     return null;
   }
 }
