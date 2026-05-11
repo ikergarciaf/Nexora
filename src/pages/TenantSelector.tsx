@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, LogOut, ShieldCheck, ChevronDown, Trash2 } from 'lucide-react';
+import { Building2, LogOut, ShieldCheck, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { NexoraLogo } from '../components/NexoraLogo';
 
@@ -48,21 +48,6 @@ export default function TenantSelector() {
     localStorage.setItem('active_tenant_id', tenantId);
     localStorage.setItem('clinic-name', name);
     navigate('/dashboard');
-  };
-
-  const handleDelete = async (e: React.MouseEvent, tenantId: string, tenantName: string) => {
-    e.stopPropagation();
-    if (!window.confirm(`¿Eliminar "${tenantName}"? Se borrarán todos sus datos (pacientes, citas, facturas...). Esta acción no se puede deshacer.`)) return;
-    try {
-      const res = await fetch(`/api/admin/tenants/${tenantId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('clinic_token')}` }
-      });
-      if (!res.ok) throw new Error();
-      setTenants(prev => prev.filter(t => t.id !== tenantId));
-    } catch {
-      alert('Error al eliminar el entorno');
-    }
   };
 
   const logout = () => {
@@ -170,38 +155,28 @@ export default function TenantSelector() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {group.tenants.map(tenant => (
-                    <div key={tenant.id} className="relative group/card">
-                      <button
-                        onClick={() => handleSelect(tenant.id, tenant.name)}
-                        className="w-full bg-white rounded-lg border border-gray-200 px-5 py-4 text-left hover:border-gray-300 hover:shadow-sm transition-all"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                            <Building2 className="w-4 h-4 text-gray-500" />
+                    <button
+                      key={tenant.id}
+                      onClick={() => handleSelect(tenant.id, tenant.name)}
+                      className="bg-white rounded-lg border border-gray-200 px-5 py-4 text-left hover:border-gray-300 hover:shadow-sm transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                          <Building2 className="w-4 h-4 text-gray-500" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate group-hover:text-[#008477] transition-colors">
+                            {tenant.name}
                           </div>
-                          <div className="min-w-0">
-                            <div className="text-sm font-medium text-gray-900 truncate group-hover:text-[#008477] transition-colors">
-                              {tenant.name}
-                            </div>
-                            <div className="text-xs text-gray-400 mt-0.5">
-                              Plan {tenant.subscriptionPlan}
-                              {tenant.trialEndsAt && new Date(tenant.trialEndsAt) > new Date() && (
-                                <span className="ml-2 text-amber-500">· Trial</span>
-                              )}
-                            </div>
+                          <div className="text-xs text-gray-400 mt-0.5">
+                            Plan {tenant.subscriptionPlan}
+                            {tenant.trialEndsAt && new Date(tenant.trialEndsAt) > new Date() && (
+                              <span className="ml-2 text-amber-500">· Trial</span>
+                            )}
                           </div>
                         </div>
-                      </button>
-                      {user?.isSuperAdmin && (
-                        <button
-                          onClick={(e) => handleDelete(e, tenant.id, tenant.name)}
-                          className="absolute top-2 right-2 w-7 h-7 rounded-md bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 opacity-0 group-hover/card:opacity-100 transition-all flex items-center justify-center"
-                          title="Eliminar entorno"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
+                      </div>
+                    </button>
                   ))}
                 </div>
               </section>
