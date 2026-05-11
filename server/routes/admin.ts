@@ -142,6 +142,35 @@ adminRouter.put('/tenants/:id/plan', async (req, res) => {
   }
 });
 
+adminRouter.delete('/tenants/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenant = await prisma.tenant.findUnique({ where: { id } });
+    if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+
+    await prisma.$transaction([
+      prisma.appointment.deleteMany({ where: { tenantId: id } }),
+      prisma.invoice.deleteMany({ where: { tenantId: id } }),
+      prisma.treatment.deleteMany({ where: { tenantId: id } }),
+      prisma.consent.deleteMany({ where: { tenantId: id } }),
+      prisma.inventoryItem.deleteMany({ where: { tenantId: id } }),
+      prisma.campaign.deleteMany({ where: { tenantId: id } }),
+      prisma.pushSubscription.deleteMany({ where: { tenantId: id } }),
+      prisma.shift.deleteMany({ where: { tenantId: id } }),
+      prisma.room.deleteMany({ where: { tenantId: id } }),
+      prisma.patient.deleteMany({ where: { tenantId: id } }),
+      prisma.tenantUser.deleteMany({ where: { tenantId: id } }),
+      prisma.tenant.delete({ where: { id } }),
+    ]);
+
+    logger.info({ tenantId: id, name: tenant.name }, 'Tenant deleted by admin');
+    res.json({ success: true });
+  } catch (error) {
+    logger.error({ error }, 'Admin delete tenant error');
+    res.status(500).json({ error: 'Failed to delete tenant' });
+  }
+});
+
 adminRouter.get('/recent-activity', async (_req, res) => {
   try {
     const recentTenants = await prisma.tenant.findMany({
