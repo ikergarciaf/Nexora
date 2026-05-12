@@ -7,7 +7,7 @@ const router = Router();
 // This simulates a webhook that WhatsApp would hit when a user sends a message
 router.post('/webhook', async (req, res) => {
   try {
-    const { fromPhone, message, clinicSlug } = req.body;
+    const { fromPhone, message: _message, clinicSlug } = req.body;
 
     const clinic = await prisma.tenant.findFirst({
       where: { 

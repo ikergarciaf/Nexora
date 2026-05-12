@@ -5,9 +5,19 @@ import { sendEmail } from '../services/emailService.ts';
 
 export const campaignRouter = Router();
 
+function getTenantId(req: any): string {
+  const id = req.user?.tenantId;
+  if (!id) throw new Error('No tenant context');
+  return id;
+}
+
 campaignRouter.get('/', async (req, res) => {
   try {
-    const campaigns = await prisma.campaign.findMany({ where: { tenantId: req.user!.tenantId }, orderBy: { createdAt: 'desc' } });
+    const tenantId = getTenantId(req);
+    const campaigns = await prisma.campaign.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+    });
     res.json(campaigns);
   } catch (error) {
     logger.error({ error }, 'Campaign list error');
@@ -17,10 +27,11 @@ campaignRouter.get('/', async (req, res) => {
 
 campaignRouter.post('/', async (req, res) => {
   try {
+    const tenantId = getTenantId(req);
     const { name, subject, body, segment } = req.body;
     if (!name || !subject || !body) return res.status(400).json({ error: 'Faltan datos obligatorios' });
     const campaign = await prisma.campaign.create({
-      data: { tenantId: req.user!.tenantId, name, subject, body, segment: segment || 'ALL' },
+      data: { tenantId, name, subject, body, segment: segment || 'ALL' },
     });
     res.status(201).json(campaign);
   } catch (error) {
@@ -31,18 +42,35 @@ campaignRouter.post('/', async (req, res) => {
 
 campaignRouter.post('/:id/send', async (req, res) => {
   try {
-    const campaign = await prisma.campaign.findFirst({ where: { id: req.params.id, tenantId: req.user!.tenantId } });
-    if (!campaign) return res.status(404).json({ error: 'Campaña no encontrada' });
-    const patients = await prisma.patient.findMany({
-      where: { tenantId: req.user!.tenantId, email: { not: null }, ...(campaign.segment !== 'ALL' ? { tags: { contains: campaign.segment } } : {}) },
+    const tenantId = getTenantId(req);
+    const campaign = await prisma.campaign.findFirst({
+      where: { id: req.params.id, tenantId },
     });
+    if (!campaign) return res.status(404).json({ error: 'Campaña no encontrada' });
+
+    const patients = await prisma.patient.findMany({
+      where: {
+        tenantId,
+        email: { not: null },
+        ...(campaign.segment !== 'ALL' ? { tags: { contains: campaign.segment } } : {}),
+      },
+    });
+
     const results = await Promise.allSettled(
       patients.filter(p => p.email).map(p =>
-        sendEmail({ to: p.email!, subject: campaign.subject, text: campaign.body, html: campaign.body.replace(/\n/g, '<br/>') })
-      )
+        sendEmail({
+          to: p.email!,
+          subject: campaign.subject,
+          text: campaign.body,
+          html: campaign.body.replace(/\n/g, '<br/>'),
+        })
+      ),
     );
     const sent = results.filter(r => r.status === 'fulfilled' && r.value).length;
-    await prisma.campaign.update({ where: { id: campaign.id }, data: { status: 'SENT', sentAt: new Date() } });
+    await prisma.campaign.update({
+      where: { id: campaign.id },
+      data: { status: 'SENT', sentAt: new Date() },
+    });
     res.json({ success: true, sent });
   } catch (error) {
     logger.error({ error }, 'Campaign send error');

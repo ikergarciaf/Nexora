@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useModal } from '../components/ModalContext';
@@ -926,7 +926,7 @@ function cell(value: boolean, highlight: boolean) {
 function FloatingContact() {
   const [open, setOpen] = useState(false);
   
-  const handleEmailClick = (e: React.MouseEvent, type: string) => {
+  const handleEmailClick = (_e: React.MouseEvent, type: string) => {
     // Standard mailto handling, ensuring it doesn't get blocked
     const subject = type === 'demo' ? 'Demo personalizada Nexora' : 'Consulta Nexora';
     window.location.href = `mailto:hola@nexora.co?subject=${encodeURIComponent(subject)}`;
@@ -992,7 +992,7 @@ function FooterColumn({
   items,
 }: {
   title: string;
-  items: { label: string; onClick: () => void | null }[];
+  items: { label: string; onClick: () => void }[];
 }) {
   return (
     <div>

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAuth } from '../middlewares/auth.ts';
+import { requireAuth, getTenantId } from '../middlewares/auth.ts';
 import prisma from '../db.ts';
 import logger from '../services/logger.ts';
 
@@ -28,7 +28,11 @@ function setCache(key: string, data: any) {
 
 dashboardRouter.get('/stats', async (req, res) => {
   try {
-    const tenantId = req.user!.tenantId;
+    let tenantId: string;
+    try { tenantId = getTenantId(req); } catch {
+      return res.status(400).json({ error: 'No tenant context' });
+    }
+
     const cached = getCached(tenantId);
     if (cached) return res.json(cached);
 
@@ -55,20 +59,22 @@ dashboardRouter.get('/stats', async (req, res) => {
       prisma.appointment.count({ where: { tenantId, startTime: { gte: startOfToday, lt: endOfToday } } }),
     ]);
 
-    let totalResolved = 0, noShows = 0;
+    let totalResolved = 0;
+    let noShows = 0;
     for (const g of statusGroups) {
+      const count = (g as any)._count?.status as number || 0;
       if (g.status === 'COMPLETED' || g.status === 'NO_SHOW') {
-        totalResolved += g._count.status;
-        if (g.status === 'NO_SHOW') noShows += g._count.status;
+        totalResolved += count;
+        if (g.status === 'NO_SHOW') noShows += count;
       }
     }
     const noShowRate = totalResolved > 0 ? (noShows / totalResolved) * 100 : 0;
-    const monthlyRevenue = currMonth._sum.amount || 0;
-    const prevRevenue = prevMonth._sum.amount || 0;
+    const monthlyRevenue = (currMonth as any)._sum?.amount || 0;
+    const prevRevenue = (prevMonth as any)._sum?.amount || 0;
     const revenueGrowth = prevRevenue > 0 ? ((monthlyRevenue - prevRevenue) / prevRevenue) * 100 : 0;
 
     const data = {
-      monthlyRevenue,
+      monthlyRevenue: Number(monthlyRevenue),
       revenueGrowth: Number(revenueGrowth.toFixed(1)),
       appointmentsThisWeek,
       activePatients,

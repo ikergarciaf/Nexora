@@ -1,7 +1,7 @@
 import { lazy, Suspense, Component, ReactNode, ErrorInfo, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 import CookieConsent from './components/CookieConsent';
 import { ModalProvider } from './components/ModalContext';
 
@@ -26,7 +26,7 @@ const CookiesPage = lazy(() => import('./pages/CookiesPage'));
 
 function PageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
+    <div className="min-h-screen flex items-center justify-center bg-white" role="status" aria-label="Cargando">
       <div className="flex flex-col items-center gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-[#008477]" />
         <span className="text-sm text-slate-500">Cargando...</span>
@@ -59,13 +59,16 @@ function AuthListener() {
   return null;
 }
 
-interface ErrorBoundaryState { hasError: boolean }
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
 
 class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryState> {
   state: ErrorBoundaryState = { hasError: false };
 
-  static getDerivedStateFromError(): ErrorBoundaryState {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -77,19 +80,23 @@ class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryStat
       return (
         <div className="min-h-screen flex items-center justify-center bg-white p-8">
           <div className="text-center max-w-md">
-            <h1 className="text-2xl font-bold text-slate-900 mb-3">Algo salió mal</h1>
-            <p className="text-slate-500 mb-6">Ha ocurrido un error inesperado. Por favor, recarga la página.</p>
+            <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">Algo salió mal</h1>
+            <p className="text-slate-500 mb-6">
+              Ha ocurrido un error inesperado. Por favor, recarga la página.
+            </p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-2.5 bg-slate-900 text-white rounded-lg font-medium hover:bg-[#008477] transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-lg font-medium hover:bg-[#008477] transition-colors"
             >
+              <RefreshCw className="w-4 h-4" />
               Recargar página
             </button>
           </div>
         </div>
       );
     }
-    return (this as any).props.children;
+    return this.props.children;
   }
 }
 
@@ -126,15 +133,23 @@ export default function App() {
               <Route path="/billing" element={<Navigate to="/dashboard" replace />} />
             </Route>
 
-            <Route path="*" element={
-              <div className="min-h-screen flex items-center justify-center bg-white">
-                <div className="text-center">
-                  <h1 className="text-6xl font-bold text-slate-200 mb-4">404</h1>
-                  <p className="text-slate-500 mb-6">Página no encontrada</p>
-                  <a href="/" className="text-[#008477] font-medium hover:underline">Volver al inicio</a>
+            <Route
+              path="*"
+              element={
+                <div className="min-h-screen flex items-center justify-center bg-white">
+                  <div className="text-center">
+                    <h1 className="text-6xl font-bold text-slate-200 mb-4">404</h1>
+                    <p className="text-slate-500 mb-6">Página no encontrada</p>
+                    <a
+                      href="/"
+                      className="inline-flex items-center gap-2 text-[#008477] font-medium hover:underline"
+                    >
+                      Volver al inicio
+                    </a>
+                  </div>
                 </div>
-              </div>
-            } />
+              }
+            />
           </Routes>
         </Suspense>
         <CookieConsent />

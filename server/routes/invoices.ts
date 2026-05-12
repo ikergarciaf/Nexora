@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import prisma from '../db.ts';
-import { requireAuth } from '../middlewares/auth.ts';
+import { requireAuth, getTenantId } from '../middlewares/auth.ts';
 import logger from '../services/logger.ts';
 import { sendEmail } from '../services/emailService.ts';
 
@@ -10,7 +10,7 @@ invoiceRouter.use(requireAuth);
 
 invoiceRouter.get('/', async (req, res) => {
   try {
-    const tenantId = req.user!.tenantId;
+    const tenantId = getTenantId(req);
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
     const status = req.query.status as string | undefined;
@@ -50,7 +50,7 @@ invoiceRouter.get('/', async (req, res) => {
 invoiceRouter.post('/', async (req, res) => {
   try {
     const { patientId, amount, description, dueDate } = req.body;
-    const tenantId = req.user!.tenantId;
+    const tenantId = getTenantId(req);
     if (!patientId || !amount) return res.status(400).json({ error: 'patientId and amount are required' });
 
     const invNumber = `FV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`;
@@ -87,7 +87,7 @@ invoiceRouter.put('/:id/status', async (req, res) => {
     if (status === 'PAID') data.paidAt = new Date();
 
     const updated = await prisma.invoice.update({
-      where: { id, tenantId: req.user!.tenantId! },
+      where: { id, tenantId: getTenantId(req) },
       data,
       include: { patient: { select: { fullName: true, email: true } } },
     });
@@ -113,7 +113,7 @@ const INVOICE_CACHE_TTL = 30_000;
 
 invoiceRouter.get('/stats', async (req, res) => {
   try {
-    const tenantId = req.user!.tenantId;
+    const tenantId = getTenantId(req);
     const cached = invoiceStatsCache.get(tenantId);
     if (cached && cached.expiry > Date.now()) return res.json(cached.data);
 

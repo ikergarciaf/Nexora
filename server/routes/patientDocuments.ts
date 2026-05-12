@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { requireAuth, requireRole } from '../middlewares/auth.ts';
+import { requireAuth, getTenantId } from '../middlewares/auth.ts';
 import logger from '../services/logger.ts';
 import prisma from '../db.ts';
 
@@ -15,7 +15,7 @@ documentRouter.use(requireAuth);
 
 documentRouter.get('/', async (req, res) => {
   try {
-    const tenantId = req.user!.tenantId;
+    const tenantId = getTenantId(req);
     const patientId = (req.params as any).patientId;
 
     const docs = await prisma.patientDocument.findMany({
@@ -40,7 +40,7 @@ documentRouter.get('/', async (req, res) => {
 
 documentRouter.post('/', async (req, res) => {
   try {
-    const tenantId = req.user!.tenantId;
+    const tenantId = getTenantId(req);
     const patientId = (req.params as any).patientId;
     const { file, fileName } = req.body;
 
@@ -97,7 +97,7 @@ documentRouter.post('/', async (req, res) => {
 
 documentRouter.delete('/:docId', async (req, res) => {
   try {
-    const tenantId = req.user!.tenantId;
+    const tenantId = getTenantId(req);
     const patientId = (req.params as any).patientId;
     const docId = (req.params as any).docId;
 

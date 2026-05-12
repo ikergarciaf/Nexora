@@ -3,10 +3,11 @@ services:
     name: nexora
     env: node
     region: frankfurt
-    plan: free
+    plan: starter
     buildCommand: npm install && npm run build
     startCommand: npx prisma migrate deploy && npx tsx server.ts
     healthCheckPath: /api/health
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production

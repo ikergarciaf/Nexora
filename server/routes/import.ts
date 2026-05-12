@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import prisma from '../db.ts';
-import { requireAuth } from '../middlewares/auth.ts';
+import { requireAuth, getTenantId } from '../middlewares/auth.ts';
 import logger from '../services/logger.ts';
 
 export const importRouter = Router();
@@ -10,7 +10,7 @@ importRouter.use(requireAuth);
 importRouter.post('/patients', async (req, res) => {
   try {
     const { patients } = req.body;
-    const tenantId = req.user!.tenantId;
+    const tenantId = getTenantId(req);
 
     if (!Array.isArray(patients) || patients.length === 0) {
       return res.status(400).json({ error: 'Must provide an array of patients' });

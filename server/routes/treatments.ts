@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import prisma from '../db.ts';
-import { requireAuth } from '../middlewares/auth.ts';
+import { requireAuth, getTenantId } from '../middlewares/auth.ts';
 import logger from '../services/logger.ts';
 
 export const treatmentRouter = Router();
@@ -10,7 +10,7 @@ treatmentRouter.use(requireAuth);
 treatmentRouter.get('/', async (req, res) => {
   try {
     const treatments = await prisma.treatment.findMany({
-      where: { tenantId: req.user!.tenantId },
+      where: { tenantId: getTenantId(req) },
       orderBy: { name: 'asc' },
       select: { id: true, name: true, description: true, category: true, duration: true, price: true, tenantId: true },
     });
@@ -24,7 +24,7 @@ treatmentRouter.get('/', async (req, res) => {
 treatmentRouter.post('/', async (req, res) => {
   try {
     const { name, description, category, duration, price } = req.body;
-    const tenantId = req.user!.tenantId;
+    const tenantId = getTenantId(req);
     if (!name) return res.status(400).json({ error: 'Name is required' });
 
     const treatment = await prisma.treatment.create({
@@ -59,7 +59,7 @@ treatmentRouter.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.treatment.delete({
-      where: { id, tenantId: req.user!.tenantId! },
+      where: { id, tenantId: getTenantId(req) },
     });
     res.json({ success: true });
   } catch (error) {

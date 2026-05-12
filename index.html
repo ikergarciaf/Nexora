@@ -37,6 +37,11 @@
         "@type": "Offer",
         "price": "29",
         "priceCurrency": "EUR"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "127"
       }
     }
     </script>
@@ -47,8 +52,22 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+
+    <!-- Preconnect to critical origins -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://api.stripe.com" />
+    <link rel="dns-prefetch" href="https://accounts.google.com" />
+
+    <!-- Preload critical fonts -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" />
+    </noscript>
+
+    <!-- DNS prefetch for API -->
+    <link rel="dns-prefetch" href="/api" />
   </head>
   <body>
     <div id="root"></div>

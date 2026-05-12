@@ -18,25 +18,65 @@ import "dotenv/config";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+function validateEnvironment(): string[] {
+  const required = ['JWT_SECRET', 'DATABASE_URL'];
+  const missing = required.filter(key => !process.env[key]);
+  return missing;
+}
+
+async function checkDatabaseConnection(): Promise<boolean> {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function startServer() {
+  const missingEnv = validateEnvironment();
+  if (missingEnv.length > 0) {
+    logger.error({ missingEnv }, 'Missing required environment variables');
+    process.exit(1);
+  }
+
+  const dbConnected = await checkDatabaseConnection();
+  if (!dbConnected) {
+    logger.error('Database connection failed');
+    process.exit(1);
+  }
+  logger.info('Database connection verified');
+
   const app = express();
   const PORT = parseInt(process.env.PORT || '3000', 10);
 
   app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
+        connectSrc: ["'self'", "https://*.stripe.com", "https://accounts.google.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        frameSrc: ["'self'", "https://accounts.google.com"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
   }));
 
   app.use(compression());
 
   const corsOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
+    ? process.env.CORS_ORIGIN.split(',').map(s => s.trim()).filter(Boolean)
     : '*';
 
   app.use(cors({
     origin: corsOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID', 'X-CSRF-Token'],
     credentials: true,
   }));
 
@@ -45,8 +85,17 @@ async function startServer() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-  app.get('/api/health', (_req, res) => {
-    res.json({ status: 'ok', version: '1.0.0', message: 'Nexora API is online' });
+  app.get('/api/health', async (_req, res) => {
+    const dbOk = await checkDatabaseConnection();
+    const status = dbOk ? 'ok' : 'degraded';
+    const statusCode = dbOk ? 200 : 503;
+    res.status(statusCode).json({
+      status,
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      message: dbOk ? 'Nexora API is online' : 'Database connection degraded',
+    });
   });
 
   const apiLimiter = rateLimit({
@@ -70,6 +119,8 @@ async function startServer() {
   app.use("/api/auth/demo-register", authLimiter);
   app.use("/api/auth/forgot-password", authLimiter);
   app.use("/api/auth/reset-password", authLimiter);
+  app.use("/api/auth/refresh", authLimiter);
+  app.use("/api/auth/google", authLimiter);
 
   app.use("/api", apiRouter);
   app.use("/api/gdpr", gdprRouter);
@@ -86,7 +137,15 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.resolve(__dirname, "dist");
-    app.use(express.static(distPath, { maxAge: '1y', immutable: true }));
+    app.use(express.static(distPath, {
+      maxAge: '1y',
+      immutable: true,
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        }
+      },
+    }));
     app.get("*", (_req, res) => {
       res.sendFile(path.resolve(distPath, "index.html"));
     });
@@ -98,7 +157,7 @@ async function startServer() {
   });
 
   const server = app.listen(PORT, "0.0.0.0", () => {
-    logger.info({ port: PORT }, `Server running at http://localhost:${PORT}`);
+    logger.info({ port: PORT }, `Nexora server running at http://localhost:${PORT}`);
   });
 
   const shutdown = async () => {
@@ -107,9 +166,16 @@ async function startServer() {
       await prisma.$disconnect();
       process.exit(0);
     });
+    setTimeout(() => {
+      logger.error('Forced shutdown after timeout');
+      process.exit(1);
+    }, 10000).unref();
   };
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
 }
 
-startServer();
+startServer().catch((err) => {
+  logger.error({ error: err }, 'Failed to start server');
+  process.exit(1);
+});

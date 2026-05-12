@@ -30,6 +30,7 @@ model Tenant {
   contactPhone         String?
   contactEmail         String?
   publicBookingEnabled Boolean       @default(false)
+  appointmentInterval  Int           @default(30)
   locale               String        @default("es")
 
   createdAt            DateTime      @default(now())
@@ -46,6 +47,10 @@ model Tenant {
   campaigns            Campaign[]
   pushSubscriptions    PushSubscription[]
   patientDocuments     PatientDocument[]
+
+  @@index([subscriptionStatus])
+  @@index([subscriptionPlan])
+  @@index([slug])
 }
 
 model User {
@@ -56,6 +61,7 @@ model User {
   name                String
   isActive            Boolean       @default(true)
   isSuperAdmin        Boolean       @default(false)
+  lastLoginAt         DateTime?
   resetToken          String?       @unique
   resetTokenExpiresAt DateTime?
   createdAt           DateTime      @default(now())
@@ -73,12 +79,13 @@ model TenantUser {
   tenantId String
   role     String @default("OWNER")
 
-  user     User   @relation(fields: [userId], references: [id])
-  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([userId, tenantId])
   @@index([tenantId])
   @@index([userId])
+  @@index([role])
 }
 
 model Patient {
@@ -93,44 +100,45 @@ model Patient {
   aiSummary           String?
   cachedAt            DateTime?
   lastVisit           DateTime?
-  nutritionalPlan      String?       @default("{}")
-  medicalRecord        String?       @default("{}")
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  nutritionalPlan     String?       @default("{}")
+  medicalRecord       String?       @default("{}")
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
   createdById         String?
-  createdBy           User?         @relation(fields: [createdById], references: [id])
+  createdBy           User?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
   appointments        Appointment[]
   invoices            Invoice[]
   consents            Consent[]
   documents           PatientDocument[]
-  tenant              Tenant        @relation(fields: [tenantId], references: [id])
+  tenant              Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([id, tenantId])
   @@index([tenantId])
   @@index([tenantId, email])
   @@index([tenantId, fullName])
   @@index([email])
+  @@index([tenantId, lastVisit])
 }
 
 model Appointment {
-  id              String   @id @default(uuid())
+  id              String      @id @default(uuid())
   tenantId        String
   patientId       String
   doctorId        String?
   startTime       DateTime
   endTime         DateTime
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
   type            String?
-  status          String   @default("SCHEDULED")
+  status          String      @default("SCHEDULED")
   treatmentId     String?
   aiConflictScore Float?
   aiAlertReason   String?
   whatsappDraft   String?
   internalNotes   String?
-  patient         Patient     @relation(fields: [patientId], references: [id])
-  treatment       Treatment?  @relation(fields: [treatmentId], references: [id])
-  tenant          Tenant      @relation(fields: [tenantId], references: [id])
+  patient         Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  treatment       Treatment?  @relation(fields: [treatmentId], references: [id], onDelete: SetNull)
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([id, tenantId])
   @@index([tenantId])
@@ -140,45 +148,48 @@ model Appointment {
   @@index([startTime])
   @@index([status])
   @@index([patientId])
+  @@index([doctorId])
+  @@index([tenantId, patientId, startTime])
 }
 
 model Treatment {
-  id          String   @id @default(uuid())
+  id          String        @id @default(uuid())
   tenantId    String
   name        String
   description String?
-  category    String   @default("General")
-  duration    Int      @default(30)
-  price       Float    @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  category    String        @default("General")
+  duration    Int           @default(30)
+  price       Float         @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   createdById String?
-  createdBy   User?    @relation(fields: [createdById], references: [id])
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  createdBy   User?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   appointments Appointment[]
 
   @@unique([id, tenantId])
   @@index([tenantId])
+  @@index([tenantId, category])
 }
 
 model Invoice {
-  id          String        @id @default(uuid())
-  tenantId    String
-  patientId   String?
-  number      String?
-  amount      Float
-  currency    String        @default("EUR")
-  status      String        @default("PENDING")
-  description String?
-  serviceDate DateTime?
-  dueDate     DateTime?
-  issuedDate  DateTime      @default(now())
-  paidAt      DateTime?
-  stripeInvoiceId String?
-  createdById String?
-  createdBy   User?         @relation(fields: [createdById], references: [id])
-  patient     Patient?      @relation(fields: [patientId], references: [id])
-  tenant      Tenant        @relation(fields: [tenantId], references: [id])
+  id              String        @id @default(uuid())
+  tenantId        String
+  patientId       String?
+  number          String?
+  amount          Float
+  currency        String        @default("EUR")
+  status          String        @default("PENDING")
+  description     String?
+  serviceDate     DateTime?
+  dueDate         DateTime?
+  issuedDate      DateTime      @default(now())
+  paidAt          DateTime?
+  stripeInvoiceId String?       @unique
+  createdById     String?
+  createdBy       User?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  patient         Patient?      @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([id, tenantId])
   @@index([tenantId])
@@ -186,13 +197,14 @@ model Invoice {
   @@index([tenantId, issuedDate])
   @@index([status])
   @@index([issuedDate])
+  @@index([stripeInvoiceId])
 }
 
 model Room {
   id        String   @id @default(uuid())
   tenantId  String
   name      String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   shifts    Shift[]
 
   @@unique([id, tenantId])
@@ -208,13 +220,15 @@ model Shift {
   endTime   DateTime
   type      String   @default("WORK")
   notes     String?
-  user      User     @relation(fields: [userId], references: [id])
-  room      Room?    @relation(fields: [roomId], references: [id])
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room      Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([id, tenantId])
   @@index([tenantId])
   @@index([tenantId, startTime])
+  @@index([userId])
+  @@index([roomId])
 }
 
 model Consent {
@@ -230,34 +244,36 @@ model Consent {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  patient         Patient   @relation(fields: [patientId], references: [id])
-  tenant          Tenant    @relation(fields: [tenantId], references: [id])
+  patient         Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([id, tenantId])
   @@index([tenantId])
   @@index([tenantId, status])
+  @@index([patientId])
 }
 
 model InventoryItem {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   tenantId      String
   name          String
   description   String?
-  category      String   @default("General")
-  quantity      Int      @default(0)
-  minStock      Int      @default(5)
-  price         Float    @default(0)
+  category      String    @default("General")
+  quantity      Int       @default(0)
+  minStock      Int       @default(5)
+  price         Float     @default(0)
   supplier      String?
   batch         String?
   expiresAt     DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([id, tenantId])
   @@index([tenantId])
   @@index([tenantId, category])
   @@index([expiresAt])
+  @@index([tenantId, quantity])
 }
 
 model Campaign {
@@ -271,10 +287,11 @@ model Campaign {
   sentAt     DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([id, tenantId])
   @@index([tenantId])
+  @@index([tenantId, status])
 }
 
 model PatientDocument {
@@ -287,8 +304,8 @@ model PatientDocument {
   fileSize     Int
   createdAt    DateTime @default(now())
 
-  patient      Patient  @relation(fields: [patientId], references: [id])
-  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  patient      Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([id, tenantId])
   @@index([tenantId])
@@ -303,7 +320,7 @@ model PushSubscription {
   p256dh    String
   auth      String
   createdAt DateTime @default(now())
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([id, tenantId])
   @@index([tenantId])

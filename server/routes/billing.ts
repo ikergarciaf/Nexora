@@ -1,21 +1,21 @@
 import { Router } from 'express';
-import { requireAuth } from '../middlewares/auth.ts';
+import { requireAuth, getTenantId } from '../middlewares/auth.ts';
 import { getStripe, PRICING_PLANS } from '../services/stripeService.ts';
 import prisma from '../db.ts';
 import logger from '../services/logger.ts';
+import { validate, checkoutSchema } from '../validation.ts';
 
 export const billingRouter = Router();
 
 billingRouter.use(requireAuth);
 
-/**
- * Initiates a Stripe Checkout Session for a specific plan upgrade.
- * Supports a 7-day trial period if not already leveraged.
- */
-billingRouter.post('/checkout', async (req, res) => {
+billingRouter.post('/checkout', validate(checkoutSchema), async (req, res) => {
   try {
-    const { planKey } = req.body; // 'STARTER', 'PRO', 'PREMIUM'
-    const tenantId = req.user!.tenantId;
+    const { planKey } = req.body;
+    let tenantId: string;
+    try { tenantId = getTenantId(req); } catch {
+      return res.status(400).json({ error: 'Selecciona una clínica primero' });
+    }
 
     const stripeKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeKey) {
@@ -29,36 +29,63 @@ billingRouter.post('/checkout', async (req, res) => {
     let tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
     if (!tenant) return res.status(404).json({ error: 'Clínica no encontrada' });
 
-    // Ensure Stripe Customer exists for this Tenant
     if (!tenant.stripeCustomerId) {
       const customer = await stripe.customers.create({
         metadata: { tenantId },
       });
       tenant = await prisma.tenant.update({
         where: { id: tenantId },
-        data: { stripeCustomerId: customer.id }
+        data: { stripeCustomerId: customer.id },
       });
     }
 
-    // Optimistically update the tenant's plan (webhook will confirm)
-    await prisma.tenant.update({
-      where: { id: tenantId },
-      data: { subscriptionPlan: planKey },
-    });
-
     const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const trialDays = !tenant.stripeSubscriptionId && (!tenant.trialEndsAt || new Date() < new Date(tenant.trialEndsAt)) ? 14 : 0;
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       customer: tenant.stripeCustomerId!,
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [{ price: plan.priceId, quantity: 1 }],
       subscription_data: {
-        trial_period_days: 14,
-        metadata: { tenantId, planKey }
+        metadata: { tenantId, planKey },
       },
       success_url: `${appUrl}/dashboard?purchase=success`,
       cancel_url: `${appUrl}/?purchase=canceled`,
+    };
+
+    if (trialDays > 0) {
+      sessionParams.subscription_data.trial_period_days = trialDays;
+    }
+
+    if (tenant.stripeSubscriptionId) {
+      const existingSubscriptions = await stripe.subscriptions.list({
+        customer: tenant.stripeCustomerId!,
+        status: 'active',
+        limit: 1,
+      });
+      if (existingSubscriptions.data.length > 0) {
+        const subscription = await stripe.subscriptions.retrieve(existingSubscriptions.data[0].id);
+        const currentPriceId = subscription.items.data[0].price.id;
+        if (currentPriceId !== plan.priceId) {
+          const portalSession = await stripe.billingPortal.sessions.create({
+            customer: tenant.stripeCustomerId!,
+            return_url: `${appUrl}/dashboard`,
+          });
+          res.json({ url: portalSession.url, portal: true });
+          return;
+        }
+      }
+    }
+
+    const idempotencyKey = `checkout_${tenantId}_${planKey}_${Date.now()}`;
+    const session = await stripe.checkout.sessions.create(sessionParams, {
+      idempotencyKey,
+    });
+
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { subscriptionPlan: planKey },
     });
 
     res.json({ url: session.url });
@@ -68,12 +95,13 @@ billingRouter.post('/checkout', async (req, res) => {
   }
 });
 
-/**
- * Creates a Stripe portal link for users to self-manage cards & plans
- */
 billingRouter.post('/portal', async (req, res) => {
   try {
-    const tenantId = req.user!.tenantId;
+    let tenantId: string;
+    try { tenantId = getTenantId(req); } catch {
+      return res.status(400).json({ error: 'Selecciona una clínica primero' });
+    }
+
     if (!process.env.STRIPE_SECRET_KEY) {
       return res.status(503).json({ error: 'Pasarela de pago no disponible.' });
     }
@@ -95,4 +123,40 @@ billingRouter.post('/portal', async (req, res) => {
     logger.error({ error }, 'Stripe portal error');
     res.status(500).json({ error: 'Error al generar el enlace del portal' });
   }
+});
+
+billingRouter.get('/subscription', async (req, res) => {
+  try {
+    let tenantId: string;
+    try { tenantId = getTenantId(req); } catch {
+      return res.status(400).json({ error: 'Selecciona una clínica primero' });
+    }
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: {
+        subscriptionPlan: true,
+        subscriptionStatus: true,
+        trialEndsAt: true,
+        stripeSubscriptionId: true,
+        stripePriceId: true,
+      },
+    });
+    if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+
+    res.json(tenant);
+  } catch (error) {
+    logger.error({ error }, 'Get subscription error');
+    res.status(500).json({ error: 'Error al obtener suscripción' });
+  }
+});
+
+billingRouter.get('/plans', async (_req, res) => {
+  const plans = Object.entries(PRICING_PLANS).map(([key, plan]) => ({
+    key,
+    name: plan.name,
+    priceId: plan.priceId,
+    features: plan.features,
+  }));
+  res.json(plans);
 });

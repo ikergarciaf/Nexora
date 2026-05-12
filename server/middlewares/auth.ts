@@ -1,11 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import prisma from '../db.ts';
 
 const JWT_SECRET = (() => {
   if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
   return process.env.JWT_SECRET;
 })();
+
+const ACCESS_TOKEN_EXPIRY = '15m';
+const REFRESH_TOKEN_EXPIRY = '7d';
+const CSRF_TOKEN_BYTES = 32;
 
 declare global {
   namespace Express {
@@ -22,6 +27,20 @@ declare global {
   }
 }
 
+export function generateTokens(payload: { id: string; isSuperAdmin: boolean }) {
+  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
+  const refreshToken = jwt.sign(
+    { id: payload.id, type: 'refresh' },
+    JWT_SECRET,
+    { expiresIn: REFRESH_TOKEN_EXPIRY },
+  );
+  return { accessToken, refreshToken };
+}
+
+export function generateCsrfToken(): string {
+  return crypto.randomBytes(CSRF_TOKEN_BYTES).toString('hex');
+}
+
 export const requireAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
@@ -34,7 +53,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string; isSuperAdmin: boolean };
     const requestedTenantId = req.headers['x-tenant-id'] as string;
-    
+
     let tenantId: string | null = null;
     let role = 'USER';
     let subscriptionStatus: string | null = null;
@@ -50,9 +69,9 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
             where: {
               userId_tenantId: {
                 userId: decoded.id,
-                tenantId: requestedTenantId
-              }
-            }
+                tenantId: requestedTenantId,
+              },
+            },
           }),
           prisma.tenant.findUnique({
             where: { id: requestedTenantId },
@@ -79,12 +98,55 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       subscriptionStatus,
       trialEndsAt,
     };
-    
+
     next();
   } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      res.status(401).json({ error: 'Token expired', code: 'TOKEN_EXPIRED' });
+      return;
+    }
     res.status(401).json({ error: 'Invalid or expired token' });
   }
 };
+
+export const requireRefreshAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      res.status(401).json({ error: 'Refresh token required' });
+      return;
+    }
+
+    const decoded = jwt.verify(refreshToken, JWT_SECRET) as { id: string; type: string };
+    if (decoded.type !== 'refresh') {
+      res.status(401).json({ error: 'Invalid token type' });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+    if (!user || !user.isActive) {
+      res.status(401).json({ error: 'User not found or inactive' });
+      return;
+    }
+
+    req.user = {
+      id: decoded.id,
+      tenantId: null,
+      role: user.isSuperAdmin ? 'SUPERADMIN' : 'USER',
+      isSuperAdmin: user.isSuperAdmin,
+    };
+
+    next();
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid or expired refresh token' });
+  }
+};
+
+export function getTenantId(req: Request): string {
+  const id = req.user?.tenantId;
+  if (!id) throw new Error('No tenant context available');
+  return id;
+}
 
 export const requireRole = (allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -92,9 +154,10 @@ export const requireRole = (allowedRoles: string[]) => {
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-    
+
     if (req.user.isSuperAdmin) {
-      return next();
+      next();
+      return;
     }
 
     if (!allowedRoles.includes(req.user.role)) {

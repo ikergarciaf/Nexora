@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import prisma from '../db.ts';
-import { requireAuth } from '../middlewares/auth.ts';
+import { requireAuth, getTenantId } from '../middlewares/auth.ts';
 import logger from '../services/logger.ts';
 import { sendEmail } from '../services/emailService.ts';
+import { validate, appointmentSchema, appointmentUpdateSchema } from '../validation.ts';
 
 export const appointmentRouter = Router();
 
@@ -10,7 +11,11 @@ appointmentRouter.use(requireAuth);
 
 appointmentRouter.get('/', async (req, res) => {
   try {
-    const tenantId = req.user!.tenantId;
+    let tenantId: string;
+    try { tenantId = getTenantId(req); } catch {
+      return res.status(400).json({ error: 'No tenant context' });
+    }
+
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
     const status = req.query.status as string | undefined;
@@ -28,7 +33,10 @@ appointmentRouter.get('/', async (req, res) => {
     const [appointments, total] = await Promise.all([
       prisma.appointment.findMany({
         where,
-        include: { patient: { select: { fullName: true } } },
+        include: {
+          patient: { select: { id: true, fullName: true, phone: true, email: true } },
+          treatment: { select: { id: true, name: true, duration: true, price: true } },
+        },
         orderBy: { startTime: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
@@ -36,88 +44,120 @@ appointmentRouter.get('/', async (req, res) => {
       prisma.appointment.count({ where }),
     ]);
 
-    const mapped = appointments.map(apt => ({
-      id: apt.id,
-      patientName: apt.patient?.fullName || "Desconocido",
-      type: "Servicio General",
-      date: new Date(apt.startTime).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }),
-      startTime: new Date(apt.startTime).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'}),
-      room: "Consultorio 1",
-      status: apt.status,
-      aiAlert: apt.aiConflictScore ? apt.aiConflictScore > 0.5 : false,
-      aiScore: apt.aiConflictScore
-    }));
-
-    res.json({ data: mapped, total, page, limit });
+    res.json({ data: appointments, total, page, limit });
   } catch (error) {
     logger.error({ error }, 'Failed to fetch appointments');
     res.status(500).json({ error: 'Failed to fetch appointments' });
   }
 });
 
-appointmentRouter.post('/', async (req, res) => {
+appointmentRouter.post('/', validate(appointmentSchema), async (req, res) => {
   try {
-    const { patientId, doctorId, startTime, durationMinutes } = req.body;
-    const tenantId = req.user!.tenantId;
-    if (!patientId || !startTime) return res.status(400).json({ error: "Missing required fields: patientId, startTime" });
+    let tenantId: string;
+    try { tenantId = getTenantId(req); } catch {
+      return res.status(400).json({ error: 'No tenant context' });
+    }
 
+    const { patientId, doctorId, startTime, durationMinutes } = req.body;
     const start = new Date(startTime);
     const end = new Date(start.getTime() + (durationMinutes || 30) * 60000);
 
-    const newAppointment = await prisma.appointment.create({
-      data: { tenantId, patientId, doctorId: doctorId || "unassigned", startTime: start, endTime: end, status: "SCHEDULED" }
+    const conflict = await prisma.appointment.findFirst({
+      where: {
+        tenantId,
+        startTime: { lt: end },
+        endTime: { gt: start },
+        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+      },
     });
 
-    const patient = await prisma.patient.findUnique({ where: { id: patientId, tenantId }, select: { fullName: true, email: true } });
-    if (patient?.email) {
+    const createData: any = {
+      tenantId,
+      patientId,
+      startTime: start,
+      endTime: end,
+      status: 'SCHEDULED',
+      aiConflictScore: conflict ? 0.8 : undefined,
+      aiAlertReason: conflict ? 'Posible conflicto de horario detectado' : undefined,
+    };
+    if (doctorId) createData.doctorId = doctorId;
+
+    const newAppointment = await prisma.appointment.create({
+      data: createData,
+      include: {
+        patient: { select: { fullName: true, email: true } },
+      },
+    });
+
+    const nA: any = newAppointment;
+    if (nA.patient?.email) {
       sendEmail({
-        to: patient.email,
+        to: nA.patient.email,
         subject: 'Cita confirmada — Nexora',
-        text: `Hola ${patient.fullName},\n\nTu cita ha sido confirmada para el ${start.toLocaleDateString('es-ES')} a las ${start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.\n\n— Nexora`,
-        html: `<p>Hola <strong>${patient.fullName}</strong>,</p><p>Tu cita ha sido confirmada para el <strong>${start.toLocaleDateString('es-ES')}</strong> a las <strong>${start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</strong>.</p><p>— Nexora</p>`,
-      });
+        text: `Hola ${nA.patient.fullName},\n\nTu cita ha sido confirmada para el ${start.toLocaleDateString('es-ES')} a las ${start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.\n\n— Nexora`,
+        html: `<p>Hola <strong>${nA.patient.fullName}</strong>,</p><p>Tu cita ha sido confirmada para el <strong>${start.toLocaleDateString('es-ES')}</strong> a las <strong>${start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</strong>.</p><p>— Nexora</p>`,
+      }).catch(err => logger.error({ error: err }, 'Failed to send confirmation email'));
     }
 
     res.status(201).json(newAppointment);
   } catch (error: any) {
     logger.error({ error }, 'Failed to create appointment');
-    res.status(500).json({ error: "Failed to create appointment." });
+    res.status(500).json({ error: 'Failed to create appointment.' });
   }
 });
 
-appointmentRouter.put('/:id', async (req, res) => {
+appointmentRouter.put('/:id', validate(appointmentUpdateSchema), async (req, res) => {
   try {
+    let tenantId: string;
+    try { tenantId = getTenantId(req); } catch {
+      return res.status(400).json({ error: 'No tenant context' });
+    }
+
     const { id } = req.params;
     const { patientId, doctorId, startTime, durationMinutes, status } = req.body;
-    const tenantId = req.user!.tenantId;
 
-    const dataToUpdate: any = {};
+    const dataToUpdate: Record<string, any> = {};
     if (patientId) dataToUpdate.patientId = patientId;
-    if (doctorId) dataToUpdate.doctorId = doctorId;
+    if (doctorId !== undefined) dataToUpdate.doctorId = doctorId;
     if (status) dataToUpdate.status = status;
     if (startTime) {
       const start = new Date(startTime);
       dataToUpdate.startTime = start;
-      if (durationMinutes) dataToUpdate.endTime = new Date(start.getTime() + durationMinutes * 60000);
+      dataToUpdate.endTime = new Date(start.getTime() + (durationMinutes || 30) * 60000);
     }
 
-    const updated = await prisma.appointment.updateMany({ where: { id, tenantId }, data: dataToUpdate });
-    if (updated.count === 0) return res.status(404).json({ error: "Appointment not found." });
-    res.json({ success: true });
-  } catch (error) {
+    const updated = await prisma.appointment.update({
+      where: { id_tenantId: { id, tenantId } },
+      data: dataToUpdate,
+    });
+
+    res.json(updated);
+  } catch (error: any) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Appointment not found.' });
+    }
     logger.error({ error }, 'Failed to update appointment');
-    res.status(500).json({ error: "Failed to update appointment." });
+    res.status(500).json({ error: 'Failed to update appointment.' });
   }
 });
 
 appointmentRouter.delete('/:id', async (req, res) => {
   try {
+    let tenantId: string;
+    try { tenantId = getTenantId(req); } catch {
+      return res.status(400).json({ error: 'No tenant context' });
+    }
+
     const { id } = req.params;
-    const deleted = await prisma.appointment.deleteMany({ where: { id, tenantId: req.user!.tenantId } });
-    if (deleted.count === 0) return res.status(404).json({ error: "Appointment not found." });
+    await prisma.appointment.delete({
+      where: { id_tenantId: { id, tenantId } },
+    });
     res.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Appointment not found.' });
+    }
     logger.error({ error }, 'Failed to delete appointment');
-    res.status(500).json({ error: "Failed to delete appointment." });
+    res.status(500).json({ error: 'Failed to delete appointment.' });
   }
 });

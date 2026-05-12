@@ -41,7 +41,6 @@ async function runTests() {
   }
 
   // 3. Create Patient
-  let patientId = "";
   try {
     const res = await fetch(`${baseUrl}/api/patients`, {
       method: 'POST',
@@ -54,7 +53,7 @@ async function runTests() {
     const data = await res.json();
     if (res.status === 201) {
       console.log("Patient Creation:", "PASS");
-      patientId = data.id;
+      void data.id;
     } else {
       console.log("Patient Creation:", "FAIL", data);
     }

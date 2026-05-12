@@ -386,8 +386,8 @@ export default function SpecialtyLanding() {
         </div>
       </section>
 
-      {/* Testimonial */}
-      <section className="py-20 lg:py-24">
+      {data.testimonial && (
+        <section className="py-20 lg:py-24">
           <div className="max-w-3xl mx-auto px-6">
             <div className="p-8 lg:p-10 rounded-2xl bg-white ring-1 ring-slate-200/70">
               <Quote className="w-6 h-6 text-[#008477] mb-4" />
@@ -412,6 +412,7 @@ export default function SpecialtyLanding() {
             </div>
           </div>
         </section>
+      )}
 
       {specialty === 'web-clinicas' && (
         <>

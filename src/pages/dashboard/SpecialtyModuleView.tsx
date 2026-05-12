@@ -75,15 +75,15 @@ export default function SpecialtyModuleView({ isDarkMode, activeView, clinicConf
       </div>
 
       <div className={`rounded-xl border shadow-sm overflow-hidden min-h-[500px] bg-white ${isDarkMode ? 'border-[#334155]' : 'border-[#e3e8ee]'}`}>
-        {activeView === 'odontograma' && <Odontogram isDarkMode={isDarkMode} value={patientRecord.odontogram} onChange={(v) => setPatientRecord(prev => ({...prev, odontogram: v}))} />}
-        {activeView === 'dietas' && <NutritionPlan isDarkMode={isDarkMode} value={patientRecord.nutritionPlan} onChange={(v) => setPatientRecord(prev => ({...prev, nutritionPlan: v}))} />}
-        {activeView === 'mapa_dolor' && <PainMap isDarkMode={isDarkMode} value={patientRecord.painPoints} onChange={(v) => setPatientRecord(prev => ({...prev, painPoints: v}))} />}
-        {activeView === 'sesiones' && <SessionDiary isDarkMode={isDarkMode} value={patientRecord.psychSessions} onChange={(v) => setPatientRecord(prev => ({...prev, psychSessions: v}))} />}
-        {activeView === 'galeria' && <AestheticGal isDarkMode={isDarkMode} value={patientRecord.aestheticPhotos} onChange={(v) => setPatientRecord(prev => ({...prev, aestheticPhotos: v}))} />}
-        {activeView === 'presupuestos' && <QuotesManager isDarkMode={isDarkMode} value={patientRecord.quotes} onChange={(v) => setPatientRecord(prev => ({...prev, quotes: v}))} />}
-        {activeView === 'evolucion' && <WeightEvolution isDarkMode={isDarkMode} value={patientRecord.weightLogs} onChange={(v) => setPatientRecord(prev => ({...prev, weightLogs: v}))} />}
-        {activeView === 'test' && <PsychometricTests isDarkMode={isDarkMode} value={patientRecord.tests} onChange={(v) => setPatientRecord(prev => ({...prev, tests: v}))} />}
-        {activeView === 'stock_estetica' && <VialStock isDarkMode={isDarkMode} value={patientRecord.vials} onChange={(v) => setPatientRecord(prev => ({...prev, vials: v}))} />}
+        {activeView === 'odontograma' && <Odontogram isDarkMode={isDarkMode} value={patientRecord.odontogram} onChange={(v) => setPatientRecord((prev: any) => ({...prev, odontogram: v}))} />}
+        {activeView === 'dietas' && <NutritionPlan isDarkMode={isDarkMode} value={patientRecord.nutritionPlan} onChange={(v) => setPatientRecord((prev: any) => ({...prev, nutritionPlan: v}))} />}
+        {activeView === 'mapa_dolor' && <PainMap isDarkMode={isDarkMode} value={patientRecord.painPoints} onChange={(v) => setPatientRecord((prev: any) => ({...prev, painPoints: v}))} />}
+        {activeView === 'sesiones' && <SessionDiary isDarkMode={isDarkMode} value={patientRecord.psychSessions} onChange={(v) => setPatientRecord((prev: any) => ({...prev, psychSessions: v}))} />}
+        {activeView === 'galeria' && <AestheticGal isDarkMode={isDarkMode} value={patientRecord.aestheticPhotos} onChange={(v) => setPatientRecord((prev: any) => ({...prev, aestheticPhotos: v}))} />}
+        {activeView === 'presupuestos' && <QuotesManager isDarkMode={isDarkMode} value={patientRecord.quotes} onChange={(v) => setPatientRecord((prev: any) => ({...prev, quotes: v}))} />}
+        {activeView === 'evolucion' && <WeightEvolution isDarkMode={isDarkMode} value={patientRecord.weightLogs} onChange={(v) => setPatientRecord((prev: any) => ({...prev, weightLogs: v}))} />}
+        {activeView === 'test' && <PsychometricTests isDarkMode={isDarkMode} value={patientRecord.tests} onChange={(v) => setPatientRecord((prev: any) => ({...prev, tests: v}))} />}
+        {activeView === 'stock_estetica' && <VialStock isDarkMode={isDarkMode} value={patientRecord.vials} onChange={(v) => setPatientRecord((prev: any) => ({...prev, vials: v}))} />}
       </div>
     </div>
   );

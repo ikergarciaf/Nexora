@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import prisma from '../db.ts';
-import { requireAuth } from '../middlewares/auth.ts';
+import { requireAuth, getTenantId } from '../middlewares/auth.ts';
 import logger from '../services/logger.ts';
 
 export const staffRouter = Router();
@@ -10,10 +10,10 @@ staffRouter.use(requireAuth);
 staffRouter.get('/users', async (req, res) => {
   try {
     const tenantUsers = await prisma.tenantUser.findMany({
-      where: { tenantId: req.user!.tenantId },
+      where: { tenantId: getTenantId(req) },
       include: { user: { select: { id: true, name: true, email: true } } },
     });
-    const users = tenantUsers.map(tu => ({
+    const users = (tenantUsers as any[]).map((tu: any) => ({
       id: tu.user.id,
       name: tu.user.name,
       email: tu.user.email,
@@ -29,7 +29,7 @@ staffRouter.get('/users', async (req, res) => {
 staffRouter.get('/rooms', async (req, res) => {
   try {
     const rooms = await prisma.room.findMany({
-      where: { tenantId: req.user!.tenantId },
+      where: { tenantId: getTenantId(req) },
       orderBy: { name: 'asc' },
     });
     res.json(rooms);
@@ -45,7 +45,7 @@ staffRouter.post('/rooms', async (req, res) => {
     if (!name) return res.status(400).json({ error: 'Name is required' });
 
     const newRoom = await prisma.room.create({
-      data: { tenantId: req.user!.tenantId, name },
+      data: { tenantId: getTenantId(req), name },
     });
     res.status(201).json(newRoom);
   } catch (err) {
@@ -58,7 +58,7 @@ staffRouter.put('/rooms/:id', async (req, res) => {
   try {
     const { name } = req.body;
     const updatedRoom = await prisma.room.update({
-      where: { id: req.params.id, tenantId: req.user!.tenantId },
+      where: { id: req.params.id, tenantId: getTenantId(req) },
       data: { name },
     });
     res.json(updatedRoom);
@@ -71,7 +71,7 @@ staffRouter.put('/rooms/:id', async (req, res) => {
 staffRouter.delete('/rooms/:id', async (req, res) => {
   try {
     await prisma.room.delete({
-      where: { id: req.params.id, tenantId: req.user!.tenantId },
+      where: { id: req.params.id, tenantId: getTenantId(req) },
     });
     res.json({ success: true });
   } catch (err) {
@@ -83,7 +83,7 @@ staffRouter.delete('/rooms/:id', async (req, res) => {
 staffRouter.get('/shifts', async (req, res) => {
   try {
     const shifts = await prisma.shift.findMany({
-      where: { tenantId: req.user!.tenantId },
+      where: { tenantId: getTenantId(req) },
       include: { room: { select: { id: true, name: true } }, user: { select: { id: true, name: true } } },
       orderBy: { startTime: 'asc' },
     });
@@ -103,7 +103,7 @@ staffRouter.post('/shifts', async (req, res) => {
 
     const newShift = await prisma.shift.create({
       data: {
-        tenantId: req.user!.tenantId,
+        tenantId: getTenantId(req),
         userId,
         roomId: roomId || null,
         startTime: new Date(startTime),
@@ -123,7 +123,7 @@ staffRouter.post('/shifts', async (req, res) => {
 staffRouter.delete('/shifts/:id', async (req, res) => {
   try {
     await prisma.shift.delete({
-      where: { id: req.params.id, tenantId: req.user!.tenantId },
+      where: { id: req.params.id, tenantId: getTenantId(req) },
     });
     res.json({ success: true });
   } catch (err: any) {

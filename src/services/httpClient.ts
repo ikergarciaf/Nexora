@@ -1,11 +1,54 @@
 const inflightRequests = new Map<string, Promise<any>>();
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
 
 function getToken(): string {
   try { return localStorage.getItem('clinic_token') || ''; } catch { return ''; }
 }
 
+function getRefreshToken(): string {
+  try { return localStorage.getItem('clinic_refresh_token') || ''; } catch { return ''; }
+}
+
 function getTenantId(): string {
   try { return localStorage.getItem('active_tenant_id') || ''; } catch { return ''; }
+}
+
+function setTokens(accessToken: string, refreshToken?: string): void {
+  try {
+    localStorage.setItem('clinic_token', accessToken);
+    if (refreshToken) localStorage.setItem('clinic_refresh_token', refreshToken);
+  } catch {}
+}
+
+function clearTokens(): void {
+  try {
+    localStorage.removeItem('clinic_token');
+    localStorage.removeItem('clinic_refresh_token');
+  } catch {}
+}
+
+async function attemptTokenRefresh(): Promise<boolean> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return false;
+
+  try {
+    const res = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!res.ok) {
+      clearTokens();
+      return false;
+    }
+    const data = await res.json();
+    setTokens(data.accessToken, data.refreshToken);
+    return true;
+  } catch {
+    clearTokens();
+    return false;
+  }
 }
 
 function buildHeaders(extra: Record<string, string> = {}): Record<string, string> {
@@ -21,7 +64,7 @@ function inflightKey(url: string, options: RequestInit): string {
   return `${options.method || 'GET'}:${url}`;
 }
 
-async function request<T = any>(url: string, options: RequestInit = {}, retries = 0): Promise<T | null> {
+async function request<T = any>(url: string, options: RequestInit = {}): Promise<T | null> {
   const key = inflightKey(url, options);
   const isGet = !options.method || options.method === 'GET';
 
@@ -38,6 +81,36 @@ async function request<T = any>(url: string, options: RequestInit = {}, retries 
 
       if (!res.ok) {
         if (res.status === 401) {
+          const errorData = await res.json().catch(() => ({}));
+          if (errorData?.code === 'TOKEN_EXPIRED' && !isRefreshing) {
+            isRefreshing = true;
+            refreshPromise = attemptTokenRefresh();
+            const refreshed = await refreshPromise;
+            isRefreshing = false;
+            refreshPromise = null;
+
+            if (refreshed) {
+              const retryRes = await fetch(url, {
+                ...options,
+                headers: { ...buildHeaders(), ...(options.headers as Record<string, string> || {}) },
+              });
+              if (retryRes.ok) {
+                return retryRes.status !== 204 ? await retryRes.json() : null;
+              }
+            }
+          } else if (isRefreshing && refreshPromise) {
+            const refreshed = await refreshPromise;
+            if (refreshed) {
+              const retryRes = await fetch(url, {
+                ...options,
+                headers: { ...buildHeaders(), ...(options.headers as Record<string, string> || {}) },
+              });
+              if (retryRes.ok) {
+                return retryRes.status !== 204 ? await retryRes.json() : null;
+              }
+            }
+          }
+
           window.dispatchEvent(new CustomEvent('auth:unauthorized'));
           return null;
         }
@@ -48,7 +121,9 @@ async function request<T = any>(url: string, options: RequestInit = {}, retries 
           return doFetch(attempt + 1);
         }
 
-        console.error(`[API] ${options.method || 'GET'} ${url} → ${res.status} ${res.statusText}`);
+        if (res.status !== 401) {
+          console.error(`[API] ${options.method || 'GET'} ${url} \u2192 ${res.status}`);
+        }
         return null;
       }
 
@@ -90,3 +165,5 @@ export const api = {
 export function apiHeaders() {
   return buildHeaders();
 }
+
+export { setTokens, clearTokens, getToken, getRefreshToken };

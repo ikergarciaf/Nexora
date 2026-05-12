@@ -1,19 +1,17 @@
 import { Router } from 'express';
 import prisma from '../db.ts';
-import { requireAuth, requireRole } from '../middlewares/auth.ts';
+import { requireAuth, requireRole, getTenantId } from '../middlewares/auth.ts';
 import logger from '../services/logger.ts';
+import { validate, patientSchema, patientUpdateSchema } from '../validation.ts';
 
 export const patientRouter = Router();
 
 patientRouter.use(requireAuth);
 
-function isValidJSON(str: string): boolean {
-  try { JSON.parse(str); return true; } catch { return false; }
-}
-
 patientRouter.get('/', async (req, res) => {
   try {
-    const tenantId = req.user!.tenantId;
+    let tenantId: string;
+    try { tenantId = getTenantId(req); } catch { return res.status(400).json({ error: 'No tenant context' }); }
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
     const search = (req.query.search as string || '').trim();
@@ -29,11 +27,13 @@ patientRouter.get('/', async (req, res) => {
 
     const [data, total] = await Promise.all([
       prisma.patient.findMany({
-        where,
-        skip: (page - 1) * limit,
-        take: limit,
+        where, skip: (page - 1) * limit, take: limit,
         orderBy: { fullName: 'asc' },
-        select: { id: true, fullName: true, email: true, phone: true, dob: true, tags: true, lastVisit: true, createdAt: true, tenantId: true },
+        select: {
+          id: true, fullName: true, email: true, phone: true,
+          dob: true, tags: true, lastVisit: true, createdAt: true, tenantId: true,
+          _count: { select: { appointments: true, invoices: true } },
+        },
       }),
       prisma.patient.count({ where }),
     ]);
@@ -45,64 +45,77 @@ patientRouter.get('/', async (req, res) => {
   }
 });
 
-patientRouter.post('/', async (req, res) => {
+patientRouter.post('/', validate(patientSchema), async (req, res) => {
   try {
+    let tenantId: string;
+    try { tenantId = getTenantId(req); } catch { return res.status(400).json({ error: 'No tenant context' }); }
     const { fullName, email, phone, medicalRecord, nutritionalPlan } = req.body;
-    const tenantId = req.user!.tenantId;
-    if (!fullName) return res.status(400).json({ error: "Full Name is required" });
-    if (medicalRecord && !isValidJSON(medicalRecord)) return res.status(400).json({ error: 'medicalRecord must be valid JSON' });
-    if (nutritionalPlan && !isValidJSON(nutritionalPlan)) return res.status(400).json({ error: 'nutritionalPlan must be valid JSON' });
 
     const newPatient = await prisma.patient.create({
-      data: { tenantId, fullName, email, phone, tags: '["new"]', medicalRecord: medicalRecord || undefined, nutritionalPlan: nutritionalPlan || undefined }
+      data: {
+        tenantId, fullName,
+        email: email || undefined, phone: phone || undefined,
+        tags: '["new"]',
+        medicalRecord: medicalRecord || undefined,
+        nutritionalPlan: nutritionalPlan || undefined,
+        createdById: req.user!.id,
+      },
     });
 
     res.status(201).json(newPatient);
   } catch (error: any) {
     logger.error({ error }, 'Failed to create patient');
-    res.status(500).json({ error: "Failed to create patient record." });
+    res.status(500).json({ error: 'Failed to create patient record.' });
   }
 });
 
-patientRouter.delete('/:id', requireRole(['ADMIN']), async (req, res) => {
+patientRouter.put('/:id', requireRole(['OWNER', 'STAFF', 'ADMIN']), validate(patientUpdateSchema), async (req, res) => {
   try {
-    const { id } = req.params;
-    const deleted = await prisma.patient.deleteMany({
-      where: { id, tenantId: req.user!.tenantId }
-    });
-    if (deleted.count === 0) return res.status(404).json({ error: "Patient not found." });
-    res.json({ success: true });
-  } catch (error) {
-    logger.error({ error }, 'Failed to delete patient');
-    res.status(500).json({ error: "Failed to delete patient." });
-  }
-});
-
-patientRouter.put('/:id', requireRole(['OWNER', 'STAFF', 'ADMIN', 'SUPERADMIN']), async (req, res) => {
-  try {
+    let tenantId: string;
+    try { tenantId = getTenantId(req); } catch { return res.status(400).json({ error: 'No tenant context' }); }
     const { id } = req.params;
     const { fullName, email, phone, medicalRecord, nutritionalPlan } = req.body;
 
-    if (medicalRecord && !isValidJSON(medicalRecord)) return res.status(400).json({ error: 'medicalRecord must be valid JSON' });
-    if (nutritionalPlan && !isValidJSON(nutritionalPlan)) return res.status(400).json({ error: 'nutritionalPlan must be valid JSON' });
-
     const updated = await prisma.patient.update({
-      where: { id, tenantId: req.user!.tenantId! },
-      data: { fullName, email, phone, medicalRecord: medicalRecord || undefined, nutritionalPlan: nutritionalPlan || undefined }
+      where: { id_tenantId: { id, tenantId } },
+      data: {
+        ...(fullName !== undefined && { fullName }),
+        ...(email !== undefined && { email }),
+        ...(phone !== undefined && { phone }),
+        ...(medicalRecord !== undefined && { medicalRecord }),
+        ...(nutritionalPlan !== undefined && { nutritionalPlan }),
+      },
     });
-
     res.json(updated);
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === 'P2025') return res.status(404).json({ error: 'Patient not found' });
     logger.error({ error }, 'Failed to update patient');
-    res.status(500).json({ error: "Failed to update patient." });
+    res.status(500).json({ error: 'Failed to update patient.' });
+  }
+});
+
+patientRouter.delete('/:id', requireRole(['ADMIN', 'OWNER']), async (req, res) => {
+  try {
+    let tenantId: string;
+    try { tenantId = getTenantId(req); } catch { return res.status(400).json({ error: 'No tenant context' }); }
+    const { id } = req.params;
+    await prisma.patient.delete({ where: { id_tenantId: { id, tenantId } } });
+    res.json({ success: true });
+  } catch (error: any) {
+    if (error.code === 'P2025') return res.status(404).json({ error: 'Patient not found' });
+    logger.error({ error }, 'Failed to delete patient');
+    res.status(500).json({ error: 'Failed to delete patient.' });
   }
 });
 
 patientRouter.get('/:id', async (req, res) => {
   try {
+    let tenantId: string;
+    try { tenantId = getTenantId(req); } catch { return res.status(400).json({ error: 'No tenant context' }); }
     const { id } = req.params;
-    const patient = await prisma.patient.findFirst({
-      where: { id, tenantId: req.user!.tenantId! }
+    const patient = await prisma.patient.findUnique({
+      where: { id_tenantId: { id, tenantId } },
+      include: { _count: { select: { appointments: true, invoices: true, documents: true, consents: true } } },
     });
     if (!patient) return res.status(404).json({ error: 'Patient not found' });
     res.json(patient);

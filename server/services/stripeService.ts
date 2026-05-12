@@ -10,28 +10,62 @@ export function getStripe(): Stripe {
       logger.warn('STRIPE_SECRET_KEY environment variable is missing.');
     }
     stripeClient = new Stripe(key || '', {
-      // @ts-expect-error Types might mismatch depending on local stripe package version
-      apiVersion: '2025-01-27.acacia',
+      apiVersion: '2025-01-27.acacia' as any,
+      maxNetworkRetries: 3,
+      timeout: 30000,
     });
   }
   return stripeClient;
 }
 
-// Ensure these match your actual Stripe Dashboard Price IDs
 export const PRICING_PLANS = {
   STARTER: {
     name: 'Starter',
     priceId: process.env.STRIPE_PRICE_STARTER || 'price_starter_mock_123',
-    features: ['1 Practitioner', 'Basic Scheduling', 'Email Reminders']
+    features: [
+      'Gestión de pacientes ilimitada',
+      'Agenda inteligente',
+      'Historial clínico digital',
+      'Recordatorios automáticos',
+      'Facturación básica',
+      '1 profesional',
+    ],
   },
   PRO: {
     name: 'Pro',
     priceId: process.env.STRIPE_PRICE_PRO || 'price_pro_mock_456',
-    features: ['3 Practitioners', 'AI Insights', 'WhatsApp Automation']
+    features: [
+      'Todo lo de Starter',
+      'Hasta 5 profesionales',
+      'IA generativa',
+      'Asistente IA en WhatsApp',
+      'Firma digital',
+      'Facturación avanzada + Stripe',
+      'Campañas de email marketing',
+      'Gestión de inventario',
+      'Soporte prioritario',
+    ],
   },
   PREMIUM: {
     name: 'Premium',
     priceId: process.env.STRIPE_PRICE_PREMIUM || 'price_premium_mock_789',
-    features: ['Unlimited Practitioners', 'Custom AI Models', 'Priority Support']
-  }
+    features: [
+      'Todo lo de Pro',
+      'Profesionales ilimitados',
+      'Web médica personalizada',
+      'Reserva online pública',
+      'SEO local premium',
+      'Portal del paciente',
+      'Panel de análisis',
+      'Soporte dedicado 24/7',
+    ],
+  },
 };
+
+export function getPlanByPriceId(priceId: string): string | null {
+  const entries = Object.entries(PRICING_PLANS);
+  for (const [key, plan] of entries) {
+    if (plan.priceId === priceId) return key;
+  }
+  return null;
+}

@@ -3,13 +3,24 @@ import prisma from '../db.ts';
 import logger from '../services/logger.ts';
 import { sendEmail } from '../services/emailService.ts';
 import { sendAppointmentReminders } from '../services/notificationWorker.ts';
+import { validate, publicBookingSchema } from '../validation.ts';
 
 export const publicRouter = Router();
 
-function getSlotsForDay(dayStart: Date, dayEnd: Date, appointments: { startTime: Date; endTime: Date }[], duration: number): string[] {
+function getSlotsForDay(
+  dayStart: Date,
+  dayEnd: Date,
+  appointments: { startTime: Date; endTime: Date }[],
+  duration: number,
+): string[] {
   const slots: string[] = [];
+  const now = new Date();
   let cursor = new Date(dayStart);
   while (cursor < dayEnd) {
+    if (cursor <= now) {
+      cursor = new Date(cursor.getTime() + duration * 60000);
+      continue;
+    }
     const slotEnd = new Date(cursor.getTime() + duration * 60000);
     const conflicted = appointments.some(a => cursor < a.endTime && slotEnd > a.startTime);
     if (!conflicted) slots.push(cursor.toISOString());
@@ -23,7 +34,14 @@ publicRouter.get('/:slug/slots', async (req, res) => {
     const { slug } = req.params;
     const { date } = req.query;
 
-    const tenant = await prisma.tenant.findUnique({ where: { slug }, select: { id: true, name: true, specialty: true, contactEmail: true, contactPhone: true, logoUrl: true, address: true, publicBookingEnabled: true } });
+    const tenant = await prisma.tenant.findUnique({
+      where: { slug },
+      select: {
+        id: true, name: true, specialty: true, contactEmail: true,
+        contactPhone: true, logoUrl: true, address: true, publicBookingEnabled: true,
+        appointmentInterval: true,
+      },
+    });
     if (!tenant) return res.status(404).json({ error: 'Clínica no encontrada' });
     if (!tenant.publicBookingEnabled) return res.status(403).json({ error: 'Reserva online no disponible' });
 
@@ -39,7 +57,11 @@ publicRouter.get('/:slug/slots', async (req, res) => {
     if (dayStart < new Date()) dayStart.setTime(Date.now() + 3600000);
 
     const appointments = await prisma.appointment.findMany({
-      where: { tenantId: tenant.id, startTime: { gte: dayStart, lt: dayEnd }, status: { not: 'CANCELLED' } },
+      where: {
+        tenantId: tenant.id,
+        startTime: { gte: dayStart, lt: dayEnd },
+        status: { not: 'CANCELLED' },
+      },
       select: { startTime: true, endTime: true },
     });
 
@@ -48,10 +70,19 @@ publicRouter.get('/:slug/slots', async (req, res) => {
       select: { id: true, name: true },
     });
 
+    const interval = tenant.appointmentInterval || 30;
+
     res.json({
-      clinic: { name: tenant.name, specialty: tenant.specialty, contactEmail: tenant.contactEmail, contactPhone: tenant.contactPhone, logoUrl: tenant.logoUrl, address: tenant.address },
+      clinic: {
+        name: tenant.name,
+        specialty: tenant.specialty,
+        contactEmail: tenant.contactEmail,
+        contactPhone: tenant.contactPhone,
+        logoUrl: tenant.logoUrl,
+        address: tenant.address,
+      },
       staff,
-      slots: getSlotsForDay(dayStart, dayEnd, appointments, 30),
+      slots: getSlotsForDay(dayStart, dayEnd, appointments, interval),
     });
   } catch (error) {
     logger.error({ error }, 'Public slots error');
@@ -59,33 +90,49 @@ publicRouter.get('/:slug/slots', async (req, res) => {
   }
 });
 
-publicRouter.post('/:slug/book', async (req, res) => {
+publicRouter.post('/:slug/book', validate(publicBookingSchema), async (req, res) => {
   try {
     const { slug } = req.params;
     const { startTime, fullName, email, phone } = req.body;
-    if (!startTime || !fullName) return res.status(400).json({ error: 'Faltan datos obligatorios' });
 
-    const tenant = await prisma.tenant.findUnique({ where: { slug }, select: { id: true, publicBookingEnabled: true } });
+    const tenant = await prisma.tenant.findUnique({
+      where: { slug },
+      select: { id: true, publicBookingEnabled: true, appointmentInterval: true },
+    });
     if (!tenant) return res.status(404).json({ error: 'Clínica no encontrada' });
     if (!tenant.publicBookingEnabled) return res.status(403).json({ error: 'Reserva online no disponible' });
 
     const start = new Date(startTime);
-    const end = new Date(start.getTime() + 30 * 60000);
+    const interval = tenant.appointmentInterval || 30;
+    const end = new Date(start.getTime() + interval * 60000);
 
     const conflict = await prisma.appointment.findFirst({
-      where: { tenantId: tenant.id, startTime: { lt: end }, endTime: { gt: start }, status: { not: 'CANCELLED' } },
+      where: {
+        tenantId: tenant.id,
+        startTime: { lt: end },
+        endTime: { gt: start },
+        status: { not: 'CANCELLED' },
+      },
     });
     if (conflict) return res.status(409).json({ error: 'Ese horario ya no está disponible' });
 
-    let patient = await prisma.patient.findFirst({ where: { tenantId: tenant.id, email: email || '' } });
+    let patient = await prisma.patient.findFirst({
+      where: { tenantId: tenant.id, email: email || '' },
+    });
     if (!patient) {
       patient = await prisma.patient.create({
-        data: { tenantId: tenant.id, fullName, email, phone, tags: 'booking_online' },
+        data: { tenantId: tenant.id, fullName, email, phone, tags: '["booking_online"]' },
       });
     }
 
     const appointment = await prisma.appointment.create({
-      data: { tenantId: tenant.id, patientId: patient.id, startTime: start, endTime: end, status: 'SCHEDULED' },
+      data: {
+        tenantId: tenant.id,
+        patientId: patient.id,
+        startTime: start,
+        endTime: end,
+        status: 'SCHEDULED',
+      },
     });
 
     if (email) {
@@ -110,7 +157,10 @@ publicRouter.get('/:slug/portal/:patientId', async (req, res) => {
   try {
     const { slug, patientId } = req.params;
 
-    const tenant = await prisma.tenant.findUnique({ where: { slug }, select: { id: true, name: true } });
+    const tenant = await prisma.tenant.findUnique({
+      where: { slug },
+      select: { id: true, name: true },
+    });
     if (!tenant) return res.status(404).json({ error: 'Clínica no encontrada' });
 
     const patient = await prisma.patient.findFirst({
@@ -120,7 +170,12 @@ publicRouter.get('/:slug/portal/:patientId', async (req, res) => {
     if (!patient) return res.status(404).json({ error: 'Paciente no encontrado' });
 
     const upcomingAppointments = await prisma.appointment.findMany({
-      where: { patientId, tenantId: tenant.id, startTime: { gte: new Date() }, status: { not: 'CANCELLED' } },
+      where: {
+        patientId,
+        tenantId: tenant.id,
+        startTime: { gte: new Date() },
+        status: { not: 'CANCELLED' },
+      },
       orderBy: { startTime: 'asc' },
       select: { id: true, startTime: true, endTime: true, status: true, type: true },
     });
@@ -164,7 +219,10 @@ publicRouter.post('/:slug/portal/:patientId/cancel', async (req, res) => {
     });
     if (!appointment) return res.status(404).json({ error: 'Cita no encontrada' });
 
-    await prisma.appointment.update({ where: { id: appointmentId }, data: { status: 'CANCELLED' } });
+    await prisma.appointment.update({
+      where: { id: appointmentId },
+      data: { status: 'CANCELLED' },
+    });
     res.json({ success: true });
   } catch (error) {
     logger.error({ error }, 'Patient cancel error');

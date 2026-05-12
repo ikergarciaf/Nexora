@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { requireAuth } from '../middlewares/auth.ts';
+import { requireAuth, getTenantId } from '../middlewares/auth.ts';
 import logger from '../services/logger.ts';
 import prisma from '../db.ts';
 
@@ -15,8 +15,7 @@ uploadRouter.use(requireAuth);
 
 uploadRouter.post('/logo', async (req, res) => {
   try {
-    const tenantId = req.user!.tenantId;
-    if (!tenantId) return res.status(400).json({ error: 'No tenant selected' });
+    const tenantId = getTenantId(req);
 
     const rawBody = req.body;
     if (!rawBody || !rawBody.image) return res.status(400).json({ error: 'No image provided' });
@@ -48,8 +47,7 @@ uploadRouter.post('/logo', async (req, res) => {
 
 uploadRouter.delete('/logo', async (req, res) => {
   try {
-    const tenantId = req.user!.tenantId;
-    if (!tenantId) return res.status(400).json({ error: 'No tenant selected' });
+    const tenantId = getTenantId(req);
 
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
     if (tenant?.logoUrl?.startsWith('/uploads/')) {
