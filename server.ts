@@ -29,7 +29,11 @@ async function checkDatabaseConnection(): Promise<boolean> {
   try {
     await prisma.$queryRaw`SELECT 1`;
     return true;
-  } catch {
+  } catch (err) {
+    logger.error({ err: String(err) }, 'Database connection failed');
+    if (String(err).includes('prepared statement')) {
+      logger.error('If using Supabase PgBouncer, add ?pgbouncer=true to DATABASE_URL and set DATABASE_URL_DIRECT to the direct connection');
+    }
     return false;
   }
 }
