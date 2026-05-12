@@ -1,5 +1,5 @@
-import { lazy, Suspense, Component, ReactNode, ErrorInfo } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { lazy, Suspense, Component, ReactNode, ErrorInfo, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Loader2 } from 'lucide-react';
 import CookieConsent from './components/CookieConsent';
@@ -47,13 +47,31 @@ function GuestGuard() {
   return <Outlet />;
 }
 
+function AuthListener() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const handler = () => {
+      navigate('/login', { replace: true });
+    };
+    window.addEventListener('auth:unauthorized', handler);
+    return () => window.removeEventListener('auth:unauthorized', handler);
+  }, [navigate]);
+  return null;
+}
+
 interface ErrorBoundaryState { hasError: boolean }
 
 class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryState> {
   state: ErrorBoundaryState = { hasError: false };
+
   static getDerivedStateFromError(): ErrorBoundaryState {
     return { hasError: true };
   }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('[ErrorBoundary] Uncaught error:', error, errorInfo);
+  }
+
   render() {
     if (this.state.hasError) {
       return (
@@ -78,6 +96,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryStat
 export default function App() {
   const routerContent = (
     <BrowserRouter>
+      <AuthListener />
       <ModalProvider>
         <Suspense fallback={<PageLoader />}>
           <Routes>

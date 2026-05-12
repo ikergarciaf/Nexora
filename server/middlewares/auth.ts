@@ -7,7 +7,6 @@ const JWT_SECRET = (() => {
   return process.env.JWT_SECRET;
 })();
 
-// Extend Express Request to include user context globally
 declare global {
   namespace Express {
     interface Request {
@@ -16,15 +15,13 @@ declare global {
         tenantId: string | null;
         role: string;
         isSuperAdmin: boolean;
+        subscriptionStatus?: string | null;
+        trialEndsAt?: string | null;
       };
     }
   }
 }
 
-/**
- * Validates JWT Token and injects identity into the Request context.
- * Resolves the Tenant Context based on X-Tenant-ID header.
- */
 export const requireAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
@@ -38,36 +35,49 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string; isSuperAdmin: boolean };
     const requestedTenantId = req.headers['x-tenant-id'] as string;
     
-    let tenantId = null;
+    let tenantId: string | null = null;
     let role = 'USER';
+    let subscriptionStatus: string | null = null;
+    let trialEndsAt: string | null = null;
 
     if (requestedTenantId) {
       if (decoded.isSuperAdmin) {
         tenantId = requestedTenantId;
         role = 'SUPERADMIN';
       } else {
-        const membership = await prisma.tenantUser.findUnique({
-          where: {
-            userId_tenantId: {
-              userId: decoded.id,
-              tenantId: requestedTenantId
+        const [membership, tenant] = await Promise.all([
+          prisma.tenantUser.findUnique({
+            where: {
+              userId_tenantId: {
+                userId: decoded.id,
+                tenantId: requestedTenantId
+              }
             }
-          }
-        });
+          }),
+          prisma.tenant.findUnique({
+            where: { id: requestedTenantId },
+            select: { subscriptionStatus: true, trialEndsAt: true },
+          }),
+        ]);
+
         if (!membership) {
           res.status(403).json({ error: 'Access denied for this tenant' });
           return;
         }
         tenantId = membership.tenantId;
         role = membership.role;
+        subscriptionStatus = tenant?.subscriptionStatus ?? null;
+        trialEndsAt = tenant?.trialEndsAt?.toISOString() ?? null;
       }
     }
 
     req.user = {
       id: decoded.id,
-      tenantId: tenantId,
-      role: role,
-      isSuperAdmin: decoded.isSuperAdmin
+      tenantId,
+      role,
+      isSuperAdmin: decoded.isSuperAdmin,
+      subscriptionStatus,
+      trialEndsAt,
     };
     
     next();

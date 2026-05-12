@@ -26,6 +26,8 @@ export default defineConfig({
     target: 'es2022',
     minify: 'esbuild',
     cssMinify: true,
+    chunkSizeWarningLimit: 500,
+    reportCompressedSize: true,
   },
   server: {
     hmr: process.env.DISABLE_HMR !== 'true',

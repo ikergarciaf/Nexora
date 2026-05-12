@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import prisma from '../db.ts';
+import logger from '../services/logger.ts';
 
 export const clinicRouter = Router();
 
@@ -32,6 +33,7 @@ clinicRouter.get('/:idOrSlug', async (req, res) => {
 
     res.json(clinic);
   } catch (error) {
+    logger.error({ error }, 'Failed to fetch clinic');
     res.status(500).json({ error: 'Failed to fetch clinic' });
   }
 });

@@ -120,3 +120,38 @@ export async function generatePatientSummary(notes: string) {
     return null;
   }
 }
+
+export interface PatientDocument {
+  id: string;
+  originalName: string;
+  mimeType: string;
+  fileSize: number;
+  filePath: string;
+  createdAt: string;
+}
+
+export async function fetchPatientDocumentsApi(patientId: string): Promise<PatientDocument[]> {
+  const res = await api.get<PatientDocument[]>(`/api/patients/${patientId}/documents`);
+  return Array.isArray(res) ? res : [];
+}
+
+export async function uploadPatientDocumentApi(patientId: string, file: File): Promise<PatientDocument | null> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      const doc = await api.post<PatientDocument>(`/api/patients/${patientId}/documents`, {
+        file: base64,
+        fileName: file.name,
+      });
+      resolve(doc);
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+
+export async function deletePatientDocumentApi(patientId: string, docId: string): Promise<boolean> {
+  const res = await api.delete(`/api/patients/${patientId}/documents/${docId}`);
+  return res !== null;
+}

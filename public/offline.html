@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sin conexión — Nexora</title>
+  <meta name="theme-color" content="#008477" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: #f6f9fc; color: #1a1f36; padding: 1rem;
+    }
+    .container { text-align: center; max-width: 400px; }
+    .icon { width: 64px; height: 64px; margin: 0 auto 1.5rem; background: #e8f0fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .icon svg { width: 32px; height: 32px; fill: #008477; }
+    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; }
+    p { color: #4f566b; line-height: 1.5; margin-bottom: 1.5rem; }
+    .btn {
+      display: inline-block; padding: 0.75rem 1.5rem; background: #008477; color: #fff;
+      border-radius: 8px; font-weight: 600; font-size: 0.875rem; cursor: pointer;
+      border: none; transition: background 0.2s;
+    }
+    .btn:hover { background: #006b62; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0f172a; color: #e2e8f0; }
+      .icon { background: #1e293b; }
+      p { color: #94a3b8; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">
+      <svg viewBox="0 0 24 24"><path d="M21 18v3H3v-3M18 10v3H6v-3M15 3v3H9V3M12 21L5 13h14Z"/></svg>
+    </div>
+    <h1>Sin conexión</h1>
+    <p>No tienes conexión a Internet. Vuelve a intentarlo cuando tengas conexión.</p>
+    <button class="btn" onclick="window.location.reload()">Reintentar</button>
+  </div>
+</body>
+</html>

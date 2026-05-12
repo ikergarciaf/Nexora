@@ -45,6 +45,7 @@ model Tenant {
   inventoryItems       InventoryItem[]
   campaigns            Campaign[]
   pushSubscriptions    PushSubscription[]
+  patientDocuments     PatientDocument[]
 }
 
 model User {
@@ -101,6 +102,7 @@ model Patient {
   appointments        Appointment[]
   invoices            Invoice[]
   consents            Consent[]
+  documents           PatientDocument[]
   tenant              Tenant        @relation(fields: [tenantId], references: [id])
 
   @@unique([id, tenantId])
@@ -269,10 +271,29 @@ model Campaign {
   sentAt     DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
 
   @@unique([id, tenantId])
   @@index([tenantId])
+}
+
+model PatientDocument {
+  id           String   @id @default(uuid())
+  tenantId     String
+  patientId    String
+  filePath     String
+  originalName String
+  mimeType     String
+  fileSize     Int
+  createdAt    DateTime @default(now())
+
+  patient      Patient  @relation(fields: [patientId], references: [id])
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([id, tenantId])
+  @@index([tenantId])
+  @@index([patientId])
+  @@index([tenantId, patientId])
 }
 
 model PushSubscription {

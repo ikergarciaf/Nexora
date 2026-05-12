@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { patientRouter } from './patients.ts';
+import { documentRouter } from './patientDocuments.ts';
 import { appointmentRouter } from './appointments.ts';
 import { tenantRouter } from './tenant.ts';
 import { clinicRouter } from './clinic.ts';
@@ -32,6 +33,7 @@ const enforceBilling = process.env.NODE_ENV === 'production' ? requireActiveSubs
 
 apiRouter.use('/dashboard', requireAuth, enforceBilling, dashboardRouter);
 apiRouter.use('/patients', requireAuth, enforceBilling, patientRouter);
+apiRouter.use('/patients/:patientId/documents', requireAuth, enforceBilling, documentRouter);
 apiRouter.use('/appointments', requireAuth, enforceBilling, appointmentRouter);
 apiRouter.use('/staff', requireAuth, enforceBilling, staffRouter);
 apiRouter.use('/tenant', requireAuth, enforceBilling, tenantRouter);
