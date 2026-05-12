@@ -5,7 +5,7 @@ services:
     region: frankfurt
     plan: starter
     buildCommand: npm install && npm run build
-    startCommand: npx prisma db push && npx tsx server.ts
+    startCommand: npm run start
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:

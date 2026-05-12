@@ -22,6 +22,9 @@ const __dirname = path.dirname(__filename);
 function validateEnvironment(): string[] {
   const required = ['JWT_SECRET', 'DATABASE_URL'];
   const missing = required.filter(key => !process.env[key]);
+  if (!process.env.DATABASE_URL_DIRECT) {
+    logger.warn('DATABASE_URL_DIRECT not set — run prisma db push manually to sync schema');
+  }
   return missing;
 }
 
