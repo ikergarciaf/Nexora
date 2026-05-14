@@ -190,8 +190,12 @@ async function startServer() {
   app.use("/api/auth/google", authLimiter);
 
   app.use('/api', (req, res, next) => {
-    const skipPaths = ['/webhooks', '/health', '/auth/csrf'];
+    const skipPaths = ['/webhooks', '/health', '/auth'];
     if (skipPaths.some(p => req.path.startsWith(p))) {
+      next();
+      return;
+    }
+    if (req.headers.authorization?.startsWith('Bearer ')) {
       next();
       return;
     }

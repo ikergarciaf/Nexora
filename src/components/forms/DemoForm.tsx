@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Loader2, CheckCircle, CreditCard } from 'lucide-react';
+import { Loader2, CheckCircle, CreditCard, Lock } from 'lucide-react';
 
 const CLINIC_TYPES = [
   { value: 'Fisioterapia', label: 'Fisioterapia', desc: 'Nexora Fisioterapia' },
@@ -17,16 +17,27 @@ interface DemoFormProps {
 }
 
 const PLAN_LABELS: Record<string, string> = {
-  STARTER: 'Starter — 29€/mes',
-  PRO: 'Pro — 59€/mes',
-  PREMIUM: 'Web Pro — 89€/mes',
+  STARTER: 'Starter',
+  PRO: 'Pro',
+  PREMIUM: 'Web Pro',
+};
+
+const PLAN_PRICES: Record<string, { monthly: number; yearly: number }> = {
+  STARTER: { monthly: 29, yearly: 24 },
+  PRO: { monthly: 59, yearly: 49 },
+  PREMIUM: { monthly: 89, yearly: 75 },
 };
 
 export default function DemoForm({ onSuccess, initialData = {} }: DemoFormProps) {
   const navigate = useNavigate();
   const isQuote = initialData.type === 'quote';
   const plan = initialData.plan || '';
+  const intervalParam = initialData.interval || 'month';
+  const isAnnual = intervalParam === 'year';
   const planLabel = PLAN_LABELS[plan] || '';
+  const planPrice = PLAN_PRICES[plan];
+  const price = planPrice ? (isAnnual ? planPrice.yearly : planPrice.monthly) : 0;
+
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [loading, setLoading] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
@@ -38,13 +49,14 @@ export default function DemoForm({ onSuccess, initialData = {} }: DemoFormProps)
     clinicType: initialData.specialty || 'Fisioterapia',
     clinicName: '',
     password: '',
+    acceptTerms: false,
   });
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const goToCheckout = async (token: string) => {
+  const goToCheckout = async (token: string, tenantId: string) => {
     setPurchasing(true);
     try {
       const res = await fetch('/api/billing/checkout', {
@@ -52,8 +64,9 @@ export default function DemoForm({ onSuccess, initialData = {} }: DemoFormProps)
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
+          'x-tenant-id': tenantId,
         },
-        body: JSON.stringify({ planKey: plan }),
+        body: JSON.stringify({ planKey: plan, interval: intervalParam }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al iniciar pago');
@@ -75,6 +88,12 @@ export default function DemoForm({ onSuccess, initialData = {} }: DemoFormProps)
         return;
       }
 
+      if (!formData.acceptTerms) {
+        setError('Debes aceptar los términos y condiciones');
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch('/api/auth/demo-register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -84,13 +103,17 @@ export default function DemoForm({ onSuccess, initialData = {} }: DemoFormProps)
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al registrarse');
 
-      localStorage.setItem('clinic_token', data.token);
+      const accessToken = data.accessToken;
+      const tenantId = data.tenant?.id;
+      if (!accessToken || !tenantId) throw new Error('Error al crear la cuenta');
+      localStorage.setItem('clinic_token', accessToken);
+      if (data.refreshToken) localStorage.setItem('clinic_refresh_token', data.refreshToken);
       localStorage.setItem('user_info', JSON.stringify(data.user));
-      localStorage.setItem('active_tenant_id', data.tenant.id);
+      localStorage.setItem('active_tenant_id', tenantId);
       localStorage.setItem('clinic-name', data.tenant.name);
 
       if (plan) {
-        await goToCheckout(data.token);
+        await goToCheckout(accessToken, tenantId);
         return;
       }
 
@@ -133,15 +156,24 @@ export default function DemoForm({ onSuccess, initialData = {} }: DemoFormProps)
     <div className="p-8">
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">
-          {isQuote ? 'Solicita tu presupuesto' : (plan ? 'Contratar ' + planLabel : 'Prueba Nexora gratis 14 días')}
+          {isQuote
+            ? 'Solicita tu presupuesto'
+            : plan
+              ? `Contratar ${planLabel}`
+              : 'Prueba Nexora gratis 14 días'}
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          {isQuote ? 'Te contactaremos en menos de 24h.' : (plan ? 'Crea tu cuenta y pasa a pagar. Sin permanencia.' : 'Sin compromiso. Sin tarjeta.')}
+          {isQuote
+            ? 'Te contactaremos en menos de 24h.'
+            : plan
+              ? `Crea tu cuenta y paga. Sin permanencia.`
+              : 'Sin compromiso. Sin tarjeta.'}
         </p>
         {plan && (
           <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#008477]/10 text-[#008477] text-sm font-medium">
             <CreditCard className="w-4 h-4" />
-            {planLabel}
+            {planLabel} — {price}€/{isAnnual ? 'año' : 'mes'}
+            {isAnnual && <span className="text-xs opacity-75">(facturado anualmente)</span>}
           </div>
         )}
       </div>
@@ -154,49 +186,121 @@ export default function DemoForm({ onSuccess, initialData = {} }: DemoFormProps)
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div>
-          <label className="block text-sm font-bold text-gray-700">Nombre completo</label>
-          <input type="text" required value={formData.name} onChange={(e) => handleChange('name', e.target.value)}
-            className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-[#008477] focus:border-[#008477] sm:text-sm font-medium" placeholder="Tu nombre" />
+          <label className="block text-sm font-bold text-gray-700">
+            Nombre completo <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text" required value={formData.name}
+            onChange={(e) => handleChange('name', e.target.value)}
+            className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-[#008477] focus:border-[#008477] sm:text-sm font-medium"
+            placeholder="Dr. García" minLength={2} maxLength={100}
+          />
         </div>
+
         <div>
-          <label className="block text-sm font-bold text-gray-700">Correo electrónico</label>
-          <input type="email" required value={formData.email} onChange={(e) => handleChange('email', e.target.value)}
-            className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-[#008477] focus:border-[#008477] sm:text-sm font-medium" placeholder="tu@email.com" />
+          <label className="block text-sm font-bold text-gray-700">
+            Correo electrónico <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="email" required value={formData.email}
+            onChange={(e) => handleChange('email', e.target.value)}
+            className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-[#008477] focus:border-[#008477] sm:text-sm font-medium"
+            placeholder="tu@email.com"
+          />
         </div>
+
         <div>
-          <label className="block text-sm font-bold text-gray-700">Teléfono</label>
-          <input type="tel" required value={formData.phone} onChange={(e) => handleChange('phone', e.target.value)}
-            className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-[#008477] focus:border-[#008477] sm:text-sm font-medium" placeholder="+34 600 000 000" />
+          <label className="block text-sm font-bold text-gray-700">
+            Teléfono <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="tel" required value={formData.phone}
+            onChange={(e) => handleChange('phone', e.target.value)}
+            className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-[#008477] focus:border-[#008477] sm:text-sm font-medium"
+            placeholder="+34 600 000 000"
+          />
         </div>
+
         <div>
-          <label className="block text-sm font-bold text-gray-700">Tipo de clínica</label>
-          <select required value={formData.clinicType} onChange={(e) => handleChange('clinicType', e.target.value)}
-            className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-[#008477] focus:border-[#008477] sm:text-sm font-medium bg-white">
+          <label className="block text-sm font-bold text-gray-700">
+            Tipo de clínica <span className="text-red-500">*</span>
+          </label>
+          <select
+            required value={formData.clinicType}
+            onChange={(e) => handleChange('clinicType', e.target.value)}
+            className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-[#008477] focus:border-[#008477] sm:text-sm font-medium bg-white"
+          >
             {CLINIC_TYPES.map((ct) => (
               <option key={ct.value} value={ct.value}>{ct.label} — {ct.desc}</option>
             ))}
           </select>
         </div>
+
         <div>
-          <label className="block text-sm font-bold text-gray-700">Nombre de tu clínica</label>
-          <input type="text" required value={formData.clinicName} onChange={(e) => handleChange('clinicName', e.target.value)}
-            className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-[#008477] focus:border-[#008477] sm:text-sm font-medium" placeholder="Ej. Clínica Fisioterapia Salud" />
+          <label className="block text-sm font-bold text-gray-700">
+            Nombre de tu clínica <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text" required value={formData.clinicName}
+            onChange={(e) => handleChange('clinicName', e.target.value)}
+            className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-[#008477] focus:border-[#008477] sm:text-sm font-medium"
+            placeholder="Ej. Clínica Fisioterapia Salud" minLength={2} maxLength={200}
+          />
         </div>
+
         {!isQuote && (
-          <div>
-            <label className="block text-sm font-bold text-gray-700">Contraseña</label>
-            <input type="password" required minLength={6} value={formData.password} onChange={(e) => handleChange('password', e.target.value)}
-              className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-[#008477] focus:border-[#008477] sm:text-sm font-medium" placeholder="Mínimo 6 caracteres" />
-          </div>
+          <>
+            <div>
+              <label className="block text-sm font-bold text-gray-700">
+                Contraseña <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password" required minLength={8} value={formData.password}
+                onChange={(e) => handleChange('password', e.target.value)}
+                className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-[#008477] focus:border-[#008477] sm:text-sm font-medium"
+                placeholder="Mínimo 8 caracteres"
+              />
+            </div>
+
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox" id="acceptTerms" required
+                checked={formData.acceptTerms}
+                onChange={(e) => handleChange('acceptTerms', e.target.checked)}
+                className="mt-1 h-4 w-4 text-[#008477] border-gray-300 rounded focus:ring-[#008477]"
+              />
+              <label htmlFor="acceptTerms" className="text-xs text-gray-500">
+                Acepto los{' '}
+                <Link to="/terminos" target="_blank" className="text-[#008477] hover:underline">términos y condiciones</Link>
+                {' '}y la{' '}
+                <Link to="/privacidad" target="_blank" className="text-[#008477] hover:underline">política de privacidad</Link>
+                . Autorizo el tratamiento de mis datos para la gestión de la cuenta.
+              </label>
+            </div>
+          </>
         )}
-        <button type="submit" disabled={loading}
-          className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-black text-white bg-[#008477] hover:bg-[#007066] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#008477] disabled:opacity-70 transition-colors">
-          {loading || purchasing ? <Loader2 className="w-5 h-5 animate-spin" /> : (isQuote ? 'Enviar solicitud' : (plan ? 'Pagar' : 'Empezar prueba gratis'))}
+
+        <button
+          type="submit" disabled={loading || purchasing}
+          className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-black text-white bg-[#008477] hover:bg-[#007066] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#008477] disabled:opacity-70 transition-colors"
+        >
+          {loading || purchasing ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : plan ? (
+            <>
+              <Lock className="w-4 h-4" />
+              Pagar {price}€{isAnnual ? '/año' : '/mes'} — Stripe Checkout
+            </>
+          ) : (
+            'Empezar prueba gratis'
+          )}
         </button>
-        <p className="text-center text-xs text-gray-400">
-          Al registrarte aceptas nuestros{' '}
-          <Link to="/terminos" className="text-[#008477] hover:underline">términos y condiciones</Link>.
+
+        <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1">
+          <Lock className="w-3 h-3" />
+          Pago seguro vía Stripe. Aceptamos tarjeta, PayPal, Bizum y más.
         </p>
+
         <div className="text-center pt-2 border-t border-gray-100">
           <span className="text-sm text-gray-500">¿Ya tienes cuenta? </span>
           <Link to="/login" className="text-sm font-bold text-[#008477] hover:text-[#007066]">Inicia sesión</Link>

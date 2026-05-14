@@ -99,24 +99,36 @@ export default function PricingPage() {
 
   const handleBuy = async (planName: string) => {
     const token = localStorage.getItem('clinic_token');
+    const planKey = PLAN_KEY[planName] || 'STARTER';
+    const interval = billing === 'yearly' ? 'year' : 'month';
+
     if (!token) {
-      navigate('/login');
+      navigate(`/demo?plan=${planKey}&interval=${interval}`);
       return;
     }
+
     setLoading(planName);
     try {
-      const planKey = PLAN_KEY[planName] || 'STARTER';
-      const interval = billing === 'yearly' ? 'year' : 'month';
+      const tenantId = localStorage.getItem('active_tenant_id');
+      if (!tenantId) {
+        navigate(`/demo?plan=${planKey}&interval=${interval}`);
+        return;
+      }
+
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'x-tenant-id': tenantId,
+        },
         body: JSON.stringify({ planKey, interval }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al iniciar pago');
       if (data.url) window.location.href = data.url;
     } catch (err: any) {
-      openModal('demo', { plan: PLAN_KEY[planName] || 'STARTER', error: err.message });
+      openModal('demo', { plan: PLAN_KEY[planName] || 'STARTER', interval, error: err.message });
     } finally {
       setLoading(null);
     }
@@ -180,7 +192,7 @@ export default function PricingPage() {
                       className="w-full h-12 rounded-xl text-[14px] font-medium transition-all bg-slate-900 text-white hover:bg-[#008477] disabled:opacity-60 disabled:cursor-not-allowed">
                       {loading === plan.name ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Comprar'}
                     </button>
-                    <button onClick={() => openModal('demo')}
+                    <button onClick={() => openModal('demo', { plan: PLAN_KEY[plan.name] || 'STARTER', interval: billing === 'yearly' ? 'year' : 'month' })}
                       className="w-full h-12 rounded-xl text-[13px] font-medium transition-all ring-1 ring-slate-300 text-slate-500 hover:text-slate-700 hover:bg-slate-50">
                       Probar 14 días gratis
                     </button>

@@ -7,8 +7,12 @@ export default function DemoRegisterPage() {
   const initialData: Record<string, string> = {};
   const type = searchParams.get('type');
   const specialty = searchParams.get('specialty');
+  const plan = searchParams.get('plan');
+  const interval = searchParams.get('interval');
   if (type) initialData.type = type;
   if (specialty) initialData.specialty = specialty;
+  if (plan) initialData.plan = plan;
+  if (interval) initialData.interval = interval;
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -36,11 +36,25 @@ billingRouter.post('/checkout', validate(checkoutSchema), async (req, res) => {
     if (!tenant.stripeCustomerId) {
       const customer = await stripe.customers.create({
         metadata: { tenantId },
+        name: tenant.name || undefined,
+        email: tenant.contactEmail || undefined,
+        phone: tenant.contactPhone || undefined,
+        address: tenant.address ? {
+          line1: tenant.address,
+          country: 'ES',
+        } : undefined,
       });
       tenant = await prisma.tenant.update({
         where: { id: tenantId },
         data: { stripeCustomerId: customer.id },
       });
+    } else {
+      await stripe.customers.update(tenant.stripeCustomerId, {
+        metadata: { tenantId },
+        name: tenant.name || undefined,
+        email: tenant.contactEmail || undefined,
+        phone: tenant.contactPhone || undefined,
+      }).catch(() => {});
     }
 
     const appUrl = process.env.APP_URL || 'http://localhost:3000';
@@ -58,7 +72,16 @@ billingRouter.post('/checkout', validate(checkoutSchema), async (req, res) => {
       subscription_data: {
         metadata: { tenantId, planKey, interval: validInterval },
       },
-      success_url: `${appUrl}/dashboard?purchase=success`,
+      customer_update: {
+        name: 'auto',
+        address: 'auto',
+      },
+      billing_address_collection: 'required',
+      tax_id_collection: { enabled: true },
+      consent_collection: {
+        terms_of_service: 'required',
+      },
+      success_url: `${appUrl}/dashboard?purchase=success&plan=${planKey}&interval=${validInterval}`,
       cancel_url: `${appUrl}/pricing?purchase=canceled`,
     };
 

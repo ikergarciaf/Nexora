@@ -53,6 +53,23 @@ webhookRouter.post('/stripe', raw({ type: 'application/json' }), async (req, res
     const stripe = getStripe();
 
     switch (event.type) {
+      case 'customer.updated': {
+        const customer = event.data.object as any;
+        const tenantId = customer.metadata?.tenantId;
+        if (tenantId) {
+          await prisma.tenant.update({
+            where: { id: tenantId },
+            data: {
+              name: customer.name || undefined,
+              contactEmail: customer.email || undefined,
+              contactPhone: customer.phone || undefined,
+              address: customer.address?.line1 || undefined,
+            },
+          }).catch(() => {});
+          logger.info({ tenantId }, 'Customer details synced from Stripe');
+        }
+        break;
+      }
       case 'checkout.session.completed': {
         const session = event.data.object as any;
         if (session.mode === 'subscription') {
