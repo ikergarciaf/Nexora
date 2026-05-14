@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Check, ArrowRight, Sparkles, Zap, Shield, Users, Brain, MessageCircle, Globe, Smartphone, FileText, CreditCard } from 'lucide-react';
+import { Check, ArrowRight, Sparkles, Zap, Shield, Users, Brain, MessageCircle, Globe, Smartphone, FileText, CreditCard, Loader2 } from 'lucide-react';
 import { FrontendNavbar } from '../components/FrontendNavbar';
 import { useModal } from '../components/ModalContext';
 
@@ -86,9 +86,10 @@ const FAQ = [
 
 export default function PricingPage() {
   const navigate = useNavigate();
-  const { openModal, closeModal } = useModal();
+  const { openModal } = useModal();
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [loading, setLoading] = useState<string | null>(null);
 
   const PLAN_KEY: Record<string, string> = {
     Starter: 'STARTER',
@@ -96,8 +97,29 @@ export default function PricingPage() {
     'Web Pro': 'PREMIUM',
   };
 
-  const handleBuy = (planName: string) => {
-    openModal('demo', { plan: PLAN_KEY[planName] || 'STARTER' });
+  const handleBuy = async (planName: string) => {
+    const token = localStorage.getItem('clinic_token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    setLoading(planName);
+    try {
+      const planKey = PLAN_KEY[planName] || 'STARTER';
+      const interval = billing === 'yearly' ? 'year' : 'month';
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ planKey, interval }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al iniciar pago');
+      if (data.url) window.location.href = data.url;
+    } catch (err: any) {
+      openModal('demo', { plan: PLAN_KEY[planName] || 'STARTER', error: err.message });
+    } finally {
+      setLoading(null);
+    }
   };
 
   return (
@@ -154,9 +176,9 @@ export default function PricingPage() {
                     <span className="text-[13px] text-slate-500">/mes</span>
                   </div>
                   <div className="mt-6 flex flex-col gap-2">
-                    <button onClick={() => handleBuy(plan.name)}
-                      className="w-full h-12 rounded-xl text-[14px] font-medium transition-all bg-slate-900 text-white hover:bg-[#008477]">
-                      Comprar
+                    <button onClick={() => handleBuy(plan.name)} disabled={loading !== null}
+                      className="w-full h-12 rounded-xl text-[14px] font-medium transition-all bg-slate-900 text-white hover:bg-[#008477] disabled:opacity-60 disabled:cursor-not-allowed">
+                      {loading === plan.name ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Comprar'}
                     </button>
                     <button onClick={() => openModal('demo')}
                       className="w-full h-12 rounded-xl text-[13px] font-medium transition-all ring-1 ring-slate-300 text-slate-500 hover:text-slate-700 hover:bg-slate-50">

@@ -34,6 +34,7 @@ export const patientUpdateSchema = patientSchema.partial();
 export const appointmentSchema = z.object({
   patientId: z.string().uuid(),
   doctorId: z.string().optional(),
+  roomId: z.string().optional(),
   startTime: z.string().datetime(),
   durationMinutes: z.number().int().min(5).max(480).default(30),
 });
@@ -41,6 +42,7 @@ export const appointmentSchema = z.object({
 export const appointmentUpdateSchema = z.object({
   patientId: z.string().uuid().optional(),
   doctorId: z.string().optional(),
+  roomId: z.string().optional(),
   startTime: z.string().datetime().optional(),
   durationMinutes: z.number().int().min(5).max(480).optional(),
   status: z.string().max(50).optional(),
@@ -63,6 +65,7 @@ export const tenantConfigSchema = z.object({
 
 export const checkoutSchema = z.object({
   planKey: z.enum(['STARTER', 'PRO', 'PREMIUM']),
+  interval: z.enum(['month', 'year']).optional().default('month'),
 });
 
 export const demoRegisterSchema = z.object({

@@ -58,6 +58,11 @@ export default function LoginPage() {
   const handleMockGoogleLogin = async () => {
     try {
       setLoading(true);
+      if (!import.meta.env.VITE_GOOGLE_CLIENT_ID) {
+        setError('Google login no está configurado. Regístrate con email y contraseña.');
+        setLoading(false);
+        return;
+      }
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

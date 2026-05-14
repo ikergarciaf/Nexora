@@ -2,14 +2,9 @@ import { Router } from 'express';
 import prisma from '../db.ts';
 import logger from '../services/logger.ts';
 import { sendEmail } from '../services/emailService.ts';
+import { getTenantId } from '../middlewares/auth.ts';
 
 export const campaignRouter = Router();
-
-function getTenantId(req: any): string {
-  const id = req.user?.tenantId;
-  if (!id) throw new Error('No tenant context');
-  return id;
-}
 
 campaignRouter.get('/', async (req, res) => {
   try {

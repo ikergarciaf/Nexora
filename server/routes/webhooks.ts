@@ -66,6 +66,7 @@ webhookRouter.post('/stripe', raw({ type: 'application/json' }), async (req, res
         const subscription = event.data.object as any;
         const tenantId = subscription.metadata?.tenantId;
         const planKey = subscription.metadata?.planKey;
+        const interval = subscription.metadata?.interval || 'month';
 
         if (tenantId) {
           const subscriptionId = subscription.id;
@@ -92,7 +93,7 @@ webhookRouter.post('/stripe', raw({ type: 'application/json' }), async (req, res
               trialEndsAt,
             },
           });
-          logger.info({ tenantId, status, plan: planKey }, 'Subscription updated via webhook');
+          logger.info({ tenantId, status, plan: planKey, interval }, 'Subscription updated via webhook');
         }
         break;
       }

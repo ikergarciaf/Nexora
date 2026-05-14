@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, getTenantId } from '../middlewares/auth.ts';
-import { getStripe, PRICING_PLANS } from '../services/stripeService.ts';
+import { getStripe, PRICING_PLANS, BillingInterval } from '../services/stripeService.ts';
 import prisma from '../db.ts';
 import logger from '../services/logger.ts';
 import { validate, checkoutSchema } from '../validation.ts';
@@ -11,7 +11,7 @@ billingRouter.use(requireAuth);
 
 billingRouter.post('/checkout', validate(checkoutSchema), async (req, res) => {
   try {
-    const { planKey } = req.body;
+    const { planKey, interval = 'month' } = req.body;
     let tenantId: string;
     try { tenantId = getTenantId(req); } catch {
       return res.status(400).json({ error: 'Selecciona una clínica primero' });
@@ -25,6 +25,10 @@ billingRouter.post('/checkout', validate(checkoutSchema), async (req, res) => {
     const stripe = getStripe();
     const plan = PRICING_PLANS[planKey as keyof typeof PRICING_PLANS];
     if (!plan) return res.status(400).json({ error: 'Plan no válido' });
+
+    const validInterval: BillingInterval = interval === 'year' ? 'year' : 'month';
+    const priceId = plan.priceIds[validInterval];
+    if (!priceId) return res.status(400).json({ error: `No hay precio configurado para el plan ${planKey} en modalidad ${validInterval}` });
 
     let tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
     if (!tenant) return res.status(404).json({ error: 'Clínica no encontrada' });
@@ -42,16 +46,20 @@ billingRouter.post('/checkout', validate(checkoutSchema), async (req, res) => {
     const appUrl = process.env.APP_URL || 'http://localhost:3000';
     const trialDays = !tenant.stripeSubscriptionId && (!tenant.trialEndsAt || new Date() < new Date(tenant.trialEndsAt)) ? 14 : 0;
 
+    const paymentMethods = process.env.STRIPE_PAYMENT_METHODS
+      ? process.env.STRIPE_PAYMENT_METHODS.split(',').map(s => s.trim()).filter(Boolean)
+      : ['card'];
+
     const sessionParams: any = {
       customer: tenant.stripeCustomerId!,
       mode: 'subscription',
-      payment_method_types: ['card'],
-      line_items: [{ price: plan.priceId, quantity: 1 }],
+      payment_method_types: paymentMethods,
+      line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
-        metadata: { tenantId, planKey },
+        metadata: { tenantId, planKey, interval: validInterval },
       },
       success_url: `${appUrl}/dashboard?purchase=success`,
-      cancel_url: `${appUrl}/?purchase=canceled`,
+      cancel_url: `${appUrl}/pricing?purchase=canceled`,
     };
 
     if (trialDays > 0) {
@@ -67,7 +75,7 @@ billingRouter.post('/checkout', validate(checkoutSchema), async (req, res) => {
       if (existingSubscriptions.data.length > 0) {
         const subscription = await stripe.subscriptions.retrieve(existingSubscriptions.data[0].id);
         const currentPriceId = subscription.items.data[0].price.id;
-        if (currentPriceId !== plan.priceId) {
+        if (currentPriceId !== priceId) {
           const portalSession = await stripe.billingPortal.sessions.create({
             customer: tenant.stripeCustomerId!,
             return_url: `${appUrl}/dashboard`,
@@ -78,7 +86,7 @@ billingRouter.post('/checkout', validate(checkoutSchema), async (req, res) => {
       }
     }
 
-    const idempotencyKey = `checkout_${tenantId}_${planKey}_${Date.now()}`;
+    const idempotencyKey = `checkout_${tenantId}_${planKey}_${validInterval}_${Date.now()}`;
     const session = await stripe.checkout.sessions.create(sessionParams, {
       idempotencyKey,
     });
@@ -155,7 +163,7 @@ billingRouter.get('/plans', async (_req, res) => {
   const plans = Object.entries(PRICING_PLANS).map(([key, plan]) => ({
     key,
     name: plan.name,
-    priceId: plan.priceId,
+    priceIds: plan.priceIds,
     features: plan.features,
   }));
   res.json(plans);

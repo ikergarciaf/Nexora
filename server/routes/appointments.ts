@@ -58,16 +58,18 @@ appointmentRouter.post('/', validate(appointmentSchema), async (req, res) => {
       return res.status(400).json({ error: 'No tenant context' });
     }
 
-    const { patientId, doctorId, startTime, durationMinutes } = req.body;
+    const { patientId, doctorId, roomId, startTime, durationMinutes } = req.body;
     const start = new Date(startTime);
     const end = new Date(start.getTime() + (durationMinutes || 30) * 60000);
 
-    const conflict = await prisma.appointment.findFirst({
+    const conflict: any = await prisma.appointment.findFirst({
       where: {
         tenantId,
         startTime: { lt: end },
         endTime: { gt: start },
         status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+        ...(doctorId ? { doctorId } : {}),
+        ...(roomId ? { roomId } : {}),
       },
     });
 
@@ -77,10 +79,24 @@ appointmentRouter.post('/', validate(appointmentSchema), async (req, res) => {
       startTime: start,
       endTime: end,
       status: 'SCHEDULED',
-      aiConflictScore: conflict ? 0.8 : undefined,
-      aiAlertReason: conflict ? 'Posible conflicto de horario detectado' : undefined,
     };
     if (doctorId) createData.doctorId = doctorId;
+    if (roomId) createData.roomId = roomId;
+
+    const reasons: string[] = [];
+    if (conflict) {
+      if (doctorId && conflict.doctorId === doctorId) {
+        reasons.push('El doctor ya tiene una cita en este horario');
+      }
+      if (roomId && conflict.roomId === roomId) {
+        reasons.push('La sala ya está ocupada en este horario');
+      }
+      if (reasons.length === 0) {
+        reasons.push('Posible conflicto de horario detectado');
+      }
+      createData.aiConflictScore = 0.8;
+      createData.aiAlertReason = reasons.join('. ');
+    }
 
     const newAppointment = await prisma.appointment.create({
       data: createData,
@@ -114,11 +130,12 @@ appointmentRouter.put('/:id', validate(appointmentUpdateSchema), async (req, res
     }
 
     const { id } = req.params;
-    const { patientId, doctorId, startTime, durationMinutes, status } = req.body;
+    const { patientId, doctorId, roomId, startTime, durationMinutes, status } = req.body;
 
     const dataToUpdate: Record<string, any> = {};
     if (patientId) dataToUpdate.patientId = patientId;
     if (doctorId !== undefined) dataToUpdate.doctorId = doctorId;
+    if (roomId !== undefined) dataToUpdate.roomId = roomId;
     if (status) dataToUpdate.status = status;
     if (startTime) {
       const start = new Date(startTime);

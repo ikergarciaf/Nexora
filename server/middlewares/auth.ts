@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import prisma from '../db.ts';
+import logger from '../services/logger.ts';
 
 const JWT_SECRET = (() => {
   if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET environment variable is required');
@@ -11,6 +12,7 @@ const JWT_SECRET = (() => {
 const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_EXPIRY = '7d';
 const CSRF_TOKEN_BYTES = 32;
+const CSRF_COOKIE = 'nexora_csrf';
 
 declare global {
   namespace Express {
@@ -40,6 +42,20 @@ export function generateTokens(payload: { id: string; isSuperAdmin: boolean }) {
 export function generateCsrfToken(): string {
   return crypto.randomBytes(CSRF_TOKEN_BYTES).toString('hex');
 }
+
+export const csrfProtection = (req: Request, res: Response, next: NextFunction): void => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    next();
+    return;
+  }
+  const cookieToken = req.cookies?.[CSRF_COOKIE];
+  const headerToken = req.headers['x-csrf-token'] as string;
+  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+    res.status(403).json({ error: 'CSRF token inválido' });
+    return;
+  }
+  next();
+};
 
 export const requireAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {

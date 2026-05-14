@@ -3,6 +3,7 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import compression from "compression";
+import cookieParser from "cookie-parser";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -14,6 +15,7 @@ import { publicRouter } from "./server/routes/public.ts";
 import rateLimit from "express-rate-limit";
 import logger from "./server/services/logger.ts";
 import prisma from "./server/db.ts";
+import { requireAuth, csrfProtection } from "./server/middlewares/auth.ts";
 import "dotenv/config";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -76,6 +78,8 @@ async function startServer() {
 
   app.use(compression());
 
+  app.use(cookieParser());
+
   const corsOrigins = process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',').map(s => s.trim()).filter(Boolean)
     : '*';
@@ -92,33 +96,89 @@ async function startServer() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+  const errorStats = { total: 0, byType: {} as Record<string, number>, lastError: null as string | null };
+
   app.get('/api/health', async (_req, res) => {
     const dbOk = await checkDatabaseConnection();
     const status = dbOk ? 'ok' : 'degraded';
     const statusCode = dbOk ? 200 : 503;
+    const memory = process.memoryUsage();
+    const tenantCount = await prisma.tenant.count().catch(() => null);
+    const userCount = await prisma.user.count().catch(() => null);
+    const appointmentCount = await prisma.appointment.count().catch(() => null);
+    const patientCount = await prisma.patient.count().catch(() => null);
     res.status(statusCode).json({
       status,
       version: '1.0.0',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+      memory: {
+        rss: Math.round(memory.rss / 1024 / 1024) + 'MB',
+        heapTotal: Math.round(memory.heapTotal / 1024 / 1024) + 'MB',
+        heapUsed: Math.round(memory.heapUsed / 1024 / 1024) + 'MB',
+      },
+      stats: {
+        tenants: tenantCount,
+        users: userCount,
+        appointments: appointmentCount,
+        patients: patientCount,
+      },
+      errors: {
+        total: errorStats.total,
+        byType: errorStats.byType,
+        lastError: errorStats.lastError,
+      },
       message: dbOk ? 'Nexora API is online' : 'Database connection degraded',
     });
   });
+
+  // Per-user rate limiting store
+  const userRateLimitStore = new Map<string, { count: number; resetAt: number }>();
+  const userRateLimitMiddleware = (maxPerWindow: number, windowMs: number) => {
+    return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+      const key = req.user?.id || req.ip || 'anonymous';
+      const now = Date.now();
+      let entry = userRateLimitStore.get(key);
+      if (!entry || entry.resetAt < now) {
+        entry = { count: 0, resetAt: now + windowMs };
+        userRateLimitStore.set(key, entry);
+      }
+      entry.count++;
+      if (entry.count > maxPerWindow) {
+        res.status(429).json({ error: "Demasiadas solicitudes. Inténtalo de nuevo más tarde." });
+        return;
+      }
+      next();
+    };
+  };
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of userRateLimitStore) {
+      if (entry.resetAt < now) userRateLimitStore.delete(key);
+    }
+  }, 5 * 60 * 1000).unref();
 
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 300,
     standardHeaders: true,
     legacyHeaders: false,
+    keyGenerator: (req) => req.user?.id || req.ip || 'anonymous',
     message: { error: "Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos." },
   });
   app.use("/api", apiLimiter);
+
+  app.use("/api/dashboard", userRateLimitMiddleware(200, 15 * 60 * 1000));
+  app.use("/api/patients", userRateLimitMiddleware(200, 15 * 60 * 1000));
+  app.use("/api/appointments", userRateLimitMiddleware(200, 15 * 60 * 1000));
 
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 20,
     standardHeaders: true,
     legacyHeaders: false,
+    keyGenerator: (req) => req.ip || 'anonymous',
     message: { error: "Demasiados intentos. Inténtalo de nuevo en 15 minutos." },
   });
   app.use("/api/auth/login", authLimiter);
@@ -129,12 +189,21 @@ async function startServer() {
   app.use("/api/auth/refresh", authLimiter);
   app.use("/api/auth/google", authLimiter);
 
+  app.use('/api', (req, res, next) => {
+    const skipPaths = ['/webhooks', '/health', '/auth/csrf'];
+    if (skipPaths.some(p => req.path.startsWith(p))) {
+      next();
+      return;
+    }
+    csrfProtection(req, res, next);
+  });
+
   app.use("/api", apiRouter);
   app.use("/api/gdpr", gdprRouter);
   app.use("/api/upload", uploadRouter);
   app.use("/api/public", publicRouter);
 
-  app.use('/uploads', express.static(path.resolve(__dirname, 'public', 'uploads')));
+  app.use('/uploads', requireAuth, express.static(path.resolve(__dirname, 'public', 'uploads')));
 
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -159,6 +228,10 @@ async function startServer() {
   }
 
   app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    errorStats.total++;
+    const type = err.name || 'UnknownError';
+    errorStats.byType[type] = (errorStats.byType[type] || 0) + 1;
+    errorStats.lastError = err.message;
     logger.error({ error: err.message, stack: err.stack }, 'Unhandled error');
     res.status(500).json({ error: 'Error interno del servidor' });
   });

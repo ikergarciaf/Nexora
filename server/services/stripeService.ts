@@ -18,10 +18,21 @@ export function getStripe(): Stripe {
   return stripeClient;
 }
 
-export const PRICING_PLANS = {
+export type BillingInterval = 'month' | 'year';
+
+export interface PlanConfig {
+  name: string;
+  priceIds: Record<BillingInterval, string>;
+  features: string[];
+}
+
+export const PRICING_PLANS: Record<string, PlanConfig> = {
   STARTER: {
     name: 'Starter',
-    priceId: process.env.STRIPE_PRICE_STARTER || 'price_starter_mock_123',
+    priceIds: {
+      month: process.env.STRIPE_PRICE_STARTER || 'price_starter_month_mock',
+      year: process.env.STRIPE_PRICE_STARTER_YEAR || 'price_starter_year_mock',
+    },
     features: [
       'Gestión de pacientes ilimitada',
       'Agenda inteligente',
@@ -33,7 +44,10 @@ export const PRICING_PLANS = {
   },
   PRO: {
     name: 'Pro',
-    priceId: process.env.STRIPE_PRICE_PRO || 'price_pro_mock_456',
+    priceIds: {
+      month: process.env.STRIPE_PRICE_PRO || 'price_pro_month_mock',
+      year: process.env.STRIPE_PRICE_PRO_YEAR || 'price_pro_year_mock',
+    },
     features: [
       'Todo lo de Starter',
       'Hasta 5 profesionales',
@@ -48,7 +62,10 @@ export const PRICING_PLANS = {
   },
   PREMIUM: {
     name: 'Premium',
-    priceId: process.env.STRIPE_PRICE_PREMIUM || 'price_premium_mock_789',
+    priceIds: {
+      month: process.env.STRIPE_PRICE_PREMIUM || 'price_premium_month_mock',
+      year: process.env.STRIPE_PRICE_PREMIUM_YEAR || 'price_premium_year_mock',
+    },
     features: [
       'Todo lo de Pro',
       'Profesionales ilimitados',
@@ -63,9 +80,8 @@ export const PRICING_PLANS = {
 };
 
 export function getPlanByPriceId(priceId: string): string | null {
-  const entries = Object.entries(PRICING_PLANS);
-  for (const [key, plan] of entries) {
-    if (plan.priceId === priceId) return key;
+  for (const [key, plan] of Object.entries(PRICING_PLANS)) {
+    if (Object.values(plan.priceIds).includes(priceId)) return key;
   }
   return null;
 }

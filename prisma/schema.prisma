@@ -125,6 +125,7 @@ model Appointment {
   tenantId        String
   patientId       String
   doctorId        String?
+  roomId          String?
   startTime       DateTime
   endTime         DateTime
   createdAt       DateTime    @default(now())
@@ -149,6 +150,7 @@ model Appointment {
   @@index([status])
   @@index([patientId])
   @@index([doctorId])
+  @@index([roomId])
   @@index([tenantId, patientId, startTime])
 }
 

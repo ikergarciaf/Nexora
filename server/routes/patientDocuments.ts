@@ -57,16 +57,22 @@ documentRouter.post('/', async (req, res) => {
     const base64Data = matches[2];
     const buffer = Buffer.from(base64Data, 'base64');
 
-    const allowedMimes = [
-      'application/pdf',
-      'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
-    ];
+    const allowedMimes: Record<string, string[]> = {
+      'application/pdf': ['.pdf'],
+      'image/jpeg': ['.jpg', '.jpeg', '.jpe'],
+      'image/jpg': ['.jpg', '.jpeg'],
+      'image/png': ['.png'],
+      'image/webp': ['.webp'],
+      'image/gif': ['.gif'],
+    };
 
-    if (!allowedMimes.includes(mimeType)) {
-      return res.status(400).json({ error: 'Only PDF and image files are allowed' });
+    const allowedExt = path.extname(fileName).toLowerCase();
+    const validExts = allowedMimes[mimeType];
+    if (!validExts || !validExts.includes(allowedExt)) {
+      return res.status(400).json({ error: `Tipo de archivo no permitido: ${mimeType} con extensión ${allowedExt}` });
     }
 
-    const ext = path.extname(fileName) || (mimeType === 'application/pdf' ? '.pdf' : '.jpg');
+    const ext = allowedExt || (mimeType === 'application/pdf' ? '.pdf' : '.jpg');
     const storedName = `patient-${patientId}-${Date.now()}${ext}`;
     const uploadDir = path.resolve(__dirname, '..', '..', 'public', 'uploads', 'documents');
 

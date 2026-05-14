@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import prisma from '../db.ts';
-import { requireAuth, requireRefreshAuth, generateTokens } from '../middlewares/auth.ts';
+import { requireAuth, requireRefreshAuth, generateTokens, generateCsrfToken } from '../middlewares/auth.ts';
 import { sendEmail } from '../services/emailService.ts';
 import logger from '../services/logger.ts';
 import { OAuth2Client } from 'google-auth-library';
@@ -19,6 +19,16 @@ import {
 export const authRouter = Router();
 
 const googleClient = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID || 'dummy');
+
+authRouter.get('/csrf', (_req, res) => {
+  const token = generateCsrfToken();
+  res.cookie('nexora_csrf', token, {
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 3600000,
+  });
+  res.json({ csrfToken: token });
+});
 
 function sanitize(str: string): string {
   return str.replace(/[<>&"'\\]/g, '').trim();
@@ -112,16 +122,6 @@ authRouter.post('/google', async (req, res) => {
   try {
     const { credential } = req.body;
     if (!credential) return res.status(400).json({ error: 'Credencial de Google requerida' });
-
-    if (credential === 'demo-google-token') {
-      if (process.env.NODE_ENV === 'production') {
-        return res.status(403).json({ error: 'Demo login no disponible en producción' });
-      }
-      const user = await prisma.user.findFirst({ orderBy: { createdAt: 'asc' } });
-      if (!user) return res.status(403).json({ error: 'No hay usuarios demo disponibles' });
-      const tokens = generateTokens({ id: user.id, isSuperAdmin: user.isSuperAdmin });
-      return res.json({ ...tokens, user: safeUser(user) });
-    }
 
     try {
       const ticket = await googleClient.verifyIdToken({ idToken: credential });
