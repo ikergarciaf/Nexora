@@ -58,9 +58,10 @@ async function startServer() {
   const app = express();
   const PORT = parseInt(process.env.PORT || '3000', 10);
 
+  const isDev = process.env.NODE_ENV !== "production";
   app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
-    contentSecurityPolicy: {
+    contentSecurityPolicy: isDev ? false : {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
@@ -69,8 +70,6 @@ async function startServer() {
         connectSrc: ["'self'", "https://*.stripe.com", "https://accounts.google.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         frameSrc: ["'self'", "https://accounts.google.com"],
-        objectSrc: ["'none'"],
-        upgradeInsecureRequests: [],
       },
     },
   }));
@@ -82,7 +81,7 @@ async function startServer() {
     : '*';
 
   app.use(cors({
-    origin: corsOrigins,
+    origin: corsOrigins === '*' ? (process.env.APP_URL || true) : corsOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID', 'X-CSRF-Token'],
     credentials: true,
@@ -108,7 +107,7 @@ async function startServer() {
 
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 300,
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: "Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos." },
@@ -117,7 +116,7 @@ async function startServer() {
 
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 10,
+    max: 20,
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: "Demasiados intentos. Inténtalo de nuevo en 15 minutos." },

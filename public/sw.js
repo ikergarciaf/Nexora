@@ -40,6 +40,16 @@ self.addEventListener('fetch', e => {
     return;
   }
 
+  if (url.pathname.startsWith('/api/')) {
+    e.respondWith(
+      fetch(request).catch(() => new Response(
+        JSON.stringify({ error: 'offline' }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      ))
+    );
+    return;
+  }
+
   if (url.pathname.startsWith('/uploads/')) {
     e.respondWith(
       caches.open(CACHE).then(cache =>
@@ -48,7 +58,7 @@ self.addEventListener('fetch', e => {
             if (res.ok) cache.put(request, res.clone());
             return res;
           }).catch(() => cached);
-          return cached || fetchPromise;
+          return fetchPromise || cached;
         })
       )
     );
