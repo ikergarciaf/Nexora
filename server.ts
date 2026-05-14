@@ -165,7 +165,8 @@ async function startServer() {
   });
 
   const server = app.listen(PORT, "0.0.0.0", () => {
-    logger.info({ port: PORT }, `Nexora server running at http://localhost:${PORT}`);
+    const url = process.env.APP_URL || `http://localhost:${PORT}`;
+    logger.info({ port: PORT, url }, `Nexora server running at ${url}`);
   });
 
   const shutdown = async () => {
